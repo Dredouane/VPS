@@ -176,5 +176,22 @@ Remédiation exécutée en une session `sudo bash -s` via SSH, avec sauvegardes 
 | Flotte Hermes | 6/6 actifs (4 Docker + 2 natifs), fail2ban actif, 0 unit failed |
 | Exposition réseau | inchangée et conforme (2222 seul public) |
 
+### 5.5 Supervision Telegram active (30/08, ajout post-audit)
+
+Architecture d'alerte centralisée déployée et validée de bout en bout :
+
+| Composant | Rôle | Validation |
+|---|---|---|
+| `/usr/local/bin/telegram-alert.sh` (700 root) | Envoi Telegram centralisé ; credentials sourcés depuis `/etc/secrets/hermes.env` (`ALERT_TELEGRAM_BOT_TOKEN`, `ALERT_TELEGRAM_CHAT_ID`) ; erreurs tracées via `logger -t telegram-alert` | Test direct **HTTP 200** ; messages reçus sur Telegram |
+| `/usr/local/bin/telegram-alert-ssh.sh` + hook PAM (`/etc/pam.d/sshd` : `session optional pam_exec.so quiet seteuid …`) | Notifie **chaque connexion SSH réussie** (utilisateur, IP source) ; silence sur `close_session` ; `optional` = ne peut jamais bloquer un login ; backup `/etc/pam.d/sshd.preaudit-20260830` | Simulation `PAM_TYPE=open_session` → notification envoyée (exit 0) ; `close_session` → silence |
+| `/usr/local/bin/aide-check-alert.sh` (cron 3h via `/etc/cron.d/aide`) | Check AIDE quotidien → alerte Telegram **uniquement si** fichiers ajoutés/supprimés/modifiés (sinon silence) | Chaîne validée : alertes parties lors des checks en écarts (reçues), silence après base propre |
+
+**Correctifs imposés par la mise en œuvre** :
+1. **`hermes.env` reconstruit** : les lignes exportées brutes depuis `.bashrc` contenaient des références non développées (`DATABASE_URL` avec `$p` → `unbound variable` fatal sous `set -u` dans les scripts) → valeurs capturées depuis l'environnement réel d'un shell root, échappées `printf %q`, dédupliquées (57→50 lignes), sourcing validé sous `set -u`. Backup : `/etc/secrets/hermes.env.preaudit-quote-20260830`.
+2. **Exclusions de churn ajoutées à `99_custom`** (sinon fausses alertes nocturnes garanties — 97 diffs mesurés au 1ᵉʳ check) : data-dirs des agents Docker (`hermes-fleet/*/data`), `.hermes` des 3 users (hermesrunner, arev-chantier-runner, admin : états/sessions/logs/tickers), index Syncthing, `fail2ban.sqlite3`, cache landscape, vault Obsidian (contenu utilisateur synchronisé), `/run/containerd`. L'AIDE continue de couvrir binaires, configs système, scripts et sudoers.
+3. **Base AIDE régénérée** (21:34) et check de validation **100 % propre** (0 ajout / 0 suppression / 0 modification, 6 min) → le cron de 3h repart sur une base saine.
+
+**Observations** : activité concurrente détectée pendant l'opération (création de `/home/admin/.hermes` à 21:14:30 — session Doer), prise en compte par les exclusions. Vérification du repo git local initialisé le même jour : **aucun secret dans l'historique** (token d'alerte absent, `spawn-hermes.sh` ne référence que des noms de variables). ✅ **Rotation du token d'alerte effectuée le 30/08 21:50** (transitoirement en clair dans la conversation) : ancien token révoqué confirmé (API 401), nouveau validé (API 200, @pipou200bot), test d'envoi OK, permissions 600 conservées, backup `/etc/secrets/hermes.env.pre-rotation-20260830`. Note : le bot d'alerte est @pipou200bot, le même que le runner natif hermesrunner — sans conflit (le script n'utilise que `sendMessage`, le gateway que `getUpdates`).
+
 ---
-*Rapport généré par audit en lecture seule — aucune modification appliquée au serveur.*
+*Rapport d'audit généré en lecture seule ; la remédiation (§5) et la supervision (§5.5) ont été appliquées et re-validées le 30/08/2026.*
