@@ -1,0 +1,23 @@
+# config.yaml.example — Config runtime pro HermesConfig
+# Rendu par spawn-hermes-pro.sh (placeholders __MODEL_PROVIDER__ / __MODEL__)
+# puis installé dans le data-dir (/opt/data/config.yaml, 640, 10000:10000).
+# Validée au boot par `hermes doctor` — vérifier les logs conteneur au 1er boot.
+
+model:
+  default: "__MODEL__"
+  provider: "__MODEL_PROVIDER__"
+
+security:
+  # Masque les secrets (clés API, tokens) dans les logs, sessions et réponses
+  redact_secrets: true
+
+# ── Notes ────────────────────────────────────────────────────────────────────
+# - Approvals : conservées en mode interactif par défaut (pas de --yolo).
+#   Pour durcir davantage par client, voir `hermes approvals --help` et
+#   `hermes security --help` (hors scope par défaut : ne rien activer sans
+#   qualification).
+# - Memory & skills : activés par défaut (learning loop) — pas de clé à forcer
+#   ici ; la mémoire et les skills vivent dans /opt/data (persistant).
+# - Dashboard : désactivé via env (HERMES_DASHBOARD=0) dans le compose généré.
+# - Toute clé supplémentaire doit être validée par `hermes doctor` avant commit
+#   de ce template.

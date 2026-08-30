@@ -64,6 +64,8 @@ ssh nemo            # connexion admin (port 2222)
 | Utilisateur cloud-init `ubuntu` | Supprimé (R1 audit 30/08) — sudoers `90-cloud-init-users` retiré |
 | Cron AIDE | Log daté dynamique `aide-$(date +\%Y\%m\%d).log` (corrigé le 30/08) |
 | snapd | Désactivé |
+| Supervision Telegram | `/usr/local/bin/telegram-alert.sh` (credentials dans `/etc/secrets/hermes.env`) — hook PAM sshd (connexion réussie) + alerte AIDE conditionnelle (cron 3h) — 30/08 |
+| AIDE (exclusions churn) | `99_custom` : data-dirs agents, `.hermes` des 3 users, index Syncthing, fail2ban.sqlite3, landscape, vault Obsidian, `/run/containerd` — base régénérée le 30/08 21:34, check 0 diff |
 
 ### Ports en écoute publique
 
@@ -128,9 +130,15 @@ journalctl -u hermes-gateway-arev -f
 
 Les deux sont `enabled` (démarrage au boot) et `Restart=always`.
 
-### 4.5 Agents Docker (flotte)
+### 4.5 Agents Docker (flotte v1)
 
-Déployer un nouvel agent dockerisé :
+> **⚠️ Héritage (v1)** : la flotte historique ci-dessous reste gérée par
+> `spawn-hermes.sh`. Les **clients pro PME** sont désormais déployés via le
+> sous-projet **`HermesConfig` v2** (sécurisé : secrets hors YAML, ports
+> loopback, image pinnée, vault scopé, healthcheck) — voir
+> `../HermesConfig/README.md`. Ne pas ajouter de nouveaux clients en v1.
+
+Déployer un nouvel agent dockerisé (v1, héritage) :
 ```bash
 # En tant que root (les secrets DEEPSEEK_API_KEY / TELEGRAM_USER_ID sont dans
 # /etc/secrets/hermes.env, sourcé automatiquement par /root/.bashrc — audit 30/08)
@@ -142,6 +150,19 @@ cd /home/admin/hermes-fleet
 ```
 
 Le script : construit l'image si nécessaire (via `hermes-repo`), trouve un port libre (8650+), monte le vault Obsidian (`/home/syncthing/obsidian-vault`), injecte `DEEPSEEK_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS` et lance `hermes gateway run --replace`.
+
+### 4.5bis Flotte PRO HermesConfig (v2) — clients PME
+
+| Agent | Conteneur | Port | Bot Telegram | Image | État |
+|---|---|---|---|---|---|
+| **arev** (AREV Travaux) | `hermes-arev-pro` | 127.0.0.1:8655 | @ArevLeanyBot (nouveau, option A) | `hermes-agent:v2026.5.16-522` | ✅ connecté (30/08/2026) |
+
+- Déploiement/audit : `/home/admin/hermes-fleet/HermesConfig/scripts/{spawn,audit}-hermes-pro.sh`
+- Secrets : `clients/arev/client.env` (600) → résolus dans `instances/arev/secrets.env` (600, référencé par `env_file`) — **jamais dans le YAML ni git**
+- Vault **scopé client** : `/home/syncthing/obsidian-vault/VPS/HermesConfig/arev/` → `/opt/vault` (10000:10000 + ACL syncthing)
+- Durcissement : `no-new-privileges`, `cap_drop ALL` + caps min, `mem_limit 2g`, `cpus 1.5`, logs 10m×3, healthcheck sur `gateway_state.json`
+- Audit 30/08 : **12 OK / 0 FAIL** (`audit-hermes-pro.sh`)
+- ⚠️ **Leçon** : ne pas définir `TELEGRAM_FALLBACK_IPS` (TLS direct IP → échec certificat sur builds récents → timeout). Le runner natif `arev-chantier-runner` (@Arev_Chantiers_AssistBot) reste en parallèle pendant la transition.
 
 **Bugs corrigés dans `spawn-hermes.sh`** (vs version d'origine) :
 - `entrypoint: []` **supprimé** → l'image utilise son entrypoint natif qui droppe les privilèges vers l'utilisateur `hermes` (sans ça, l'image refuse de lancer le gateway en root)
@@ -212,7 +233,11 @@ Après la réinstallation, **rien n'était lancé** :
 ### Vérifications / Sauvegardes
 - [ ] Tester la **persistance après reboot** (services systemd + conteneurs `restart: unless-stopped`).
 - [ ] Vérifier la bonne synchronisation du vault Obsidian via Syncthing après premiers changements.
-- [ ] Mettre à jour AIDE (base) après tous ces changements pour éviter de fausses alertes : `aideinit --force` (config sha256, exclusions node_modules). Base régénérée le 30/08 à 11:56, **mais** la remédiation de l'audit (13:32 : `.bashrc`, `/etc/secrets/`, cron AIDE, spawn script, suppression `/home/ubuntu`) produira des diffs attendus au run de 3h → régénérer après vérification.
+- [ ] **HermesConfig** : tester un message Telegram réel vers @ArevLeanyBot + réponse de l'agent ; créer le bot Ops + routines après validation client.
+- [ ] **HermesConfig** : intégrer `/home/admin/hermes-fleet/HermesConfig/instances/` (data) + `clients/` à la procédure de backup.
+- [x] **AIDE** : base régénérée le 30/08 **21:34** après remédiation + exclusions churn (check de validation 0 diff) ; cron 3h → `aide-check-alert.sh` (alerte Telegram **si** différences uniquement). Refaire `aideinit --force` après tout changement système majeur.
+- [x] **Rotation du token du bot d'alerte** — **faite le 30/08 21:50** : nouveau token dans `/etc/secrets/hermes.env` (600), ancien révoqué (API 401), nouveau validé (API 200, @pipou200bot), test d'envoi OK. Backup : `/etc/secrets/hermes.env.pre-rotation-20260830`.
+- [ ] Nettoyer les backups pré-audit sur le serveur une fois la stabilité confirmée (`/root/.bashrc.preaudit-20260830`, `/etc/pam.d/sshd.preaudit-20260830`, `/etc/secrets/hermes.env.preaudit-quote-20260830`, `/etc/cron.d/aide.preaudit-20260830`).
 - [x] **PROCÉDURE DE BACKUP** : inclure **`/home/admin/hermes-fleet/`** (données + configs des agents Docker : sessions, memories, state.db) — **absent du backup `backup.tar.gz` d'origine**, ce qui a causé la perte des historiques des agents Docker. Les données à sauvegarder :
   - `/home/admin/hermes-fleet/` (agents Docker : `hermes-fleet/<agent>/data/`)
   - `/home/<runner>/.hermes/` (runners natifs : sessions, memories, state.db, .env)
@@ -247,4 +272,7 @@ sync-status
 # Sécurité
 sudo ufw status verbose
 sudo fail2ban-client status sshd
+
+# Test manuel de l'alerte Telegram
+sudo /usr/local/bin/telegram-alert.sh "Test" "message de test"
 ```

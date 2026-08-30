@@ -19,7 +19,17 @@ VPS/
 │   ├── DOCUMENTATION_VPS.md          ← Doc globale post-installation
 │   ├── SYNCTHING_OBSIDIAN.md         ← Guide Syncthing & Obsidian
 │   ├── RAPPORT_AUDIT_2026-08-30.md   ← Rapport d'audit sécurité
-│   └── spawn-hermes.sh               ← Script de déploiement des agents Hermes
+│   └── spawn-hermes.sh               ← Script de déploiement des agents Hermes (v1)
+│
+├── HermesConfig/              ← 🤖 Agents Hermes PRO clients PME (v2, variabilisé)
+│   ├── README.md              ← Vue d'ensemble + quickstart
+│   ├── VEILLE_HERMES_2026-08.md      ← Veille state of the art (août 2026)
+│   ├── ARCHITECTURE.md        ← Décisions (ADR) — Docker v2, secrets, Bot Mode
+│   ├── DEPLOYMENT.md          ← Guide pas-à-pas déploiement VPS
+│   ├── docker/                ← Template compose sécurisé
+│   ├── clients/               ← TEMPLATE + clients réels (arev)
+│   ├── hermes/                ← config, bots, routines, skills
+│   └── scripts/               ← spawn-hermes-pro.sh + audit-hermes-pro.sh
 │
 ├── .gitignore                 ← Exclusions (backup.tar.gz, secrets, logs…)
 │
@@ -33,6 +43,8 @@ VPS/
 ```bash
 ssh nemo                # admin@REDACTED:2222 (clé REDACTED)
 syncthing-gui           # tunnel SSH → GUI Syncthing du VPS (http://localhost:8384)
+# Agent pro client (flotte HermesConfig v2) :
+cd HermesConfig && ./scripts/spawn-hermes-pro.sh <slug>   # sur le VPS
 ```
 
 ## 🔗 Liens utiles

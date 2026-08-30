@@ -1,0 +1,71 @@
+# HermesConfig v2 — docker-compose généré par spawn-hermes-pro.sh
+# Client : __SLUG__  |  Généré le __DATE__
+# ⚠️ Fichier généré : ne pas éditer à la main, le spawn l'écrase.
+# Les secrets vivent dans __CLIENTS_DIR__/client.env (env_file, mode 600).
+
+services:
+  hermes-__SLUG__-pro:
+    image: __IMAGE__
+    container_name: hermes-__SLUG__-pro
+    restart: unless-stopped
+    command:
+      - gateway
+      - run
+      - --replace
+    env_file:
+      - __INSTANCE_DIR__/secrets.env
+    environment:
+      # Identité
+      - HERMES_AGENT_NAME=__SLUG__-pro
+      - HERMES_MODE=gateway
+      # Runtime non-root (entrypoint gosu → hermes, UID image = 10000)
+      - HERMES_UID=10000
+      - HERMES_GID=10000
+      - HERMES_HOME=/opt/data
+      # Vault scopé client (mount restreint, cf. ARCHITECTURE.md D6)
+      - HERMES_VAULT_DIR=/opt/vault
+      - OBSIDIAN_VAULT_PATH=/opt/vault
+      # Dashboard désactivé (surface d'attaque)
+      - HERMES_DASHBOARD=0
+      # NB: pas de TELEGRAM_FALLBACK_IPS — TLS direct vers l'IP brute échoue la
+      # vérification de certificat sur les builds récents (connect timeout).
+    ports:
+      # Défense en profondeur : loopback only (UFW deny 864x en 2e rideau)
+      - "127.0.0.1:__PORT__:8642"
+    volumes:
+      # Data dir pré-créé par le spawn (10000:10000, 700)
+      - __DATA_DIR__:/opt/data
+      # Vault client scopé — JAMAIS la racine Obsidian (fuite croisée)
+      - __VAULT_CLIENT_DIR__:/opt/vault
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      # Minimum requis par la phase root de l'entrypoint (usermod/chown/gosu)
+      - CHOWN
+      - FOWNER
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+    healthcheck:
+      # Gateway vivant ET Telegram connecté (le state file est la source de
+      # vérité — l'API 8642 ne tourne pas en mode gateway headless).
+      test:
+        - CMD-SHELL
+        - grep -qs '"state":"connected"' /opt/data/gateway_state.json
+      interval: 60s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Multi-tenant : un agent ne doit pas affamer le VPS
+    mem_limit: 2g
+    cpus: 1.5
