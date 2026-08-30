@@ -1,0 +1,16 @@
+# Archive de sauvegarde volumineuse / sensible
+backup.tar.gz
+*.tar.gz
+
+# Artefacts Windows (Zone.Identifier)
+*:Zone.Identifier
+
+# Secrets & fichiers sensibles locaux
+*.env
+.env
+*.pem
+*.key
+
+# Journaux / temporaires
+*.log
+/tmp/
