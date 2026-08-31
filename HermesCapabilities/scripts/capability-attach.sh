@@ -253,6 +253,21 @@ PY
     fi
 done
 
+# --- 6bis. Définitions SQL client (D9) -------------------------------------------
+SQL_SRC="$CAPS_BASE/sql/$SLUG"
+if [ -d "$SQL_SRC" ]; then
+    if [ "$DRY_RUN" = "1" ]; then
+        log "[plan] sql/$SLUG/ → data/sql/ (définitions pour les skills experts)"
+    else
+        mkdir -p "$DATA_DIR/sql"
+        cp -f "$SQL_SRC"/*.sql "$DATA_DIR/sql/"
+        chown -R 10000:10000 "$DATA_DIR/sql"
+        chmod 640 "$DATA_DIR/sql"/*.sql
+        ok "définitions SQL copiées (data/sql/) — source de vérité des skills"
+        CHANGED=1
+    fi
+fi
+
 # --- 7. Redémarrage (APPLY réel uniquement) -------------------------------------
 if [ "$SELFTEST" = "0" ] && [ "$DRY_RUN" = "0" ] && [ "$CHANGED" = "1" ] && [ -n "$CONTAINER" ]; then
     log "Redémarrage de $CONTAINER (config changée)…"

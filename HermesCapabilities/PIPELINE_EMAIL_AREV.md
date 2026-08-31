@@ -73,7 +73,8 @@ connaître les tables/RPC disponibles — le schéma est la source de vérité (
 ## 4. Idempotence & erreurs
 
 1. Un message n'est **jamais indexé deux fois** : `doc_status` avant indexation
-   (et contrainte d'unicité `(client_id, kind, message_id)` en DB).
+   (et dédup par contenu : unique `(client_id, kind, content_md5)` en DB —
+   une PJ déjà vue ne crée pas de doublon).
 2. Le label `ia-traite` n'est posé **qu'après succès complet** du mail (RAG ±
    expert). Erreur → pas de label → retraité au tick suivant (retry naturel).
 3. Après **3 échecs** du même message (comptés dans `emails.status='error'`),
