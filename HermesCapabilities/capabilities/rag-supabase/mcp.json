@@ -1,0 +1,11 @@
+{
+  "_comment": "MCP supabase du catalogue Hermes (vérifié 30/08 v0.20.6). Clé = rôle capability limité (RLS/RPC) — JAMAIS la service key. Les env référencent des secrets par NOM, résolus par capability-attach.sh depuis clients/<slug>/client.env. Wiring exact (hermes mcp install vs add) à valider en M2 sur hermes-arev-pro.",
+  "name": "supabase",
+  "source": "catalog",
+  "install": "hermes mcp install supabase",
+  "env": {
+    "SUPABASE_URL": "${SUPABASE_URL}",
+    "SUPABASE_KEY": "${SUPABASE_RPC_KEY}"
+  },
+  "notes": "RLS + RPC rpc_cap_<slug>_* uniquement. Projet Supabase TEST séparé pour les tests d'intégration (SUPABASE_URL/RPC_KEY de test)."
+}

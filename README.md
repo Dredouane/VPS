@@ -31,6 +31,13 @@ VPS/
 │   ├── hermes/                ← config, bots, routines, skills
 │   └── scripts/               ← spawn-hermes-pro.sh + audit-hermes-pro.sh
 │
+├── HermesCapabilities/        ← 🧩 Compétences modulaires (email, OCR, RAG…)
+│   ├── README.md              ← Cycle de vie d'une capability
+│   ├── ARCHITECTURE.md        ← Contrat manifest + matrice natif/mix/sidecar
+│   ├── capabilities/          ← TEMPLATE + pilote rag-supabase (C5)
+│   ├── pipelines/             ← Compositions de capabilities (chaînes métier)
+│   └── scripts/               ← capability-test.sh + capability-attach.sh
+│
 ├── .gitignore                 ← Exclusions (backup.tar.gz, secrets, logs…)
 │
 └── (non versionnés, locaux uniquement)

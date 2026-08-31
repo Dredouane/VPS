@@ -1,12 +1,13 @@
 ---
 name: check-hermesconfig
 description: >-
-  Vérification de non-régression du projet VPS et du sous-projet HermesConfig
-  (agents Hermes pro clients PME). Use when the user says "check",
-  "vérification", "non-régression", "audit projet", "check HermesConfig",
-  "audit-hermes-pro", at the start of a session on this repo, before any
-  commit touching HermesConfig/, or after any VPS deployment.
-  Local git/template invariants + read-only SSH fleet checks.
+  Vérification de non-régression du projet VPS et des sous-projets HermesConfig
+  + HermesCapabilities (agents Hermes pro clients PME). Use when the user says
+  "check", "vérification", "non-régression", "audit projet", "check
+  HermesConfig", "audit-hermes-pro", at the start of a session on this repo,
+  before any commit touching HermesConfig/ or HermesCapabilities/, or after
+  any VPS deployment. Local git/template invariants + read-only SSH fleet
+  checks + capability contract tests.
 ---
 
 # Check non-régression HermesConfig
@@ -88,6 +89,31 @@ A8. `HermesConfig/clients/*/client.env.example` :
 
 A9. `HermesConfig/clients/*/soul.md` : contient sait / peut / refuse / escalade
 
+A10. Sous-projet HermesCapabilities (volet 2 — compétences modulaires) :
+
+     Fichiers requis (`test -f`) :
+     `HermesCapabilities/README.md`, `HermesCapabilities/ARCHITECTURE.md`,
+     `HermesCapabilities/integration-hermesconfig.md`,
+     `HermesCapabilities/pipelines/TEMPLATE/pipeline.yaml`,
+     `HermesCapabilities/capabilities/TEMPLATE/manifest.yaml`,
+     `HermesCapabilities/capabilities/TEMPLATE/decision.md`,
+     `HermesCapabilities/capabilities/TEMPLATE/soul-addendum.md`,
+     `HermesCapabilities/capabilities/TEMPLATE/tests/test.sh`,
+     `HermesCapabilities/capabilities/rag-supabase/manifest.yaml`,
+     `HermesCapabilities/capabilities/rag-supabase/decision.md`,
+     `HermesCapabilities/capabilities/rag-supabase/soul-addendum.md`,
+     `HermesCapabilities/capabilities/rag-supabase/skill.md`,
+     `HermesCapabilities/capabilities/rag-supabase/mcp.json`,
+     `HermesCapabilities/capabilities/rag-supabase/tests/test.sh`
+
+     Tests de contrat (attendu : 0 FAIL, tout PASS) :
+
+     HermesCapabilities/scripts/capability-test.sh all
+
+     Scripts : `bash -n` + `test -x` sur `capability-test.sh` et
+     `capability-attach.sh`. `decision.md` de chaque capability contient un
+     verdict natif/mix/sidecar (couvert par les tests de contrat).
+
 ## B. VPS (read-only — SKIP si SSH indisponible)
 
 Préfixe : `ssh -o BatchMode=yes -o ConnectTimeout=8 nemo`
@@ -137,9 +163,10 @@ B8. Transition : `ssh nemo 'systemctl is-active hermes-gateway-arev'` = active
 
 ## C. Cohérence (local)
 
-- `README.md` racine mentionne `HermesConfig` (grep)
+- `README.md` racine mentionne `HermesConfig` **et** `HermesCapabilities` (grep)
 - `Installation/DOCUMENTATION_VPS.md` contient `4.5bis` (grep)
 - `HermesConfig/VERIFICATIONS.md` existe
+- `HermesConfig/README.md` référence le volet 2 `HermesCapabilities` (grep)
 - `git status -sb` : arbre propre (ou modifications assumées) ; note le
   nombre de commits d'avance sur `origin/main`
 
@@ -166,6 +193,9 @@ compléments généraux : `Installation/DOCUMENTATION_VPS.md` §4.5bis.
 ## Étendre (quand le projet avance)
 
 - Nouveau client → RIEN à faire : B1/B3 itèrent sur `instances/*/`.
+- Nouvelle capability HermesCapabilities → mettre à jour la liste A10
+  (nouveaux fichiers requis) ; le runner `capability-test.sh all` couvre
+  automatiquement les contrats.
 - Nouvel invariant (nouvelle leçon) → 1) ce SKILL.md, 2)
   `HermesConfig/VERIFICATIONS.md` (+ date et leçon), 3) `audit-hermes-pro.sh`
   si côté VPS. Committer les trois ensemble.

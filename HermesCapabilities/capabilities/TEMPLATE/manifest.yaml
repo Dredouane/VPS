@@ -1,0 +1,42 @@
+# Contrat de capability HermesCapabilities v1 — TEMPLATE
+# Copier capabilities/TEMPLATE → capabilities/<id> puis renseigner.
+# ⚠️ id DOIT être égal au nom du dossier. Jamais de valeur de secret ici.
+
+id: template
+version: 0.1.0
+title: "Capability TEMPLATE"
+type: natif                  # natif | mix | sidecar (voir decision.md)
+description: >
+  Décrire la compétence métier apportée à l'agent (pas la technologie).
+
+# Secrets requis dans HermesConfig/clients/<slug>/client.env (mode 600)
+# — NOMS uniquement, validés par capability-attach.sh (comptage, jamais d'affichage)
+secrets: []
+# ex: [SUPABASE_URL, SUPABASE_RPC_KEY]
+
+# Variables d'environnement NON secrètes injectées dans l'instance.
+# Interpolation {{CLIENT_SLUG}} supportée.
+env: {}
+# ex:
+#   GMAIL_LABEL: "{{CLIENT_SLUG}}"
+
+# MCP servers Hermes à activer → mcp.json REQUIS si non vide
+mcp: []
+# ex: [supabase]
+
+# Skills Hermes installées pour cette capability → skill.md REQUIS si non vide
+skills: []
+# ex: [rag-search]
+
+# Routines cron Hermes → routine.yaml REQUIS si non vide
+routines: []
+# ex: [gmail-poll-15min]
+
+# Montages volumes additionnels (host → container)
+mounts: {}
+
+# Clauses mergées dans le SOUL.md du client (marqueurs idempotents)
+soul_addendum: soul-addendum.md
+
+# Tests unitaires (exécutés par scripts/capability-test.sh)
+tests: tests/

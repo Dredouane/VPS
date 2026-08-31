@@ -67,5 +67,6 @@ vim clients/monclient/soul.md      # adapter le contrat au client
 - Veille & sources officielles : [`VEILLE_HERMES_2026-08.md`](VEILLE_HERMES_2026-08.md)
 - Décisions d'architecture : [`ARCHITECTURE.md`](ARCHITECTURE.md)
 - Procédure de déploiement complète : [`DEPLOYMENT.md`](DEPLOYMENT.md)
+- **Volet 2 — compétences modulaires** : [`../HermesCapabilities/README.md`](../HermesCapabilities/README.md)
 - Doc globale VPS : [`../Installation/DOCUMENTATION_VPS.md`](../Installation/DOCUMENTATION_VPS.md)
 - Vault Obsidian : `/home/syncthing/obsidian-vault/VPS/HermesConfig/` (notes ADR, runbook, état flotte)

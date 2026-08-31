@@ -1,0 +1,35 @@
+# Pipeline HermesCapabilities — composition de capabilities (TEMPLATE)
+# Un pipeline = une chaîne métier de capabilities attachées à un client.
+# Consumé par capability-attach.sh (attache tout le pipeline) et, en M2/M3,
+# par les routines d'orchestration de l'agent.
+
+id: template-pipeline
+title: "Pipeline TEMPLATE"
+description: >
+  Décrire la chaîne métier (déclencheur → traitements → sorties).
+client_slug: "{{CLIENT_SLUG}}"
+
+# Capabilities activées, dans l'ordre logique de la chaîne métier
+# (chaque id doit exister dans HermesCapabilities/capabilities/)
+capabilities: []
+
+# Déclencheur de la chaîne
+trigger: manual            # manual | routine | webhook
+schedule: null             # cron si trigger=routine, ex: "*/15 * * * *"
+entry_skill: null          # skill qui démarre la chaîne (ex: email-classify)
+
+# Sorties attendues (documentation)
+outputs:
+  - "Ex: documents indexés dans le RAG (C5)"
+  - "Ex: analyses sauvegardées pour la webapp CRUD (C7)"
+
+# --- Exemple commenté : pipeline email AREV (M2) -----------------------------
+# id: arev-email-pipeline
+# client_slug: arev
+# capabilities: [email-gmail, email-processing, doc-ocr, rag-embeddings, rag-supabase, analysis-facturation, db-crud-sync]
+# trigger: routine
+# schedule: "*/15 * * * *"
+# entry_skill: gmail-read
+# outputs:
+#   - "Emails classés + pièces jointes OCR indexées dans le RAG (C5)"
+#   - "Analyses facturation sauvegardées pour la webapp CRUD (C7)"

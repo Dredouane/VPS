@@ -164,6 +164,16 @@ Le script : construit l'image si nécessaire (via `hermes-repo`), trouve un port
 - Audit 30/08 : **12 OK / 0 FAIL** (`audit-hermes-pro.sh`)
 - ⚠️ **Leçon** : ne pas définir `TELEGRAM_FALLBACK_IPS` (TLS direct IP → échec certificat sur builds récents → timeout). Le runner natif `arev-chantier-runner` (@Arev_Chantiers_AssistBot) reste en parallèle pendant la transition.
 
+### 4.5ter HermesCapabilities — volet compétences modulaires (M1, 31/08/2026)
+
+Sous-projet `HermesCapabilities/` : capabilities granulaires (email, OCR, RAG,
+analyses…) décrites par contrat `manifest.yaml`, testées unitairement, et
+attachables aux instances (`capability-attach.sh`). Ordre de décision
+technique : natif > mix > sidecar (matrice dans `ARCHITECTURE.md`). Pilote :
+`rag-supabase` (C5, natif — MCP `supabase` du catalogue Hermes). Implémentation
+réelle (M2) : schéma/RPC Supabase TEST → wiring MCP sur `hermes-arev-pro`.
+Interface future avec le spawn v3 : `integration-hermesconfig.md`.
+
 **Bugs corrigés dans `spawn-hermes.sh`** (vs version d'origine) :
 - `entrypoint: []` **supprimé** → l'image utilise son entrypoint natif qui droppe les privilèges vers l'utilisateur `hermes` (sans ça, l'image refuse de lancer le gateway en root)
 - Commande : `gateway run --replace` (les options `--no-supervise --force` n'existaient pas)
@@ -234,6 +244,7 @@ Après la réinstallation, **rien n'était lancé** :
 - [ ] Tester la **persistance après reboot** (services systemd + conteneurs `restart: unless-stopped`).
 - [ ] Vérifier la bonne synchronisation du vault Obsidian via Syncthing après premiers changements.
 - [ ] **HermesConfig** : tester un message Telegram réel vers @ArevLeanyBot + réponse de l'agent ; créer le bot Ops + routines après validation client.
+- [ ] **HermesCapabilities** : M2 — implémentation réelle C5 rag-supabase (Supabase TEST → MCP sur arev) puis C1 email-gmail ; réplication contrats C2/C3/C4/C6/C7.
 - [ ] **HermesConfig** : intégrer `/home/admin/hermes-fleet/HermesConfig/instances/` (data) + `clients/` à la procédure de backup.
 - [x] **AIDE** : base régénérée le 30/08 **21:34** après remédiation + exclusions churn (check de validation 0 diff) ; cron 3h → `aide-check-alert.sh` (alerte Telegram **si** différences uniquement). Refaire `aideinit --force` après tout changement système majeur.
 - [x] **Rotation du token du bot d'alerte** — **faite le 30/08 21:50** : nouveau token dans `/etc/secrets/hermes.env` (600), ancien révoqué (API 401), nouveau validé (API 200, @pipou200bot), test d'envoi OK. Backup : `/etc/secrets/hermes.env.pre-rotation-20260830`.

@@ -1,0 +1,12 @@
+# Routines cron de la capability (hermes cron) — si manifest.routines non vide.
+# Format: liste de {id, schedule, prompt}. Le prompt ne contient JAMAIS de secret
+# (il passe par les MCP/tools de l'agent). Appartenant au bot Ops par défaut
+# (voir HermesConfig/hermes/bots/README.md).
+
+routines:
+  - id: template-routine
+    schedule: "0 7 * * 1"
+    prompt: >-
+      Décrire la tâche récurrente et sa sortie attendue (Telegram référent,
+      note vault, RPC…). Rester court — c'est un prompt, pas une spec.
+    profile: ops

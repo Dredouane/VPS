@@ -1,0 +1,39 @@
+# Contrat de capability — rag-supabase (C5, pilote)
+# RAG Supabase pgvector via MCP natif Hermes. Clé limitée (RLS/RPC), jamais
+# la service key. Voir decision.md pour l'analyse natif/mix/sidecar.
+
+id: rag-supabase
+version: 0.1.0
+title: "RAG Supabase — indexation et recherche documentaire"
+type: natif
+description: >
+  Permet à l'agent d'indexer des documents (texte extrait, ex. emails/OCR)
+  dans Supabase pgvector (embeddings fournis par la capability rag-embeddings,
+  hors périmètre ici) et de rechercher par similarité pour répondre aux
+  demandes métier. Écriture/lecture exclusivement via RPC dédiées par client.
+
+# Secrets requis dans HermesConfig/clients/<slug>/client.env (600)
+# SUPABASE_URL       : URL du projet Supabase du client
+# SUPABASE_RPC_KEY   : clé du rôle capability (RLS/RPC restreintes)
+#                      — JAMAIS SUPABASE_SERVICE_KEY
+secrets: [SUPABASE_URL, SUPABASE_RPC_KEY]
+
+# Vars non secrètes, variabilisées par client
+env:
+  RAG_SCHEMA: "cap_{{CLIENT_SLUG}}"      # schéma/pgvector dédié au client
+
+# MCP natif Hermes (catalogue, vérifié 30/08 v0.20.6)
+mcp: [supabase]
+
+# Skills installées pour cette capability
+skills: [rag-search]
+
+# Pas de routine : l'indexation est déclenchée par les pipelines amont
+# (ex: email-processing) ou à la demande. Une routine de maintenance
+# (réindexation, purge) pourra être ajoutée en M2.
+routines: []
+
+mounts: {}
+
+soul_addendum: soul-addendum.md
+tests: tests/

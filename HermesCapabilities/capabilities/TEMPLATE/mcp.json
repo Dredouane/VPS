@@ -1,0 +1,10 @@
+{
+  "_comment": "Config MCP de la capability. 'source: catalog' = serveur du catalogue Hermes (hermes mcp install <name>). 'env' référence des secrets par NOM — résolus par capability-attach.sh depuis clients/<slug>/client.env, jamais écrits en dur.",
+  "name": "template-mcp",
+  "source": "catalog",
+  "install": "hermes mcp install template-mcp",
+  "env": {
+    "TEMPLATE_API_KEY": "${TEMPLATE_API_KEY}"
+  },
+  "notes": "Wiring exact à valider en M2 sur l'instance test (hermes mcp add --help). JAMAIS de service key full-access : clé limitée (RLS/RPC) par client."
+}
