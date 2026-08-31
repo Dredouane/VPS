@@ -119,6 +119,8 @@ B6. Vault : `sudo getfacl /home/syncthing/obsidian-vault/VPS/HermesConfig/<slug>
     → `user:syncthing:rwx` + `default:user:syncthing:rwx` ; les 4 notes
     présentes dans `/home/syncthing/obsidian-vault/VPS/HermesConfig/`
     (VEILLE, Décisions, Runbook AREV, État flotte pro) ; sous-dossier `arev/`.
+    ⚠️ Lister avec `sudo ls` (dossier appartient à syncthing — un `ls` simple
+    en admin échoue en Permission denied).
 
 B7. Drift repo↔VPS (I14) : comparer md5sum locaux vs VPS sur
     `scripts/spawn-hermes-pro.sh`, `scripts/audit-hermes-pro.sh`,

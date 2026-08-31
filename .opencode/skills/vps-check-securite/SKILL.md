@@ -53,9 +53,9 @@ Les checks R1-R4 (repo local) ne dépendent pas du SSH — cf. skill
 | S5 | PubkeyAuthentication | `sudo sshd -T \| grep -i pubkeyauthentication` | `yes` |
 | S6 | AuthenticationMethods | `sudo sshd -T \| grep -i authenticationmethods` | `publickey` |
 | S7 | MaxAuthTries | `sudo sshd -T \| grep -i maxauthtries` | `3` |
-| S8 | Forwards / DNS / X11 / empty pwd | `sudo sshd -T \| grep -Ei 'allowtcpforwarding\|allowagentforwarding\|usedns\|x11forwarding\|permitemptypasswords'` | `no` ×5 (usedns : `no`) |
-| S9 | Ciphers/MACs sans algo faible | `sudo sshd -T \| grep -E '^(ciphers\|macs) '` | **0** occurrence de `arcfour`, `hmac-sha1`, `hmac-md5` (grep -cE → 0) ; AES-GCM ou ETM présent |
-| S10 | Drop-ins SSH | `ls /etc/ssh/sshd_config.d/` | `00-hardening.conf` présent (le hardening inclus reste prioritaire) |
+| S8 | Forwards / DNS / X11 / empty pwd | `sudo sshd -T \| grep -Ei 'allowtcpforwarding\|allowagentforwarding\|usedns\|x11forwarding\|permitemptypasswords'` | `allowtcpforwarding local` (intentionnel : `10-tunnel.conf`, tunnels `nemoclaw-tunnel` — ⚠️ le §1.1 du RAPPORT_AUDIT dit « no » à tort) ; `allowagentforwarding no`, `usedns no`, `x11forwarding no`, `permitemptypasswords no` |
+| S9 | Ciphers/MACs sans algo faible | `sudo sshd -T \| grep -E '^(ciphers\|macs) '` | **0** occurrence de `arcfour`, `hmac-sha1`, `hmac-md5` (grep -cE → 0) ; `chacha20-poly1305@openssh.com` autorisé (moderne), AES-GCM + hmac-sha2-ETM présents |
+| S10 | Drop-ins SSH | `ls /etc/ssh/sshd_config.d/` | `00-hardening.conf` présent (chargé en 1ᵉʳ → first-match-wins) ; drop-ins cloud-init résiduels tolérés (`50-cloud-init.conf` contient `PasswordAuthentication yes` **inerte** — neutralisé par sshd -T ; `60-cloudimg-settings.conf` = `no`) → `~ WARN` documentaire (prolonge Y2) |
 | S11 | Perms `.ssh` admin | `stat -c '%a' /home/admin/.ssh /home/admin/.ssh/authorized_keys` | `700` et `600` |
 
 ## Checks — Réseau / UFW / Docker
@@ -65,7 +65,7 @@ Les checks R1-R4 (repo local) ne dépendent pas du SSH — cf. skill
 | S12 | UFW active | `sudo ufw status` | `Status: active` |
 | S13 | Default policy | `sudo ufw status verbose` | `Default: deny (incoming)` |
 | S14 | Règles ouvertes | `sudo ufw status \| grep -E '2222\|8642\|8650\|22000'` | `2222/tcp ALLOW` ; `8642/tcp DENY` ; `8650/tcp DENY` ; `22000/tcp ALLOW` **depuis REDACTED uniquement** |
-| S15 | Bloc UFW/Docker | `grep -c 'BEGIN UFW AND DOCKER' /etc/ufw/after.rules` | ≥ 1 (bloc présent — critique : Docker court-circuite UFW) |
+| S15 | Bloc UFW/Docker | `sudo grep -c 'BEGIN UFW AND DOCKER' /etc/ufw/after.rules` | ≥ 1 (bloc présent — critique : Docker court-circuite UFW) |
 | S16 | Chaîne DOCKER-USER | `sudo iptables -L DOCKER-USER -n` | contient une règle `DROP` finale (RETURN RFC1918/loopback/ESTABLISHED tolérés) |
 | S17 | daemon.json | `cat /etc/docker/daemon.json` | `no-new-privileges: true`, `live-restore: true`, log-opts `max-size 10m` / `max-file 3`, **aucune** clé `userns-remap` |
 
@@ -77,7 +77,7 @@ une liste figée complète de règles, uniquement les règles ci-dessus.
 | # | Check | Commande | Attendu |
 |---|---|---|---|
 | S18 | Service fail2ban | `systemctl is-active fail2ban` | `active` |
-| S19 | Jail sshd | `sudo fail2ban-client status` (liste) + `grep -E '^(port\|bantime\|backend\|banaction)' /etc/fail2ban/jail.local` | jail `sshd` présente ; `port = 2222`, `bantime = 86400`, `backend = systemd`, `banaction = ufw` |
+| S19 | Jail sshd | `sudo fail2ban-client status` (liste) + `sudo fail2ban-client get sshd bantime` + `sudo grep -E '^(port\|bantime\|backend\|banaction)' /etc/fail2ban/jail.local` | jail `sshd` présente ; bantime **effectif** `86400` ; `port = 2222`, `backend = systemd`, `banaction = ufw` — un `bantime = 3600` en tête ([DEFAULT]) est toléré si la section [sshd] prime |
 | S20 | Base AIDE | `stat -c '%a' /var/lib/aide/aide.db` | présente, `600` |
 | S21 | Cron AIDE | `cat /etc/cron.d/aide` | planifié à 3h (`0 3 * * *`) appelant `/usr/local/bin/aide-check-alert.sh`, avec `%` **échappé** (`\%`) si log daté |
 | S22 | Exclusions churn `99_custom` | `cat /etc/aide/aide.conf.d/99_custom` | contient : `node_modules` ( agents + global), `/var/lib/docker`, `containerd`, data-dirs `hermes-fleet/*/data`, `.hermes` des 3 users, `syncthing`, `fail2ban`, `landscape`, `/run/containerd` (grep par mot-clé, ≥ 8 motifs) |
@@ -89,11 +89,11 @@ une liste figée complète de règles, uniquement les règles ci-dessus.
 |---|---|---|---|
 | S24 | Perms /etc/secrets | `sudo stat -c '%a %U:%G' /etc/secrets /etc/secrets/hermes.env` | `700 root:root` et `600 root:root` |
 | S25 | Sourcing valide | `sudo bash -uc '. /etc/secrets/hermes.env && echo OK'` | `OK`, pas d'`unbound variable` |
-| S26 | Variables présentes (noms seuls) | `sudo grep -cE '^(DEEPSEEK_API_KEY\|ALERT_TELEGRAM_BOT_TOKEN\|ALERT_TELEGRAM_CHAT_ID\|SSH_ALERT_ALLOWED_IPS)=' /etc/secrets/hermes.env` | `4` — **ne jamais afficher les valeurs** |
+| S26 | Variables présentes (noms seuls) | `sudo grep -cE '^[[:space:]]*(export[[:space:]]+)?(DEEPSEEK_API_KEY\|ALERT_TELEGRAM_BOT_TOKEN\|ALERT_TELEGRAM_CHAT_ID\|SSH_ALERT_ALLOWED_IPS)=' /etc/secrets/hermes.env` | `4` — les lignes sont au format `export VAR=…` (migration §5.1) ; **ne jamais afficher les valeurs** |
 | S27 | 0 export dans .bashrc | `sudo grep -c '^export' /root/.bashrc` + `sudo stat -c '%a' /root/.bashrc` | `0` et `600` |
 | S28 | Tokens fleet | `sudo stat -c '%a' /root/.fleet_tokens.env` | `600` |
 | S29 | Utilisateur ubuntu supprimé | `id ubuntu` | inexistant (rc≠0) |
-| S30 | Sudoers durci | `ls /etc/sudoers.d/` | `90-admin` présent, `90-cloud-init-users` **absent** |
+| S30 | Sudoers durci | `sudo ls /etc/sudoers.d/` | `90-admin` présent, `90-cloud-init-users` **absent** |
 | S31 | Hook PAM SSH | `grep pam_exec /etc/pam.d/sshd` | contient `session optional pam_exec.so quiet seteuid /usr/local/bin/telegram-alert-ssh.sh` |
 | S32 | Scripts d'alerte | `sudo stat -c '%a %U:%G' /usr/local/bin/telegram-alert.sh /usr/local/bin/telegram-alert-ssh.sh /usr/local/bin/aide-check-alert.sh` | `700 root:root` ×3 |
 
