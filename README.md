@@ -47,6 +47,26 @@ syncthing-gui           # tunnel SSH → GUI Syncthing du VPS (http://localhost:
 cd HermesConfig && ./scripts/spawn-hermes-pro.sh <slug>   # sur le VPS
 ```
 
+## 🛡️ Skills de non-régression
+
+6 skills OpenCode (`.opencode/skills/`) vérifient en **lecture seule** que
+l'état validé (audit du 30/08/2026) ne régresse pas. Les invoquer par leur
+nom ou par mots-clés (ex. « lance vps-check-full ») — **redémarrer opencode**
+après leur création pour les charger :
+
+| Skill | Périmètre |
+|---|---|
+| `vps-check-repo` | Repo git local : secrets versionnés, `.gitignore`, `~/.ssh/config`, alias |
+| `vps-check-securite` | Hardening VPS : sshd 2222 + ciphers, UFW/DOCKER-USER, Fail2ban, AIDE, sysctl, `/etc/secrets` 600, hook PAM |
+| `vps-check-flotte` | Flotte legacy : 4 conteneurs 8650-8653, 2 runners natifs, loukyrunner inactif, 0 conflit 409, `spawn-hermes.sh` |
+| `check-hermesconfig` | Invariants HermesConfig : template compose, `audit-hermes-pro.sh`, `redact_secrets`, ACLs Obsidian, drift repo↔VPS |
+| `vps-check-sync` | Syncthing : service actif, folder idle, GUI 127.0.0.1:8384, vault `VPS/HermesConfig` |
+| `vps-check-full` | Orchestrateur : exécute les 5 skills (repo → sécurité → flotte → HermesConfig → sync) + synthèse PASS/FAIL |
+
+Format : tableau `✓ PASS / ✗ FAIL / ~ WARN` + renvoi exact vers la doc de
+remédiation — les skills **ne corrigent jamais** (rapport seul).
+Registre des invariants HermesConfig : [`HermesConfig/VERIFICATIONS.md`](HermesConfig/VERIFICATIONS.md).
+
 ## 🔗 Liens utiles
 
 - [Repo GitHub](https://github.com/Dredouane/VPS)
