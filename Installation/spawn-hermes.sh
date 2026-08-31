@@ -41,7 +41,7 @@ USER_ID="${TELEGRAM_USER_ID:-""}"
 echo "🚀 Création de l'agent Hermes: $AGENT_NAME (Port attribué : $AGENT_PORT)..."
 
 mkdir -p "$BASE_DIR/data"
-chmod -R 777 "$BASE_DIR/data"
+chown -R 10000:10000 "$BASE_DIR/data" && chmod -R 700 "$BASE_DIR/data"
 
 # === NOUVEAU : Vérification du vault Obsidian ===
 VAULT_PATH="/home/syncthing/obsidian-vault"
@@ -68,9 +68,7 @@ services:
     image: hermes-agent:latest
     container_name: hermes-$AGENT_NAME
     restart: unless-stopped
-    entrypoint: []
     command:
-      - /opt/hermes/.venv/bin/hermes
       - gateway
       - run
       - --replace
