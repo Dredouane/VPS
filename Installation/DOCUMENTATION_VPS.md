@@ -64,7 +64,7 @@ ssh nemo            # connexion admin (port 2222)
 | Utilisateur cloud-init `ubuntu` | Supprimé (R1 audit 30/08) — sudoers `90-cloud-init-users` retiré |
 | Cron AIDE | Log daté dynamique `aide-$(date +\%Y\%m\%d).log` (corrigé le 30/08) |
 | snapd | Désactivé |
-| Supervision Telegram | `/usr/local/bin/telegram-alert.sh` (credentials dans `/etc/secrets/hermes.env`) — hook PAM sshd (connexion réussie) + alerte AIDE conditionnelle (cron 3h) — 30/08 |
+| Supervision Telegram | `/usr/local/bin/telegram-alert.sh` (credentials dans `/etc/secrets/hermes.env`) — hook PAM sshd : alerte **uniquement si connexion inhabituelle** (IP ≠ allowlist `SSH_ALERT_ALLOWED_IPS=REDACTED`, utilisateur ≠ admin, ou locale) + alerte AIDE conditionnelle (cron 3h) — 30/08 |
 | AIDE (exclusions churn) | `99_custom` : data-dirs agents, `.hermes` des 3 users, index Syncthing, fail2ban.sqlite3, landscape, vault Obsidian, `/run/containerd` — base régénérée le 30/08 21:34, check 0 diff |
 
 ### Ports en écoute publique
