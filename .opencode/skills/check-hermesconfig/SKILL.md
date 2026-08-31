@@ -93,6 +93,8 @@ A10. Sous-projet HermesCapabilities (volet 2 — compétences modulaires) :
 
      Fichiers requis (`test -f`) :
      `HermesCapabilities/README.md`, `HermesCapabilities/ARCHITECTURE.md`,
+     `HermesCapabilities/DECISIONS.md`,
+     `HermesCapabilities/PIPELINE_EMAIL_AREV.md`,
      `HermesCapabilities/integration-hermesconfig.md`,
      `HermesCapabilities/pipelines/TEMPLATE/pipeline.yaml`,
      `HermesCapabilities/capabilities/TEMPLATE/manifest.yaml`,

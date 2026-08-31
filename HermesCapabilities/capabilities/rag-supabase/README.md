@@ -27,7 +27,10 @@ service key.
 
 ## À faire en M2 (implémentation)
 
-1. Supabase : créer le schéma `cap_<slug>` (table `documents` + pgvector),
+> Design complet du pipeline : [`../../PIPELINE_EMAIL_AREV.md`](../../PIPELINE_EMAIL_AREV.md)
+> · Schéma/RPC/RLS : [`../../sql/arev/`](../../sql/arev/) (source de vérité, D9)
+
+1. Supabase : créer le schéma `cap_arev` (table `documents` + pgvector),
    le rôle capability (RLS), les RPC `rpc_cap_<slug>_search|upsert|delete`
    — projet TEST d'abord, puis prod client.
 2. Valider le wiring MCP sur `hermes-arev-pro` : `hermes mcp install supabase`

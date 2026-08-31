@@ -3,6 +3,7 @@
 > Comment la plateforme HermesConfig consomme les capabilities. Ce contrat
 > sera implémenté par **spawn-hermes-pro v3** (M3/M4). En M1/M2, l'attachement
 > se fait manuellement via `capability-attach.sh`.
+> Premier cas d'usage concret : pipeline email AREV — [`PIPELINE_EMAIL_AREV.md`](PIPELINE_EMAIL_AREV.md).
 
 ## 1. Flux cible (spawn v3)
 
