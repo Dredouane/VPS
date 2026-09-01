@@ -109,18 +109,32 @@ n'est pas violé.
 **Rejetés** : *propose-then-write* (pipeline bloqué sans humain) ; *seuil de
 confiance hybride* (seuil non calibré au départ — réévaluable après retours).
 
-## D7 — Supabase : UN projet multi-tenant, le slug drive tout ✅ (révisé 31/08)
+## D7 — Supabase : UN projet multi-tenant, le slug drive tout ✅ (révisé 31/08, D7-ter 01/09)
 
 **Décision (révision suite décision utilisateur)** : un **seul projet
 Supabase** héberge tout le projet Hermes — tous les clients, les tests ET la
 prod. Le **slug de l'instance discrimine tout** : tables génériques
 `public.cap_*` avec colonne `client_slug`, et le slug drive toutes les
 requêtes SQL/RAG via les **RPC dédiées par slug**. La webapp CRUD du client
-consomme les mêmes tables (même projet, zéro synchronisation).
+consommera ces tables (même projet, zéro synchronisation).
 
-**Rejetés / obsolètes** : *projet TEST séparé* (version initiale D7 — remplacée
+**D7-ter (01/09) — Registry + intégrité** : table générique
+`public.cap_clients` (slug, nom, statut `active/suspended/archived`, référent,
+rpc_prefix), **FK** `client_slug → cap_clients.slug` sur les 4 tables de
+données, **auto-déclaration par le runner** à l'apply d'un dossier
+`sql/<slug>/` (`--client-nom` / `--client-referent`). La registry est gérée
+**par le runner uniquement** (RLS deny-all, aucune RPC pour l'agent). Un slug
+inconnu ne peut plus créer de données.
+
+**Décisions reportées (revue 01/09)** : la **webapp CRUD AREV sera construite
+plus tard** — ses lecteurs (REST/RLS/API) seront documentés au moment de sa
+conception ; la **rétention/purge** est reportée (volumes minuscules au
+départ, décision réversible).
+
+**Rejetés / obsolètes** : *projet TEST séparé* (version initiale D7 — remplacé
 par smoke tests admin-side sur le même projet, lignes marquées + cleanup) ;
-*schéma par client (`cap_<slug>`)* (v1 — remplacé par colonne `client_slug`).
+*schéma par client (`cap_<slug>`)* (v1 — remplacé par colonne `client_slug`) ;
+*registry purement git sans SQL* (fantômes possibles).
 
 ## D8 — RPC dédiées par slug, RLS deny-all, clé publishable ✅ (révisé 31/08)
 

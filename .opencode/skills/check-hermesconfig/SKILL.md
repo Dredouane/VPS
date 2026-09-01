@@ -99,6 +99,7 @@ A10. Sous-projet HermesCapabilities (volet 2 — compétences modulaires) :
      `HermesCapabilities/pipelines/TEMPLATE/pipeline.yaml`,
      `HermesCapabilities/sql/README.md`,
      `HermesCapabilities/sql/generic/001_schema.sql`,
+     `HermesCapabilities/sql/generic/002_clients.sql`,
      `HermesCapabilities/sql/arev/001_rpc.sql`,
      `HermesCapabilities/scripts/supabase-sql.sh`,
      `HermesCapabilities/capabilities/TEMPLATE/manifest.yaml`,

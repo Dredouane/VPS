@@ -10,7 +10,8 @@
 | Règle | Détail |
 |---|---|
 | Organisation | `sql/generic/` = structure commune (sans slug) · `sql/<slug>/` = scripts **dédiés au slug** (RPC, spécificités) — décision utilisateur |
-| Tables | `public.cap_documents`, `cap_emails`, `cap_factures`, `cap_pipeline_runs` — toutes avec `client_slug text not null` |
+| Tables | `public.cap_documents`, `cap_emails`, `cap_factures`, `cap_pipeline_runs` + **`cap_clients`** (registry D7-ter) — toutes avec RLS deny-all |
+| Registry | `cap_clients` : déclarée **par le runner** à l'apply d'un dossier `<slug>/` (`--client-nom`, `--client-referent`). **FK** `client_slug → cap_clients.slug` sur les 4 tables de données — un slug non déclaré ne peut pas créer de données. Gérée par le runner uniquement (aucune RPC agent) |
 | Numérotation | `001_*.sql` par dossier, puis `002_…`, `003_…` pour les migrations — **ne jamais modifier un fichier déjà appliqué** (utiliser un nouveau numéro) |
 | Tracker | `public.cap_migrations (filename, scope, applied_at)` — géré par le runner, un fichier appliqué n'est jamais réappliqué (sauf `--force`, DDL idempotent) |
 | Sécurité | RLS deny-all sur les tables ; agents = clé publishable + **RPC only** (`security definer`, `client_slug` hardcodé) ; webapp/admin = service key. Jamais la service key à un agent (D8-v2) |
@@ -31,20 +32,24 @@
 ## Runner — `scripts/supabase-sql.sh`
 
 ```bash
-./scripts/supabase-sql.sh arev status              # read-only : appliqués vs disponibles + counts
-./scripts/supabase-sql.sh arev all [--yes] [--smoke]   # générique D'ABORD puis <slug>/ (ordre critique)
+./scripts/supabase-sql.sh arev status              # read-only : migrations + counts + registry
+./scripts/supabase-sql.sh arev all [--yes] [--smoke] [--force] \
+    [--client-nom "AREV Travaux"] [--client-referent "email@…"]
 ./scripts/supabase-sql.sh arev --file arev/001_rpc.sql [--force]
 ```
 
 - `--yes` : sans confirmation · `--force` : réapplique même si tracké (DDL idempotent)
+- **Auto-déclaration du client** dans `cap_clients` à l'apply (idempotent) —
+  avant tout fichier slug ; les RPC/FK exigent un client déclaré
 - `--smoke` : tests RPC complets (doc_status/upsert/search, facture_upsert/find,
   pipeline_log) avec lignes marquées puis **cleanup admin**
-- Post-checks intégrés : 4 tables + RLS 4/4 + 7 RPC du slug
+- Post-checks intégrés : 5 tables + RLS 5/5 + 7 RPC du slug + FK 4/4 + client déclaré
 - Chaque fichier appliqué en `--single-transaction` (rollback total si erreur)
 
 ## État
 
 | Dossier | Fichiers | Appliqué |
 |---|---|---|
-| `generic/` | `001_schema.sql` | ✅ 31/08 |
-| `arev/` | `001_rpc.sql` (7 RPC + grants) | ✅ 31/08 (smoke 7/7 OK) |
+| `generic/` | `001_schema.sql` · `002_clients.sql` (registry + FK) | ✅ 01/09 |
+| `arev/` | `001_rpc.sql` (7 RPC + grants) | ✅ 31/08 (smoke 7/7 OK, FK actif) |
+| Registry | client `arev` — "AREV Travaux", active | ✅ 01/09 |

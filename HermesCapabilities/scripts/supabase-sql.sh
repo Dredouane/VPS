@@ -15,14 +15,19 @@ BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SQL_DIR="$BASE_DIR/sql"
 
 SLUG=""; CMD=""; TARGET_FILE=""; YES=0; SMOKE=0; FORCE=0
+CLIENT_NOM=""; CLIENT_REF=""
 prev=""
 for a in "$@"; do
     if [ "$prev" = "--file" ]; then TARGET_FILE="$a"; prev=""; continue; fi
+    if [ "$prev" = "--client-nom" ]; then CLIENT_NOM="$a"; prev=""; continue; fi
+    if [ "$prev" = "--client-referent" ]; then CLIENT_REF="$a"; prev=""; continue; fi
     case "$a" in
         --yes) YES=1 ;;
         --smoke) SMOKE=1 ;;
         --force) FORCE=1 ;;
         --file) prev="--file" ;;
+        --client-nom) prev="--client-nom" ;;
+        --client-referent) prev="--client-referent" ;;
         -h|--help) grep '^#' "$0" | head -10; exit 0 ;;
         status|all) CMD="$a" ;;
         *) if [ -z "$SLUG" ]; then SLUG="$a"; fi ;;
@@ -89,6 +94,32 @@ run_file() {  # $1 = chemin relatif (ex: generic/001_schema.sql)
     fi
 }
 
+sql_esc() {  # escape simple quotes pour interpolation SQL safe
+    printf '%s' "$1" | sed "s/'/''/g"
+}
+
+# Déclaration du client (registry D7-ter) — appelée AVANT le 1er fichier slug
+is_client_declared() {
+    "${PSQL[@]}" -tA -c "select count(*) from public.cap_clients where slug = '$SLUG';" 2>/dev/null | grep -q '^1$'
+}
+
+declare_client() {
+    local nom ref
+    nom="$(sql_esc "${CLIENT_NOM:-$SLUG}")"
+    ref="$(sql_esc "$CLIENT_REF")"
+    local sql="insert into public.cap_clients (slug, nom, statut, rpc_prefix"
+    [ -n "$ref" ] && sql="$sql, referent"
+    sql="$sql) values ('$SLUG', '$nom', 'active', 'rpc_cap_${SLUG}_'"
+    [ -n "$ref" ] && sql="$sql, '$ref'"
+    sql="$sql) on conflict (slug) do nothing;"
+    if "${PSQL[@]}" -c "$sql" >/dev/null 2>&1; then
+        ok "client déclaré: $SLUG (nom: ${CLIENT_NOM:-$SLUG})"
+    else
+        fail "déclaration client '$SLUG' échouée"
+        return 1
+    fi
+}
+
 # ---------------------------------------------------------------- status
 if [ "$CMD" = "status" ]; then
     echo "── Migrations Supabase (projet unique multi-tenant) ──"
@@ -100,9 +131,14 @@ if [ "$CMD" = "status" ]; then
     done < <(list_files)
     echo
     "${PSQL[@]}" -tA -c "select 'tables cap_: ' || count(*) from pg_tables
-        where schemaname='public' and tablename in ('cap_documents','cap_emails','cap_factures','cap_pipeline_runs');"
+        where schemaname='public' and tablename in ('cap_documents','cap_emails','cap_factures','cap_pipeline_runs','cap_clients');"
     "${PSQL[@]}" -tA -c "select 'rpc $SLUG: ' || count(*) from pg_proc
         where pronamespace = 'public'::regnamespace and proname like 'rpc_cap_${SLUG}_%';"
+    if "${PSQL[@]}" -tA -c "select count(*) from pg_tables where schemaname='public' and tablename='cap_clients';" | grep -q '^1$'; then
+        "${PSQL[@]}" -tA -c "select 'clients: ' || coalesce(string_agg(slug, ', '), '(aucun)') from public.cap_clients;"
+    else
+        warn "registry absente — apply générique/002_clients.sql"
+    fi
     exit 0
 fi
 
@@ -123,6 +159,11 @@ if [ "$YES" -ne 1 ]; then
 fi
 
 ERR=0
+# Auto-déclaration du client (registry D7-ter) — inconditionnelle en all/apply,
+# idempotent (on conflict do nothing). Les RPC/FK exigent un client déclaré.
+if ! is_client_declared; then
+    declare_client || ERR=$((ERR+1))
+fi
 for f in "${APPLY_LIST[@]}"; do
     if is_applied "$f" && [ "$FORCE" -ne 1 ]; then
         ok "déjà appliqué: $f (skip)"
@@ -134,14 +175,19 @@ done
 # ---------------------------------------------------------------- post-checks
 if [ "$ERR" -eq 0 ] && [ ${#APPLY_LIST[@]} -gt 0 ]; then
     N_TAB=$("${PSQL[@]}" -tA -c "select count(*) from pg_tables
-        where schemaname='public' and tablename in ('cap_documents','cap_emails','cap_factures','cap_pipeline_runs');")
+        where schemaname='public' and tablename in ('cap_documents','cap_emails','cap_factures','cap_pipeline_runs','cap_clients');")
     N_RLS=$("${PSQL[@]}" -tA -c "select count(*) from pg_tables
         where schemaname='public' and rowsecurity and tablename like 'cap_%' and tablename <> 'cap_migrations';")
     N_RPC=$("${PSQL[@]}" -tA -c "select count(*) from pg_proc
         where pronamespace='public'::regnamespace and proname like 'rpc_cap_${SLUG}_%';")
-    [ "$N_TAB" = "4" ] && ok "tables génériques: 4/4" || { fail "tables: $N_TAB/4"; ERR=$((ERR+1)); }
-    [ "$N_RLS" = "4" ] && ok "RLS deny-all: 4/4"   || { fail "RLS: $N_RLS/4";  ERR=$((ERR+1)); }
+    N_FK=$("${PSQL[@]}" -tA -c "select count(*) from pg_constraint
+        where conname in ('cap_documents_slug_fk','cap_emails_slug_fk','cap_factures_slug_fk','cap_pipeline_runs_slug_fk');")
+    [ "$N_TAB" = "5" ] && ok "tables génériques: 5/5" || { fail "tables: $N_TAB/5"; ERR=$((ERR+1)); }
+    [ "$N_RLS" = "5" ] && ok "RLS deny-all: 5/5"   || { fail "RLS: $N_RLS/5";  ERR=$((ERR+1)); }
     [ "$N_RPC" = "7" ] && ok "RPC $SLUG: 7/7"      || { fail "RPC: $N_RPC/7"; ERR=$((ERR+1)); }
+    [ "$N_FK" = "4" ]  && ok "FK client_slug: 4/4" || { fail "FK: $N_FK/4";   ERR=$((ERR+1)); }
+    if is_client_declared; then ok "client '$SLUG' déclaré (registry)"
+    else warn "client '$SLUG' NON déclaré (apply un fichier slug pour le déclarer)"; fi
 fi
 
 # ---------------------------------------------------------------- smoke

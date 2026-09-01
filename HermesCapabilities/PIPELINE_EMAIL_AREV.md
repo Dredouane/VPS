@@ -102,6 +102,9 @@ tout — D7-v2/D9-v2) :
   + `document_id`, `extraction jsonb` (audit brut). Matching :
   unique `(client_slug, numero, fournisseur)`.
 - `cap_pipeline_runs` — observabilité (1 ligne/run).
+- `cap_clients` — **registry clients** (D7-ter) : slug, nom, statut, référent,
+  rpc_prefix — déclarée par le runner, FK source pour toutes les tables
+  (`client_slug → slug`). Gérée par le runner uniquement.
 - `cap_migrations` — tracker du runner (supabase-sql.sh).
 
 **RPC dédiées slug arev** (`sql/arev/001_rpc.sql`, security definer, slug
