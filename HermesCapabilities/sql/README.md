@@ -1,37 +1,50 @@
-# 🗃️ sql/ — Source de vérité du schéma Supabase (D9)
+# 🗃️ sql/ — Source de vérité SQL Supabase (D9-v2)
 
-> Tous les scripts SQL du projet vivent ici, **versionnés git** et
-> **append-only** (migrations numérotées). Le schéma est du code.
+> **Un seul projet Supabase multi-tenant** (clients, tests, prod) — le slug
+> discrimine : tables génériques `public.cap_*` avec colonne `client_slug`,
+> RPC dédiées par slug avec le slug **hardcodé** dans la fonction.
+> Tout est versionné git et **append-only** (migrations numérotées).
 
 ## Conventions
 
 | Règle | Détail |
 |---|---|
-| Organisation | `sql/<slug>/` par client (`arev/`, futur `client2/`…) |
-| Numérotation | `001_schema.sql` (création initiale), `002_rpc.sql`, `003_rls.sql`, puis `00N_*.sql` pour les migrations — **ne jamais modifier un fichier déjà appliqué** |
-| Isolation client | Schéma dédié `cap_<slug>` + RPC `public.rpc_cap_<slug>_*` avec `client_id` **hardcodé** dans la fonction (D8) |
-| Accès | RLS deny-all sur les tables, accès **uniquement** via RPC (clé publishable anon) — jamais la service key |
-| pgvector | Type dans le schéma `extensions` (Supabase) — `vector(768)` figé (D5) |
+| Organisation | `sql/generic/` = structure commune (sans slug) · `sql/<slug>/` = scripts **dédiés au slug** (RPC, spécificités) — décision utilisateur |
+| Tables | `public.cap_documents`, `cap_emails`, `cap_factures`, `cap_pipeline_runs` — toutes avec `client_slug text not null` |
+| Numérotation | `001_*.sql` par dossier, puis `002_…`, `003_…` pour les migrations — **ne jamais modifier un fichier déjà appliqué** (utiliser un nouveau numéro) |
+| Tracker | `public.cap_migrations (filename, scope, applied_at)` — géré par le runner, un fichier appliqué n'est jamais réappliqué (sauf `--force`, DDL idempotent) |
+| Sécurité | RLS deny-all sur les tables ; agents = clé publishable + **RPC only** (`security definer`, `client_slug` hardcodé) ; webapp/admin = service key. Jamais la service key à un agent (D8-v2) |
+| pgvector | `extensions.vector(768)` figé (D5) |
 
-## Ordre d'application
+## Vars d'environnement (bashrc local — valeurs jamais documentées)
 
-1. **Projet Supabase TEST** d'abord (toute validation de RPC se fait là)
-2. Puis **projet prod** (celui de la webapp CRUD du client — D7)
+| Var | Usage |
+|---|---|
+| `SUPERBASE_VPS_DB_URL` | Connection string admin (pooler) — runner SQL |
+| `SUPERBASE_VPS_DB_PROJECT_URL` | URL REST du projet (agent, M2.1+) |
+| `SUPERBASE_VPS_DB_RPC_KEY` | Clé publishable (agent, M2.1+) — jamais service key |
 
-Pour chaque projet, appliquer dans l'ordre : `001` → `002` → `003` → migrations.
+> ⚠️ Le bashrc a un guard d'interactivité : le runner extrait les vars
+> **littéralement** (`grep` + strip de quotes, jamais `eval` — le mot de
+> passe peut contenir des `$`).
 
-Application : **éditeur SQL du dashboard Supabase** (copier/coller le fichier
-complet) ou `psql "$DATABASE_URL" -f 001_schema.sql` si accès direct fourni.
+## Runner — `scripts/supabase-sql.sh`
 
-## Consommation par les skills (D9)
+```bash
+./scripts/supabase-sql.sh arev status              # read-only : appliqués vs disponibles + counts
+./scripts/supabase-sql.sh arev all [--yes] [--smoke]   # générique D'ABORD puis <slug>/ (ordre critique)
+./scripts/supabase-sql.sh arev --file arev/001_rpc.sql [--force]
+```
 
-`capability-attach.sh` copie `sql/<slug>/` → `instances/<slug>/data/sql/` :
-l'agent (skills experts) peut **lire les définitions** (tables, RPC, statuts
-permis) pour construire ses appels — sans jamais exécuter de DDL (impossible
-de toute façon : RPC only).
+- `--yes` : sans confirmation · `--force` : réapplique même si tracké (DDL idempotent)
+- `--smoke` : tests RPC complets (doc_status/upsert/search, facture_upsert/find,
+  pipeline_log) avec lignes marquées puis **cleanup admin**
+- Post-checks intégrés : 4 tables + RLS 4/4 + 7 RPC du slug
+- Chaque fichier appliqué en `--single-transaction` (rollback total si erreur)
 
-## Contenu
+## État
 
-| Client | Fichiers | État |
+| Dossier | Fichiers | Appliqué |
 |---|---|---|
-| `arev` | `001_schema.sql` · `002_rpc.sql` · `003_rls.sql` | ✅ prêts — à appliquer TEST puis prod (M2.0) |
+| `generic/` | `001_schema.sql` | ✅ 31/08 |
+| `arev/` | `001_rpc.sql` (7 RPC + grants) | ✅ 31/08 (smoke 7/7 OK) |

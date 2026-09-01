@@ -18,9 +18,9 @@ description: >
 #                      — JAMAIS SUPABASE_SERVICE_KEY
 secrets: [SUPABASE_URL, SUPABASE_RPC_KEY]
 
-# Vars non secrètes, variabilisées par client
-env:
-  RAG_SCHEMA: "cap_{{CLIENT_SLUG}}"      # schéma/pgvector dédié au client
+# Vars non secrètes — le slug est porté par les RPC dédiées (D7-v2) :
+# tables génériques public.cap_* + client_slug, RPC rpc_cap_<slug>_*
+env: {}
 
 # MCP natif Hermes (catalogue, vérifié 30/08 v0.20.6)
 mcp: [supabase]

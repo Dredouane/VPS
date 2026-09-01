@@ -84,23 +84,32 @@ connaître les tables/RPC disponibles — le schéma est la source de vérité (
    mails_new, mails_known, attachments_ocr, docs_indexed, factures_upserted,
    errors, duration_ms).
 
-## 5. Modèle de données (résumé — source de vérité : `sql/arev/`)
+## 5. Modèle de données (résumé — source de vérité : `sql/`, projet unique multi-tenant)
 
-- `cap_arev.documents` — RAG : `embedding vector(768)`, `kind`
+**Tables génériques** `public.cap_*` avec colonne `client_slug` (le slug drive
+tout — D7-v2/D9-v2) :
+
+- `cap_documents` — RAG : `embedding vector(768)`, `kind`
   (`email`|`attachment`), `message_id`, `thread_id`, `thread_role`,
   `metadata jsonb` (**tags du vecteur** : `from`, `date`, `filename`, `mime`,
-  `classification`, `ocr_confidence`, `pipeline_version`).
-- `cap_arev.emails` — état de traitement par message (classification, résumé,
-  status, error).
-- `cap_arev.factures` — extraction expert : `numero`, `fournisseur`,
+  `classification`, `ocr_confidence`, `pipeline_version`). Dedup :
+  unique `(client_slug, kind, content_md5)`.
+- `cap_emails` — état de traitement par message (classification, résumé,
+  status, attempts, error).
+- `cap_factures` — extraction expert : `numero`, `fournisseur`,
   `montant_ht/tva/ttc`, `date_facture/echeance`, `statut`
   (`extracted`→`valide`/`rejete`/`paye`), `confiance`, lien `email_message_id`
-  + `document_id`, `extraction jsonb` (audit brut). Unicité de matching :
-  `(client_id, numero, fournisseur)`.
-- `cap_arev.pipeline_runs` — observabilité.
-- RPC (`public`, security definer, client hardcodé) :
-  `doc_status`, `doc_upsert`, `doc_search`, `email_upsert`, `facture_find`,
-  `facture_upsert`, `pipeline_log`.
+  + `document_id`, `extraction jsonb` (audit brut). Matching :
+  unique `(client_slug, numero, fournisseur)`.
+- `cap_pipeline_runs` — observabilité (1 ligne/run).
+- `cap_migrations` — tracker du runner (supabase-sql.sh).
+
+**RPC dédiées slug arev** (`sql/arev/001_rpc.sql`, security definer, slug
+hardcodé) : `rpc_cap_arev_doc_status`, `doc_upsert` (ordre positional :
+kind, message_id, content, embedding, puis optionnels), `doc_search`
+(borne ≤20), `email_upsert`, `facture_find`, `facture_upsert`
+(non-rétrogradation des factures validées), `pipeline_log`.
+Les skills lisent les définitions copiées dans `data/sql/` (D9).
 
 ## 6. Non-régression (verrous)
 

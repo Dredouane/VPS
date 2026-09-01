@@ -17,9 +17,9 @@
 | D4 | OCR = **Gemini Vision** (clé SUREN réutilisée) | Tesseract local · Firecrawl API |
 | D5 | Embeddings = **Gemini text-embedding-004, 768d, figé** | OpenAI 1536d · embeddings locaux |
 | D6 | Facturation : **auto-upsert + statut `extracted`** | Propose-then-write · seuil de confiance |
-| D7 | **Même projet Supabase** que la webapp CRUD + projet TEST séparé | Projet Supabase séparé pour l'agent |
-| D8 | Accès DB = **RPC `security definer` client hardcodé**, clé publishable | Service key directe · accès tables direct |
-| D9 | **Folder `sql/`** = source de vérité du schéma, consommé par les skills | SQL dispersé dans les capabilities |
+| D7 | **UN projet Supabase multi-tenant** (clients, tests, prod) — tables génériques `cap_*` + colonne `client_slug`, le slug drive tout | Projet TEST séparé · schéma par slug (obsolète) |
+| D8 | Accès DB = **RPC dédiées par slug** (`rpc_cap_<slug>_*`, slug hardcodé) sur tables génériques ; RLS deny-all ; clé publishable | Service key directe · accès tables direct |
+| D9 | **`sql/generic/` + `sql/<slug>/`** = source de vérité ; runner `supabase-sql.sh` + tracker `cap_migrations` | SQL dispersé · scripts tout-slug |
 | D10 | **Filtre +AREV strict** — boîte multi-clients par alias | Traiter toute la boîte |
 | D11 | **Silencieux** — zéro Telegram, traçabilité `pipeline_runs` | Notifications TG par email traité |
 | D12 | **Rollout direct** + cadence 10 min / max 5 threads | Phase DRY_RUN · 30 min / 20 threads |
@@ -109,33 +109,44 @@ n'est pas violé.
 **Rejetés** : *propose-then-write* (pipeline bloqué sans humain) ; *seuil de
 confiance hybride* (seuil non calibré au départ — réévaluable après retours).
 
-## D7 — Supabase : même projet que la webapp + projet TEST ✅
+## D7 — Supabase : UN projet multi-tenant, le slug drive tout ✅ (révisé 31/08)
 
-**Décision** : les données agent (RAG, emails, factures extraites) vivent dans
-**le même projet Supabase que la webapp CRUD AREV** (les experts alimentent
-directement les données que la webapp consomme — zéro synchronisation), dans le
-schéma dédié `cap_arev`. Les tests unitaires/intégration s'exécutent sur un
-**projet Supabase TEST séparé**.
+**Décision (révision suite décision utilisateur)** : un **seul projet
+Supabase** héberge tout le projet Hermes — tous les clients, les tests ET la
+prod. Le **slug de l'instance discrimine tout** : tables génériques
+`public.cap_*` avec colonne `client_slug`, et le slug drive toutes les
+requêtes SQL/RAG via les **RPC dédiées par slug**. La webapp CRUD du client
+consomme les mêmes tables (même projet, zéro synchronisation).
 
-**Rejeté** : *projet séparé pour l'agent* — un projet de plus à gérer et une
-sync à construire.
+**Rejetés / obsolètes** : *projet TEST séparé* (version initiale D7 — remplacée
+par smoke tests admin-side sur le même projet, lignes marquées + cleanup) ;
+*schéma par client (`cap_<slug>`)* (v1 — remplacé par colonne `client_slug`).
 
-## D8 — Accès DB : RPC security definer, client hardcodé ✅
+## D8 — RPC dédiées par slug, RLS deny-all, clé publishable ✅ (révisé 31/08)
 
-**Décision** : l'agent n'a **aucun accès direct aux tables** (RLS deny-all,
-grants schéma révoqués). Tout passe par des RPC dans `public` nommées
-`rpc_cap_arev_*`, en `security definer` avec `client_id` **hardcodé** dans la
-fonction (impossible de toucher un autre client même avec la clé). La clé
-utilisée est la **clé publishable (anon)** — par design exposable, car seules
-les EXECUTE sont permises. **Jamais la service key.**
+**Décision** : chaque slug a ses **RPC dédiées** `rpc_cap_<slug>_*` en
+`security definer` (search_path figé, slug **hardcodé** dans la fonction —
+l'agent arev ne peut toucher QUE ses lignes). Les tables génériques sont en
+**RLS deny-all + grants révoqués** : la clé publishable (anon) ne peut que
+EXÉCUTER les RPC.
 
-## D9 — Folder `sql/` : source de vérité du schéma ✅
+**Risque résiduel documenté** : une clé publishable unique pour le projet →
+un agent compromis pourrait appeler les RPC d'un autre slug. Mitigations :
+clés jamais publiques (agents sur notre VPS, secrets 600 hors git) ;
+**évolution D8-bis** si multi-clients réels : JWT par client avec claim slug +
+policies RLS sur `client_slug = claim`. Accepté pour M2 (un seul client réel).
 
-**Décision** : tous les scripts SQL (schéma, RPC, RLS, migrations) vivent dans
-`HermesCapabilities/sql/<slug>/` (`001_schema.sql`, `002_rpc.sql`,
-`003_rls.sql`). Ils sont : (a) appliqués TEST puis prod, (b) **copiés dans
-l'instance à l'attach** (`data/sql/`) pour que les skills connaissent les
-définitions dont ils ont besoin, (c) versionnés git — le schéma est du code.
+## D9 — sql/ générique + dédié, runner avec tracker ✅ (révisé 31/08)
+
+**Décision (révision)** : `sql/generic/` = structure commune **sans slug**
+(tables, indexes, RLS) ; `sql/<slug>/` = scripts **dédiés au slug** (RPC +
+spécificités) — séparation demandée par l'utilisateur. Le runner
+`scripts/supabase-sql.sh` applique **générique d'abord, slug ensuite**,
+tracke chaque fichier dans `public.cap_migrations` (jamais double-apply,
+`--force` pour réappliquer l'DDL idempotent), post-checks intégrés (tables,
+RLS, RPC), smoke tests + cleanup admin.
+
+## D7bis/D9bis (historique v1 — remplacés ci-dessus)
 
 ## D10 — Filtre +AREV strict ✅
 
