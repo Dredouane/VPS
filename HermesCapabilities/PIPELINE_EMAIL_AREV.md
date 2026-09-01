@@ -22,15 +22,15 @@
 > testée par fixtures versionnées. `capability-attach.sh` refuse d'attacher
 > si `capability-test.sh` échoue. Pas de `pip install` dans le conteneur.
 
-### 2.1 `gmail_poll.py` — réception
+### 2.1 `imap_poll.py` — réception (IMAP, D13)
 
 | | |
 |---|---|
-| Entrée | env : `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, `GMAIL_USER_EMAIL`, `GMAIL_ALIAS_TAG=+AREV`, `GMAIL_LABEL_DONE=ia-traite`, `GMAIL_MAX_THREADS=5` |
-| Action | refresh OAuth → `threads.list` (query `to:<alias> -label:ia-traite newer_than:90d`) → `threads.get` complet pour ≤5 threads |
-| Sortie | `{ "threads": [ {"thread_id", "messages": [ {message_id, thread_id, header_from/to/subject/date/message_id, body_plain, attachments[{filename, mime, size, attachment_id}]} ] } ], "count", "query" }` — **PJ référencées par `attachment_id`** (téléchargement paresseux par l'OCR C3, le spool ne contient pas les binaires) |
-| Erreurs | token expiré → exit 2 (cron incident) ; réseau/HTTP → exit 3 ; retries avec backoff |
-| Corps | `text/plain` préféré, sinon `text/html` dépouillé (strip déterministe, fixtures testées) |
+| Entrée | env : `GMAIL_RECEPTION_IMAP_ADRESS`, `GMAIL_RECEPTION_IMAP_MDP`, `GMAIL_ALIAS_TAG=+AREV`, `GMAIL_LABEL_DONE=ia-traite`, `GMAIL_MAX_THREADS=5`, `GMAIL_SPOOL_DIR`, `GMAIL_NEWER_THAN_DAYS=90` |
+| Action | login SSL → **EXAMINE readonly** → `UID SEARCH X-GM-RAW` (`to:<alias> -label:ia-traite newer_than:90d`) → fetch `X-GM-THRID` → group par thread (≤5, récents d'abord) → fetch **BODY.PEEK[]** (jamais \Seen) → parsing RFC822 (`email.parser`) |
+| Spool | `<spool_dir>/threads/<thread_id>/thread.json` + **fichiers PJ** (`att-<n>-<fichier-safe>`) — stdout = résumé léger `{"count", "thread_ids", "spool_dir"}` |
+| Sortie thread.json | `{thread_id (X-GM-THRID), messages: [{uid, message_id (Message-ID canonique), header_from/to/subject/date, body_plain (plain préféré sinon html strip déterministe), attachments: [{filename, mime, size, path}]}]}` |
+| Erreurs | auth → exit 2 ; réseau/IMAP → exit 3 ; retries backoff |
 
 ### 2.2 `thread_parser.py` — le module bétonné (D3)
 
@@ -56,9 +56,12 @@
 | Entrée | textes à indexer + `GEMINI_API_KEY` |
 | Sortie | `{ "embedding": [768 floats], "model": "text-embedding-004" }` — dimension **figée** |
 
-### 2.5 `gmail_label.py` — idempotence
+### 2.5 `imap_mark_done.py` — idempotence
 
-Pose `ia-traite` sur les message_ids **traités avec succès** (jamais en cas d'erreur du run — le message sera retraité au prochain tick).
+Déplacement vers le label `ia-traite` (créé si absent) : `UID COPY` →
+`\Deleted` → **UID EXPUNGE ciblé** (jamais d'expunge global). Skip si déjà
+labelisé (X-GM-LABELS). Appelé UNIQUEMENT en fin de pipeline réussie —
+en cas d'erreur, le message reste en place et sera retraité au tick suivant.
 
 ## 3. Skills LLM (Hermes)
 

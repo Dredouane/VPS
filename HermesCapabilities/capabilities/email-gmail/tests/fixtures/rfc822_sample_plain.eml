@@ -1,0 +1,19 @@
+From: Client Dupont <dupont@example.com>
+To: REDACTED_EMAIL
+Subject: Demande de devis renovation
+Date: Sat, 30 Aug 2026 08:15:00 +0200
+Message-ID: <msgA@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="B1"
+
+--B1
+Content-Type: text/plain; charset=utf-8
+
+Bonjour, merci pour votre demande de devis renovation. Cordialement.
+--B1
+Content-Type: application/pdf; name="plan-chantier.pdf"
+Content-Disposition: attachment; filename="plan-chantier.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKJSBQREYgZml4dHVyZSB0ZXN0
+--B1--

@@ -1,40 +1,34 @@
-# Contrat de capability — email-gmail (C1)
-# Réception des emails pro via alias Gmail (+AREV) — polling OAuth (mix).
-
+# Contrat de capability — email-gmail (C1, M2.1-bis IMAP)
 id: email-gmail
-version: 0.1.0
-title: "Email — réception Gmail par alias client"
+version: 0.2.0
+title: "Email — réception IMAP par alias client"
 type: mix
 description: >
-  Permet à l'agent de lire les emails professionnels arrivant sur l'alias
-  Gmail du client (REDACTED_EMAIL), via un poller déterministe
-  exécuté par routine cron (heures ouvrées uniquement). Exporte les threads
-  complets vers le spool pour le pipeline (thread-parser → OCR → RAG →
-  experts). Lecture seule + marquage 'traite' (gmail.modify).
+  Lecture des emails pro via IMAP app password (boîte contrôlée), filtre
+  strict sur l'alias client (+AREV), export spool threads + PJ, marquage
+  'traite' par déplacement vers label (COPY + \Deleted + UID EXPUNGE).
+  Lecture EXAMINE + BODY.PEEK (zéro mutation en lecture).
 
 # Secrets requis dans HermesConfig/clients/<slug>/client.env (600)
-# GMAIL_CLIENT_ID      : OAuth client id (Google Cloud, type Desktop)
-# GMAIL_CLIENT_SECRET  : OAuth client secret
-# GMAIL_REFRESH_TOKEN  : refresh token (scope gmail.modify, offline)
-#   → obtenu via HermesCapabilities/scripts/gmail-oauth-setup.sh
-secrets: [GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN]
+# GMAIL_RECEPTION_IMAP_ADRESS : adresse de la boîte (ex: REDACTED_EMAIL)
+# GMAIL_RECEPTION_IMAP_MDP    : app password IMAP (2FA Gmail requise)
+# (orthographe 'ADRESS' conservée — convention existante du propriétaire)
+secrets: [GMAIL_RECEPTION_IMAP_ADRESS, GMAIL_RECEPTION_IMAP_MDP]
 
-# Vars non secrètes, variabilisées par client (multi-clients via alias, D10)
 env:
-  GMAIL_USER_EMAIL: "REDACTED_EMAIL"   # boîte mère contrôlée
-  GMAIL_ALIAS_TAG: "+AREV"                   # filtre strict par alias
-  GMAIL_LABEL_DONE: "ia-traite"              # marquage idempotence
-  GMAIL_MAX_THREADS: "5"                     # max threads par run (D12)
+  GMAIL_ALIAS_TAG: "+AREV"
+  GMAIL_LABEL_DONE: "ia-traite"
+  GMAIL_MAX_THREADS: "5"
+  GMAIL_SPOOL_DIR: "/opt/data/spool/gmail"
+  GMAIL_NEWER_THAN_DAYS: "90"
 
-# Pas de MCP : pas de serveur Gmail dans le catalogue Hermes (vérifié 30/08)
 mcp: []
-
 skills: [gmail-poll]
 
-# Routine créée à M2.6 (pipeline complet) — le poller seul ne suffit pas
+# Routine créée à M2.6 (pipeline complet attaché)
 routines: [email-poll]
 
-code: [gmail_poll, gmail_label]
+code: [imap_poll, imap_mark_done]
 
 mounts: {}
 

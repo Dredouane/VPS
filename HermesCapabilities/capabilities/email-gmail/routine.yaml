@@ -9,10 +9,11 @@ routines:
     schedule: "*/10 8-19 * * *"      # heures creuses 20h→08h (D1)
     profile: ops                     # routines appartiennent au bot Ops (D11 HermesConfig)
     prompt: >-
-      Pipeline email : exécuter python3 /opt/data/code/email-gmail/gmail_poll.py
-      > /opt/data/spool/gmail/poll-<ts>.json ; pour chaque thread de la sortie,
-      écrire /opt/data/spool/gmail/threads/<thread_id>.json puis suivre
-      PIPELINE_EMAIL_AREV.md §2 (thread-parser, classification, OCR PJ,
-      embeddings, RAG upsert, expert-router, expert-facturation, label
-      ia-traite). Terminer par rpc_cap_arev_pipeline_log (compteurs du run).
+      Pipeline email : exécuter python3 /opt/data/code/email-gmail/imap_poll.py
+      (résumé stdout + spool). Pour chaque thread du spool
+      (<spool>/threads/<tid>/thread.json), suivre PIPELINE_EMAIL_AREV.md §2
+      (thread-parser, classification, OCR PJ, embeddings, RAG upsert,
+      expert-router, expert-facturation), puis marquer traité:
+      python3 /opt/data/code/email-gmail/imap_mark_done.py <uids>.
+      Terminer par rpc_cap_arev_pipeline_log (compteurs du run).
       Max 5 threads par run. Silencieux (aucune notification).

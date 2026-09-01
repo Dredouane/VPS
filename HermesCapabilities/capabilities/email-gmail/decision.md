@@ -1,38 +1,40 @@
 # Decision — Capability email-gmail (C1)
 
 > Règle d'ordre : **NATIF > MIX > SIDECAR** (ARCHITECTURE.md §2).
+> **Révision M2.1-bis (01/09)** : réception basée sur **IMAP app password**
+> (décision D13) — les modules OAuth API ont été remplacés.
 
 ## Besoin
 
 Recevoir les emails pro du client (alias `+AREV` d'une boîte contrôlée)
-et les exporter vers le pipeline (spool) — sans exposer l'agent à plus de
-scope que nécessaire, avec idempotence de traitement.
+et les exporter vers le spool (threads + PJ) — sans exposer l'agent à plus
+de scope que nécessaire, avec idempotence de traitement.
 
 ## Options évaluées
 
-| Option | Disponibilité vérifiée | Verdict |
+| Option | Vérifié | Verdict |
 |---|---|---|
-| Natif : MCP Gmail du catalogue | ❌ absent du `hermes mcp catalog` (v0.20.6, vérifié 30/08) | ❌ |
-| Natif : support email Hermes gateway | ❌ `hermes gateway/tools` : aucun email/imap (vérifié 31/08) | ❌ |
-| Natif : `hermes webhook` (event-driven) | ⚠️ existe MAIS notre gateway headless n'active pas l'API HTTP (8642 inactif, vérifié 30/08) | ❌ pour M2 |
-| **Mix** : skill + code OAuth (polling cron, scope `gmail.modify`) | ✅ pattern OAuth déjà validé (`SUREN_GMAIL_OAUTH_*` dans /etc/secrets) | ✅ **retenu** |
-| Sidecar : worker Python dédié hors agent | code à maintenir séparé, orchestration compliquée | ❌ |
+| Natif : MCP Gmail catalogue / support email Hermes / `hermes webhook` | ❌ aucun (v0.20.6, 30-31/08 — webhook inutilisable headless) | ❌ |
+| Mix OAuth Gmail API | ⚠️ fonctionnel mais **refresh token expiré tous les 7 jours** pour une app Testing non vérifiée (politique Google) | ❌ rétrogradé en plan B |
+| **Mix IMAP app password** (`imaplib` stdlib) | ✅ **vérifié live 01/09** : login, X-GM-RAW, X-GM-THRID, X-GM-LABELS | ✅ **retenu** |
+| Sidecar worker | code séparé à maintenir | ❌ |
 
-## Décision
+## Décision (révisée 01/09 — D13)
 
-**MIX** — le code déterministe (`gmail_poll.py`, `gmail_label.py`) vit dans
-la capability (`code/`, stdlib Python, testé par fixtures) et l'agent
-l'exécute via sa shell tool, déclenché par la routine cron (D1 : `*/10 8-19`,
-heures creuses 20h-08h). OAuth via refresh token dédié AREV (scope
-`gmail.modify` : read + pose du label `ia-traite`), pattern réutilisé de
-SUREN. Filtre strict sur le destinataire `+AREV` (D10, multi-clients ready).
+**MIX** (IMAP app password — D13) — `imap_poll.py` (EXAMINE readonly, X-GM-RAW
+`to:+AREV -label:ia-traite newer_than:90d`, X-GM-THRID threading, parsing
+RFC822 via `email.parser` stdlib — **plus déterministe** que l'arbre MIME API)
+et `imap_mark_done.py` (déplacement vers label `[Gmail]/ia-traite` : COPY +
+\Deleted + UID EXPUNGE ciblé, skip si déjà labelisé). Filtre strict `+AREV`
+(D10). PJ en **fichiers spool** (décision 01/09) — pas de binaires dans le JSON.
 
-Plan B si besoin temps réel un jour : activer l'API gateway + `hermes
-webhook` (réévaluer la version Hermes), ou Pub/Sub (D1 bis). MCP Gmail
-communautaire à réévaluer à chaque montée de version (catalogue).
+**Plan B** : OAuth API (helper `gmail-oauth-setup.sh` conservé) — à considérer
+si app password révoqué ou après vérification Google de l'app (refresh stable).
+Les modules OAuth restent dans l'historique git.
 
 ## Re-vérification
 
 | Date | Hermes | Verdict inchangé ? | Notes |
 |---|---|---|---|
-| 2026-08-31 | v0.20.6 | — (décision initiale) | catalog + gateway + webhook vérifiés sur VPS |
+| 2026-08-31 | v0.20.6 | — (initial : OAuth) | catalog + gateway + webhook vérifiés |
+| 2026-09-01 | v0.20.6 | ✅ IMAP | sonde live read-only (login/RAW/THRID/LABELS) |

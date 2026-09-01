@@ -74,7 +74,7 @@ ssh nemo            # connexion admin (port 2222)
 | 2222/tcp | SSH | Autorisé UFW |
 | 8642/tcp | API gateway natif hermesrunner | **DENY UFW** (protégé par API_SERVER_KEY) |
 | 8650-8653/tcp | Agents Docker (gateways API 8642 des conteneurs) | **DENY UFW** (ports publiés mais bloqués publiquement) |
-| 22000/tcp | Syncthing (sync de données) | **Restreint à REDACTED uniquement** |
+| 22000/tcp | Syncthing (sync de données) | **FERMÉ (01/09)** — le sync passera par Tailscale (serveur enrôlé : REDACTED) |
 
 ### ✅ Secrets migrés vers `/etc/secrets/` (30/08/2026 — audit)
 
@@ -220,7 +220,7 @@ Après la réinstallation, **rien n'était lancé** :
 - [x] **aquisition_bot** : déployé (token fourni) → `hermes-aquisition` port 8652, @aquisition_red_bot ✅
 - [x] **copycat** : déployé → `hermes-copycat` port 8651, @copy_cat_agent_bot ✅
 - [x] **va_agent** : déployé → `hermes-va_agent` port 8653, @red_va_agent_bot ✅
-- [x] **leanConstruction** : recréé avec le bon bot @lean_construction_bot (port 8650) ✅
+- [x] **leanConstruction** : recréé avec le bon bot @lean_construction_bot (port 8650) ✅ ; **uniformisé le 01/09** : re-déployé sur image à jour, gateway en uid 10000 (comme les 3 autres), data préservée (tar de précaution dans `/var/backups/lean-precaution/`).
 - [ ] **loukyrunner** : doublon de hermesrunner (même bot @pipou200bot). Si un bot distinct est attendu, fournir son token.
 - [ ] Mapping complet **nom_agent → token → mode** documenté dans `/root/.fleet_tokens.env` (mode 600).
 
@@ -231,11 +231,14 @@ Après la réinstallation, **rien n'était lancé** :
 ### Sécurité
 - [x] **Port 8650-8653** (APIs agents Docker) : **DENY UFW** — ports publiés mais bloqués publiquement.
 - [x] **Port 8642** (API gateway natif) : **DENY UFW**.
-- [x] **Port 22000** (Syncthing) : **restreint à l'IP locale `REDACTED`**.
+- [x] **Port 22000** (Syncthing) : **FERMÉ le 01/09** — remplacé par Tailscale (serveur enrôlé REDACTED ; installer l'app Tailscale sur PC/téléphone pour le sync futur).
 - [x] **Déplacer les secrets de `/root/.bashrc`** vers `/etc/secrets/` — **fait le 30/08 (audit)** : 55 variables migrées vers `/etc/secrets/hermes.env` (600), `.bashrc` en 600 + sourcing, backup `/root/.bashrc.preaudit-20260830`.
 - [ ] Activer la **redaction des secrets** dans la config Hermes (`security.redact_secrets: true`) — désactivée par défaut.
 - [ ] Changer le **mot de passe root Contabo** (via console VNC) si pas déjà fait.
-- [ ] **Uniformiser le conteneur leanConstruction** : son gateway tourne en root (uid 0) contrairement aux 3 autres (uid 10000) → rebuild avec `USER 10000` ou `--user 10000` + `chown -R 10000:10000` du data-dir.
+- [x] **Uniformiser le conteneur leanConstruction** : ✅ **fait le 01/09** — compose régénéré sans `entrypoint: []`, image `hermes-agent:latest`, gateway en uid 10000, data `10000:10000 700`, Telegram `connected`.
+- [x] **Sauvegardes quotidiennes** : ✅ **fait le 01/09** — `/usr/local/bin/vps-backup.sh` (cron 4h30, archive ~1,3 Go dans `/var/backups/vps-fleet/`, rétention 7 j, log `/var/log/vps-backup.log`) + rapatriement local automatique `Installation/scripts/vps-backup-pull.sh` (tâche schtasks à créer, voir EXPLICATION_SECURITE.md) + NAS Synology en 2ᵉ temps (le NAS pull en SSH, procédure documentée).
+- [x] **Tailscale** : ✅ **installé le 01/09** — serveur enrôlé (`REDACTED`, tailnet REDACTED_EMAIL). À faire côté user : installer l'app Tailscale sur PC/téléphone pour accéder aux services via le tailnet.
+- [x] **Clés SSH durcies** : ✅ **01/09** — passphrase sur `REDACTED` + fonction `vps` (agent SSH au socket fixe `~/.ssh/agent.sock`, 1× par session WSL) + archive GPG des clés (`Installation/scripts/backup-keys.sh`, à copier sur USB).
 - [ ] **Nettoyer `/etc/ssh/sshd_config` principal** (`PermitRootLogin yes` / `X11Forwarding yes` morts, neutralisés par `00-hardening.conf` mais piégeux).
 - [ ] **Binder le gateway natif sur 127.0.0.1** (défense en profondeur, UFW deny 8642 déjà en place).
 - [ ] **Purger les résidus snapd** (`apt purge snapd`, `/snap`) et mettre en place **logrotate AIDE** (logs > 40 Mo).

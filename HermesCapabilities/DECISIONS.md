@@ -23,6 +23,7 @@
 | D10 | **Filtre +AREV strict** — boîte multi-clients par alias | Traiter toute la boîte |
 | D11 | **Silencieux** — zéro Telegram, traçabilité `pipeline_runs` | Notifications TG par email traité |
 | D12 | **Rollout direct** + cadence 10 min / max 5 threads | Phase DRY_RUN · 30 min / 20 threads |
+| D13 | Réception = **IMAP app password** (creds existants, OAuth Testing = refresh expiré 7j, parsing RFC822 déterministe) | OAuth Gmail API (révisée 01/09) |
 
 ---
 
@@ -188,6 +189,25 @@ Cadence : poll toutes les 10 min (8h-19h), **max 5 threads par run**.
 (batchs gros = runs longs, timeout risk).
 
 ---
+
+## D13 — Réception email : IMAP app password ✅ (01/09, révisé après M2.1 initial)
+
+**Décision** : la réception passe par **IMAP app password** (creds déjà
+possédés par le propriétaire de la boîte) plutôt que l'API OAuth Gmail.
+Vérifié **live en read-only (01/09)** : login OK, X-GM-RAW (recherche Gmail),
+X-GM-THRID (threading), X-GM-LABELS, label `ia-traite` à créer.
+
+**Pourquoi IMAP** :
+1. Creds **déjà en place** (`GMAIL_RECEPTION_IMAP_ADRESS/MDP`) — zéro setup Google Cloud.
+2. ⚠️ OAuth : une app en mode *Testing* non vérifiée → **refresh token expiré
+   tous les 7 jours** (politique Google) — intenable en prod sans vérification d'app.
+3. Parsing **plus déterministe** : raw RFC822 → `email.parser` stdlib.
+4. `imaplib` + `email` = stdlib (invariant I11).
+
+**Garanties** : lecture EXAMINE + BODY.PEEK (zéro mutation) ; marquage =
+COPY vers `[Gmail]/ia-traite` + \Deleted + **UID EXPUNGE ciblé** (jamais
+d'expunge global) ; skip si déjà labelisé. **Plan B** : OAuth API (helper
+`gmail-oauth-setup.sh` conservé) — à réévaluer si vérification d'app faite.
 
 ## Historique
 
