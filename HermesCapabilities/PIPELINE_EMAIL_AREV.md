@@ -26,10 +26,11 @@
 
 | | |
 |---|---|
-| Entrée | env : `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, `GMAIL_ALIAS_TAG=+AREV`, `GMAIL_LABEL_DONE=ia-traite`, `GMAIL_MAX_THREADS=5` |
-| Action | refresh OAuth → `threads.list` (query `to:+AREV -label:ia-traite newer_than:90d`) → `threads.get` complet pour ≤5 threads |
-| Sortie | `{ "threads": [ {"thread_id", "messages": [ {message_id, thread_id, headers{from,to,subject,date,message_id}, body_plain, attachments[{filename,mime,size,data_b64}]} ] } ], "count" }` |
-| Erreurs | token expiré → exit 2 (cron incident) ; rate-limit → backoff |
+| Entrée | env : `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, `GMAIL_USER_EMAIL`, `GMAIL_ALIAS_TAG=+AREV`, `GMAIL_LABEL_DONE=ia-traite`, `GMAIL_MAX_THREADS=5` |
+| Action | refresh OAuth → `threads.list` (query `to:<alias> -label:ia-traite newer_than:90d`) → `threads.get` complet pour ≤5 threads |
+| Sortie | `{ "threads": [ {"thread_id", "messages": [ {message_id, thread_id, header_from/to/subject/date/message_id, body_plain, attachments[{filename, mime, size, attachment_id}]} ] } ], "count", "query" }` — **PJ référencées par `attachment_id`** (téléchargement paresseux par l'OCR C3, le spool ne contient pas les binaires) |
+| Erreurs | token expiré → exit 2 (cron incident) ; réseau/HTTP → exit 3 ; retries avec backoff |
+| Corps | `text/plain` préféré, sinon `text/html` dépouillé (strip déterministe, fixtures testées) |
 
 ### 2.2 `thread_parser.py` — le module bétonné (D3)
 

@@ -33,6 +33,11 @@ if m.get("skills"):
     assert os.path.isfile(os.path.join(cap_dir, "skill.md")), "skills non vide → skill.md requis"
 if m.get("routines"):
     assert os.path.isfile(os.path.join(cap_dir, "routine.yaml")), "routines non vide → routine.yaml requis"
+if m.get("code"):
+    code_dir = os.path.join(cap_dir, "code")
+    assert os.path.isdir(code_dir), "code non vide → dossier code/ requis"
+    for mod in m["code"]:
+        assert os.path.isfile(os.path.join(code_dir, mod + ".py")), f"module code manquant: {mod}.py"
 PY
 then ok "manifest.yaml — schéma + cohérences conditionnelles"; else fail "manifest.yaml — invalide"; fi
 

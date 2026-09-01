@@ -28,6 +28,12 @@ mcp: []
 skills: []
 # ex: [rag-search]
 
+# Modules de code déterministe → dossier code/ REQUIS si non vide (v1.1).
+# Python stdlib uniquement (aucun pip dans le conteneur), fonctions pures
+# testables par fixtures. Copiés vers data/code/<id>/ par capability-attach.
+code: []
+# ex: [gmail_poll, gmail_label]
+
 # Routines cron Hermes → routine.yaml REQUIS si non vide
 routines: []
 # ex: [gmail-poll-15min]

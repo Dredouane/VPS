@@ -88,6 +88,7 @@ with open(sys.argv[2], "w") as f:
     f.write(f"CAP_SECRETS='{l('secrets')}'\n")
     f.write(f"CAP_MCP='{l('mcp')}'\n")
     f.write(f"CAP_SKILLS='{l('skills')}'\n")
+    f.write(f"CAP_CODE='{l('code')}'\n")
     f.write(f"CAP_ROUTINES='{l('routines')}'\n")
     f.write(f"CAP_SOUL={m.get('soul_addendum','soul-addendum.md')}\n")
 PY
@@ -204,6 +205,20 @@ for CAP in "${CAPS[@]}"; do
             CHANGED=1
         fi
     done
+
+    # 3. Code déterministe (v1.1) → data/code/<cap>/
+    if [ -n "$CAP_CODE" ]; then
+        if [ "$DRY_RUN" = "1" ] || [ "$SELFTEST" = "1" ]; then
+            log "  [plan] code: $CAP_CODE → data/code/$CAP_ID/"
+        else
+            mkdir -p "$DATA_DIR/code/$CAP_ID"
+            cp -f "$CAP_DIR"/code/*.py "$DATA_DIR/code/$CAP_ID/"
+            chown -R 10000:10000 "$DATA_DIR/code"
+            chmod 640 "$DATA_DIR/code/$CAP_ID"/*.py
+            ok "code copié: $CAP_CODE (data/code/$CAP_ID/)"
+            CHANGED=1
+        fi
+    fi
 
     # 4. Routines
     if [ -n "$CAP_ROUTINES" ]; then

@@ -24,6 +24,7 @@ spawn HermesConfig v3) :
 | `mcp` | list[str] | ✅ (vide ok) | MCP servers Hermes à activer → `mcp.json` requis si non vide |
 | `skills` | list[str] | ✅ (vide ok) | Skills Hermes installées → `skill.md` requis si non vide |
 | `routines` | list[str] | ✅ (vide ok) | Routines cron → `routine.yaml` requis si non vide |
+| `code` | list[str] | ✅ (vide ok, v1.1) | Modules **déterministes** (stdlib Python, fixtures) → `code/` requis si non vide ; copiés vers `data/code/<id>/` par l'attach |
 | `mounts` | map | ✅ (vide ok) | Volumes additionnels (host → container) |
 | `soul_addendum` | str | ✅ | Fichier de clauses mergé dans le SOUL.md client (défaut `soul-addendum.md`) |
 | `tests` | str | ✅ | Dossier de tests (défaut `tests/`) |
