@@ -131,7 +131,7 @@ if [ "$CMD" = "status" ]; then
     done < <(list_files)
     echo
     "${PSQL[@]}" -tA -c "select 'tables cap_: ' || count(*) from pg_tables
-        where schemaname='public' and tablename in ('cap_documents','cap_emails','cap_factures','cap_pipeline_runs','cap_clients');"
+        where schemaname='public' and tablename like 'cap_%';"
     "${PSQL[@]}" -tA -c "select 'rpc $SLUG: ' || count(*) from pg_proc
         where pronamespace = 'public'::regnamespace and proname like 'rpc_cap_${SLUG}_%';"
     if "${PSQL[@]}" -tA -c "select count(*) from pg_tables where schemaname='public' and tablename='cap_clients';" | grep -q '^1$'; then
@@ -173,19 +173,22 @@ for f in "${APPLY_LIST[@]}"; do
 done
 
 # ---------------------------------------------------------------- post-checks
+# Compteurs DYNAMIQUES (les migrations ajoutent des tables/RPC par volet) :
+# FAIL seulement si vide ; les counts attendus par volet vivent dans les
+# fichiers SQL eux-mêmes (source de vérité).
 if [ "$ERR" -eq 0 ] && [ ${#APPLY_LIST[@]} -gt 0 ]; then
     N_TAB=$("${PSQL[@]}" -tA -c "select count(*) from pg_tables
-        where schemaname='public' and tablename in ('cap_documents','cap_emails','cap_factures','cap_pipeline_runs','cap_clients');")
+        where schemaname='public' and tablename like 'cap_%';")
     N_RLS=$("${PSQL[@]}" -tA -c "select count(*) from pg_tables
-        where schemaname='public' and rowsecurity and tablename like 'cap_%' and tablename <> 'cap_migrations';")
+        where schemaname='public' and rowsecurity and tablename like 'cap_%';")
     N_RPC=$("${PSQL[@]}" -tA -c "select count(*) from pg_proc
         where pronamespace='public'::regnamespace and proname like 'rpc_cap_${SLUG}_%';")
     N_FK=$("${PSQL[@]}" -tA -c "select count(*) from pg_constraint
-        where conname in ('cap_documents_slug_fk','cap_emails_slug_fk','cap_factures_slug_fk','cap_pipeline_runs_slug_fk');")
-    [ "$N_TAB" = "5" ] && ok "tables génériques: 5/5" || { fail "tables: $N_TAB/5"; ERR=$((ERR+1)); }
-    [ "$N_RLS" = "5" ] && ok "RLS deny-all: 5/5"   || { fail "RLS: $N_RLS/5";  ERR=$((ERR+1)); }
-    [ "$N_RPC" = "7" ] && ok "RPC $SLUG: 7/7"      || { fail "RPC: $N_RPC/7"; ERR=$((ERR+1)); }
-    [ "$N_FK" = "4" ]  && ok "FK client_slug: 4/4" || { fail "FK: $N_FK/4";   ERR=$((ERR+1)); }
+        where conname like 'cap_%_slug_fk';")
+    [ "$N_TAB" -ge 5 ] && ok "tables cap_*: $N_TAB"      || { fail "tables: $N_TAB (min 5)"; ERR=$((ERR+1)); }
+    [ "$N_RLS" = "$N_TAB" ] && ok "RLS deny-all: $N_RLS/$N_TAB" || { fail "RLS: $N_RLS/$N_TAB"; ERR=$((ERR+1)); }
+    [ "$N_RPC" -ge 7 ] && ok "RPC $SLUG: $N_RPC"        || { fail "RPC: $N_RPC (min 7)"; ERR=$((ERR+1)); }
+    [ "$N_FK" -ge 4 ]  && ok "FK client_slug: $N_FK"    || { fail "FK: $N_FK (min 4)"; ERR=$((ERR+1)); }
     if is_client_declared; then ok "client '$SLUG' déclaré (registry)"
     else warn "client '$SLUG' NON déclaré (apply un fichier slug pour le déclarer)"; fi
 fi

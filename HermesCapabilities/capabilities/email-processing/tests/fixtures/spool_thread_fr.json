@@ -1,0 +1,39 @@
+{
+  "thread_id": "1875124411713563599",
+  "messages": [
+    {
+      "uid": 1720,
+      "message_id": "<msgA@example.com>",
+      "internal_date_ms": 1756500000000,
+      "header_from": "Client Dupont <dupont@example.com>",
+      "header_to": "REDACTED_EMAIL",
+      "header_subject": "Demande de devis renovation",
+      "header_date": "Sat, 30 Aug 2026 08:15:00 +0200",
+      "body_plain": "Bonjour, nous avons une demande de devis renovation pour un appartement de 60m2.\nMerci de nous communiquer vos tarifs.",
+      "attachments": [
+        {"filename": "plan-chantier.pdf", "mime": "application/pdf", "size": 102400, "path": "/opt/data/spool/gmail/threads/1875124411713563599/att-1-plan-chantier.pdf"}
+      ]
+    },
+    {
+      "uid": 1721,
+      "message_id": "<msgB@example.com>",
+      "internal_date_ms": 1756509000000,
+      "header_from": "Arev Team <arev@example.com>",
+      "header_to": "Client Dupont <dupont@example.com>",
+      "header_subject": "Re: Demande de devis renovation",
+      "header_date": "Sat, 30 Aug 2026 11:30:00 +0200",
+      "header_in_reply_to": "<msgA@example.com>",
+      "body_plain": "Bonjour, le devis arrive en fin de semaine.\n\nLe 30 août 2026 à 08:15, Client Dupont a écrit :\n> Bonjour, nous avons une demande de devis renovation pour un appartement de 60m2.\n> Merci de nous communiquer vos tarifs."
+    },
+    {
+      "uid": 1722,
+      "message_id": "<msgC@example.com>",
+      "internal_date_ms": 1756518000000,
+      "header_from": "Client Dupont <dupont@example.com>",
+      "header_to": "REDACTED_EMAIL",
+      "header_subject": "Tr: Re: Demande de devis renovation",
+      "header_date": "Sat, 30 Aug 2026 14:00:00 +0200",
+      "body_plain": "Veuillez trouver ci-dessous le transfer de notre conversation avec le syndic.\n\n----- Message d'origine -----\nDe : Syndic Horizon <syndic@horizon.tld>\nEnvoyé : samedi 30 août 2026 12:00\nÀ : Client Dupont\nObjet : RE: renovation immeuble\n\nLe syndic valide l'accès au chantier en septembre.\n> cordialement,\n> le syndic"
+    }
+  ]
+}

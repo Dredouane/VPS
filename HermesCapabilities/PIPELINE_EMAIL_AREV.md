@@ -32,14 +32,19 @@
 | Sortie thread.json | `{thread_id (X-GM-THRID), messages: [{uid, message_id (Message-ID canonique), header_from/to/subject/date, body_plain (plain préféré sinon html strip déterministe), attachments: [{filename, mime, size, path}]}]}` |
 | Erreurs | auth → exit 2 ; réseau/IMAP → exit 3 ; retries backoff |
 
-### 2.2 `thread_parser.py` — le module bétonné (D3)
+### 2.2 `thread_parser.py` — le module bétonné (D3) + SAVE DB
 
 | | |
 |---|---|
-| Entrée | un thread JSON (sortie 2.1) + réponse `doc_status` (message_ids connus) |
-| Traitement | pour chaque message : détection du **rôle** (`nouveau` / `reponse` / `transfert`) via headers (`In-Reply-To`, `References`) + parsing des quotes (`Le … a écrit :`, `On … wrote:`, `De :`, `--- Message d'origine ---`, `Forwarded message`) ; séparation **contenu nouveau** vs **segments cités** ; **position dans le thread** |
-| Sortie | `{"mails": [ {"message_id", "thread_id", "role", "position", "from", "date", "subject", "new_content", "quoted_segments[]", "attachments[]", "rag_status": "known"|"new"} ]}` |
-| Garantie | fixtures multilingues (FR/EN, transferts imbriqués, clients mobiles sans headers propres) ; toute régression = FAIL avant attach |
+| Entrée | un thread.json du spool (sortie 2.1) + liste optionnelle des message_ids déjà en RAG (`rpc_cap_arev_doc_status`, fournie par l'orchestrateur) |
+| Traitement | rôle (nouveau/reponse/transfert — sujet Re:/Tr:/Fwd:, headers, quotes), séparation **contenu nouveau** vs **segments cités** (FR/EN/Outlook, fixtures verrouillées), position chronologique, agrégat de chaîne (sujet normalisé, participants, bornes de dates) |
+| Sortie | `{"thread_id", "chain": {subject, participants, messages_count, first/last_message_at}, "mails": [{message_id, uid, role, position, new_content, quoted_segments[], attachments, rag_status: known\|new}], "stats"}` |
+| Garantie | idempotent (re-parse = même résultat), fixtures multilingues ; **`Tr:` = transfert FR**, `Re:` = réponse |
+
+**SAVE DB (exigence 01/09 — par l'orchestrateur après le parser, via MCP supabase C5)** :
+1. `rpc_cap_arev_chain_upsert(thread_id, subject, participants, count, first, last)` → 1× (chaîne, idempotent)
+2. `rpc_cap_arev_email_upsert(message_id, thread_id, role, from, subject, date, classification, resume, status='received')` → **par mail** (chaîne complète, y compris anciens mails lazy)
+3. `rpc_cap_arev_doc_status(message_ids)` avant indexation → ne ré-indexer que `new`
 
 ### 2.3 `ocr_gemini.py` — OCR de TOUTES les pièces jointes (D4)
 

@@ -1,0 +1,33 @@
+# Contrat de capability — email-processing (C2)
+# Thread-parser déterministe + classification — save chains/emails en DB.
+
+id: email-processing
+version: 0.1.0
+title: "Traitement email — thread parser + classification"
+type: natif
+description: >
+  Module déterministe (D3) : transforme une mailChain (thread.json du spool)
+  en liste structurée de mails — rôle de chaque mail (nouveau/réponse/
+  transfert), contenu nouveau vs historique cité, position, agrégat de
+  chaîne — avec statut RAG (déjà indexé / nouveau, lazy backfill des
+  anciens mails). Enchaîne sur la classification LLM et le SAVE DB :
+  chaîne (cap_email_chains via rpc_cap_arev_chain_upsert) + emails
+  (cap_emails via rpc_cap_arev_email_upsert).
+
+# Aucun secret : les accès DB passent par les RPC via MCP supabase (C5)
+secrets: []
+
+env: {}
+
+mcp: []                      # le MCP supabase de C5 est réutilisé (pas de doublon)
+
+skills: [email-classify]
+
+routines: []                 # déclenché par la routine email-poll de C1 (M2.6)
+
+code: [thread_parser]
+
+mounts: {}
+
+soul_addendum: soul-addendum.md
+tests: tests/
