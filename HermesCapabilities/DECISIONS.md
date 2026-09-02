@@ -24,6 +24,7 @@
 | D11 | **Silencieux** — zéro Telegram, traçabilité `pipeline_runs` | Notifications TG par email traité |
 | D12 | **Rollout direct** + cadence 10 min / max 5 threads | Phase DRY_RUN · 30 min / 20 threads |
 | D13 | Réception = **IMAP app password** (creds existants, OAuth Testing = refresh expiré 7j, parsing RFC822 déterministe) | OAuth Gmail API (révisée 01/09) |
+| D14 | OCR = **2 extracteurs vision** (Gemini + OpenRouter) + **deux juges séparés** : général (code, toujours) / montants (bifurcation facture, code) avec adaptateur SLM Flash | Juge unique fusionné (revue 01/09) · un seul extracteur · schéma imposé à tous les docs |
 
 ---
 
@@ -218,6 +219,28 @@ X-GM-THRID (threading), X-GM-LABELS, label `ia-traite` à créer.
 COPY vers `[Gmail]/ia-traite` + \Deleted + **UID EXPUNGE ciblé** (jamais
 d'expunge global) ; skip si déjà labelisé. **Plan B** : OAuth API (helper
 `gmail-oauth-setup.sh` conservé) — à réévaluer si vérification d'app faite.
+
+## D14 — OCR multi-provider, deux juges séparés ✅ (01/09)
+
+**Décision (révisée après revue utilisateur)** : le module OCR extrait des
+documents de TOUTES sortes — la sortie des extracteurs est **générique**
+(`{text, doc_type_hint, confidence}`), pas un schéma facture imposé.
+
+**Deux juges séparés** (la fusion initiale était une erreur de conception) :
+1. **Juge général** (toujours, code pur) : similarité token-overlap entre les
+   2 extractions, complétude, confidence, doc_type = **majorité hints +
+   heuristiques** (mots facture/TVA/échéance + densité montants), winner ;
+   désaccord fort → `low_agreement` + confiance réduite.
+2. **Check montant** (bifurcation **uniquement si facture**) : adaptateur
+   SLM **Gemini Flash** reformate le texte gagnant en JSON canonique
+   (`schemas/invoice_extraction.json`), sortie **re-validée par le code**
+   (aliases, nombres FR/EN), puis Σ lignes == HT et HT+TVA == TTC (±0,02).
+   Reformat invalide = `sums_ok: null` — jamais inventé. Un document
+   non-facture n'a PAS de check montant.
+
+Extracteur #2 : **OpenRouter vision** (`SUREN_OPENROUTER_API_KEY` existante)
+— famille différente de Gemini = vraie diversité. Rejetés : juge unique
+fusionné, schéma imposé à tous les docs, Tesseract sidecar.
 
 ## Historique
 

@@ -1,0 +1,36 @@
+# Contrat de capability — doc-ocr (C3)
+# OCR multi-extracteurs + deux juges (D14) : général (code) + montants (bifurcation facture).
+
+id: doc-ocr
+version: 0.1.0
+title: "OCR — extraction multi-provider avec juge"
+type: mix
+description: >
+  Extrait le texte des pièces jointes (spool C1) avec DEUX extracteurs
+  vision en parallèle (Gemini Vision + OpenRouter vision — familles
+  différentes pour diversifier). Un JUGE GÉNÉRAL déterministe (code pur)
+  compare les extractions (similarité, complétude, confidence) et désigne
+  le winner. BIFURCATION facture uniquement (hints extracteurs +
+  heuristiques code) : un adaptateur SLM (Gemini Flash) reformate le texte
+  gagnant en JSON facture canonique, validé par le code, puis le CHECK
+  MONTANT vérifie l'arithmétique (Σ lignes == HT, HT+TVA == TTC ±0,02 €).
+  Sortie générique pour tout type de document.
+
+# Secrets requis dans HermesConfig/clients/<slug>/client.env (600)
+# GEMINI_API_KEY      : vision #1 + adaptateur SLM Flash (ex: valeur SUREN_GEMINI_API_KEY)
+# OPENROUTER_API_KEY  : vision #2 (ex: valeur SUREN_OPENROUTER_API_KEY)
+secrets: [GEMINI_API_KEY, OPENROUTER_API_KEY]
+
+env:
+  OCR_OPENROUTER_MODEL: "openai/gpt-4o-mini"
+  OCR_INVOICE_TOLERANCE: "0.02"
+
+mcp: []
+skills: [ocr-attachments]
+routines: []                 # appelé par le pipeline email (C1/C2), pas de cron propre
+code: [ocr_gemini, ocr_openrouter, ocr_judge, invoice_adapter, invoice_check]
+
+mounts: {}
+
+soul_addendum: soul-addendum.md
+tests: tests/

@@ -61,7 +61,7 @@ Hermes** (le catalogue MCP et les skills bundlées évoluent vite) :
 | **analysis-facturation** (C6) | ✅ Bot role + skill custom + routine | **Natif** |
 | **email-processing** (C2) | ✅ Skill custom LLM-driven | **Natif** |
 | **email-gmail** (C1) | ❌ Pas de Gmail dans le MCP catalog | **Mix** — MCP Gmail communautaire à évaluer, sinon skill OAuth (pattern `SUREN_GMAIL_OAUTH_*` déjà dans `/etc/secrets/`) + routine |
-| **doc-ocr** (C3) | ❌ Pas de Firecrawl (catalog ni code v0.20.6) | **Mix** — API Firecrawl ou Gemini Vision (`SUREN_GEMINI_API_KEY`), sidecar Tesseract en dernier recours |
+| **doc-ocr** (C3) | ❌ Pas de Firecrawl (catalog ni code v0.20.6) | **Mix** — 2 extracteurs vision (Gemini + OpenRouter, familles différentes) + 2 juges séparés (D14) ; sidecar Tesseract écarté |
 | **rag-embeddings** (C4) | ❌ Pas de primitive embeddings (memory ≠ RAG docs) | **Mix** — API embeddings (Gemini/OpenRouter) + save via MCP supabase |
 
 > ⚠️ La mémoire Hermes (`MEMORY.md`/providers mem0…) gère les **faits et

@@ -46,13 +46,14 @@
 2. `rpc_cap_email_upsert(slug, secret, message_id, thread_id, role, from, subject, date, classification, resume, status='received')` → **par mail** (chaîne complète, y compris anciens mails lazy)
 3. `rpc_cap_doc_status(slug, secret, message_ids)` avant indexation → ne ré-indexer que `new`
 
-### 2.3 `ocr_gemini.py` — OCR de TOUTES les pièces jointes (D4)
+### 2.3 `doc-ocr` — OCR multi-provider + deux juges (D14)
 
 | | |
 |---|---|
-| Entrée | PJ (bytes, mime, filename) + `GEMINI_API_KEY` |
-| Sortie | `{ "text", "confidence", "model": "gemini-vision", "pages" }` |
-| Limites | > 20 Mo ou mime non image/pdf → `skipped` + raison (dans metadata) |
+| Extracteurs | `ocr_gemini.py` (Gemini Vision) + `ocr_openrouter.py` (OpenRouter vision, famille différente) — **en parallèle**, sortie générique `{text, doc_type_hint, confidence}` |
+| Juge général | code pur, toujours : similarité token-overlap, complétude, confidence ×2 → winner ; désaccord fort → `low_agreement` + confiance réduite |
+| Bifurcation facture | hints majoritaires + heuristiques code → adaptateur SLM Flash (générique → JSON canonique `schemas/invoice_extraction.json`) → validation code → CHECK MONTANT : Σ lignes == HT, HT+TVA == TTC (±0,02) |
+| Sortie | `{text, structured?, confidence, extractor, judge: {scores, sums_ok, detail}}` → C4 (embeddings) + C6 (facture pré-vérifiée) |
 
 ### 2.4 `embed_gemini.py` — embeddings (D5)
 

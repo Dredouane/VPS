@@ -1,0 +1,27 @@
+{
+  "$comment": "Schéma canonique FACTURE (D14) — consommé par invoice_adapter.py (prompt SLM) et invoice_check.py (validation + sommes). Descriptif : la validation réelle est faite par le code (stdlib, pas de lib jsonschema). Champs absents = null — ne jamais inventer.",
+  "title": "Facture canonique",
+  "type": "object",
+  "properties": {
+    "numero": {"type": ["string", "null"], "description": "Numéro de facture"},
+    "fournisseur": {"type": ["string", "null"]},
+    "fournisseur_identifiant": {"type": ["string", "null"], "description": "SIRET / TVA si présent"},
+    "objet": {"type": ["string", "null"]},
+    "date_facture": {"type": ["string", "null"], "description": "ISO 8601 si possible, sinon texte brut"},
+    "date_echeance": {"type": ["string", "null"]},
+    "montant_ht": {"type": ["number", "null"]},
+    "montant_tva": {"type": ["number", "null"]},
+    "montant_ttc": {"type": ["number", "null"]},
+    "devise": {"type": ["string", "null"], "description": "EUR par défaut"},
+    "lignes": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "properties": {
+          "designation": {"type": ["string", "null"]},
+          "montant": {"type": ["number", "null"]}
+        }
+      }
+    }
+  }
+}
