@@ -23,8 +23,11 @@ chmod 600 "$TMP"/* 2>/dev/null || true
 N=$(ls -1 "$TMP" | wc -l)
 [ "$N" -ge 2 ] || { echo "ERREUR: aucune clé trouvée dans ~/.ssh"; exit 1; }
 
-tar -C "$TMP" -czf "$TMP/keys-$STAMP.tar.gz" .
-gpg --symmetric --cipher-algo AES256 --output "$DEST/keys-$STAMP.tar.gz.gpg" "$TMP/keys-$STAMP.tar.gz"
+# Archive écrite HORS de $TMP (sinon tar se voit s'archiver lui-même → rc=1 avec set -e)
+TARBALL="/tmp/keys-$STAMP.tar.gz"
+tar -C "$TMP" -czf "$TARBALL" .
+gpg --symmetric --cipher-algo AES256 --output "$DEST/keys-$STAMP.tar.gz.gpg" "$TARBALL"
+rm -f "$TARBALL"
 chmod 600 "$DEST/keys-$STAMP.tar.gz.gpg"
 
 echo ""

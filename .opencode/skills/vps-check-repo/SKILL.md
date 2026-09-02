@@ -41,6 +41,7 @@ R1 à R3 : `git grep` retourne rc=1 quand aucune correspondance → **rc=1 = PAS
 | R9 | Alias `syncthing-gui` (tunnel GUI Syncthing) | `grep syncthing-gui ~/.bashrc` | présent (ligne active) |
 | R10 | Ancien alias root@22 neutralisé | `grep -n 'alias nemo' ~/.bashrc` | ancien alias `root@…:22` **commenté** (précédé de `#`) ; seul l'alias SSH `nemo` → admin@2222 est actif (dans `~/.ssh/config`) |
 | R11 | État de l'arbre (informatif) | `git status -sb` | noter branche, fichiers modifiés, avance sur `origin/main` — jamais FAIL |
+| R12 | Clés privées locales jamais versionnées | `git ls-files \| grep -cE 'id_vps_backup\|REDACTED\|id_ed25519'` → **0** ; `ls ~/.ssh/id_vps_backup` présent localement (info — la clé backup pull n'existe que sur le PC) | 0 clé privée trackée ; la clé publique seule, si versionnée un jour, est tolérée |
 
 ## Rapport
 

@@ -48,7 +48,7 @@ Le check Y9 est local (exécutable quoi qu'il arrive).
 | Y5 | Relais activé | `sudo grep -oE '<relaysEnabled>[a-z]*</relaysEnabled>' /home/syncthing/.config/syncthing/config.xml` | `<relaysEnabled>true</relaysEnabled>` (nomades via relay) |
 | Y6 | Sous-dossier projet | `sudo stat -c '%U:%G %a' /home/syncthing/obsidian-vault/VPS` (sudo obligatoire) | existe, owner `syncthing:syncthing` |
 | Y7 | Vault HermesConfig | `ls /home/syncthing/obsidian-vault/VPS/HermesConfig/` | notes présentes (VEILLE, Décisions, Runbook AREV, État flotte pro) + sous-dossier `arev/` |
-| Y8 | Port données 22000 | `sudo ss -tlnp \| grep syncthing` | `*:22000` en écoute (filtré par UFW — cf. skill `vps-check-securite` S14) |
+| Y8 | Port données 22000 | `sudo ss -tlnp \| grep syncthing` | `*:22000` en écoute (processus) — **UFW ferme le port depuis le 01/09** (aucune règle ALLOW, cf. skill `vps-check-securite` S14) ; le sync futur passera par Tailscale (`REDACTED`) |
 | Y9 | Tunnel GUI (local) | `grep syncthing-gui ~/.bashrc` (machine locale) | alias présent — cf. skill `vps-check-repo` R9 |
 
 ⚠️ Y2/Y3 : ne jamais `echo $APIKEY` ni logger la commande avec la clé ;

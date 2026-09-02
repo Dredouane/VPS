@@ -104,5 +104,23 @@ Le script utilise la clé **dédiée** `id_vps_backup` (sans passphrase mais enf
 2. Sur le NAS : `ssh-keygen -t ed25519 -f /volume1/backups/.ssh/nemo_key -N ""` → copier le `.pub` dans `/home/admin/.ssh/authorized_keys` du VPS (avec `restrict,command=` comme pour `id_vps_backup` si on veut restreindre, ou en clé de lecture rsync)
 3. DSM → Planificateur de tâches → tâche planifiée (root) → script : `rsync -az --delete -e "ssh -i /volume1/backups/.ssh/nemo_key -p 2222" admin@REDACTED:/var/backups/vps-fleet/ /volume1/backups/nemo/`
 
-### 7.5 Hygiène locale (hors VPS)
-Ton `.bashrc` **local** contient encore des secrets en clair (RUNPOD, HF, Supabase, tokens…). Le VPS est durci, mais ton PC reste le trésor : envisager le même traitement (migrations vers un `.env` chiffré/gestionnaire) un de ces jours.
+### 7.5 Hygiène locale (hors VPS) — À FAIRE dans une session dédiée
+Ton `.bashrc` **local** contient encore des secrets en clair (RUNPOD, HF, Supabase, tokens…). Le VPS est durci, mais ton PC reste le trésor. Procédure (même pattern que le VPS, ~20 min) :
+
+```bash
+# 1. Sauvegarde
+cp -a ~/.bashrc ~/.bashrc.preaudit-$(date +%Y%m%d)
+# 2. Dossier sécurisé + extraction de TOUTES les lignes export
+mkdir -p ~/.config/secrets && chmod 700 ~/.config/secrets
+umask 077
+grep -E '^export [A-Za-z_][A-Za-z_0-9]*=' ~/.bashrc > ~/.config/secrets/env
+# 3. Vérification syntaxe + sourcing sous set -u
+bash -n ~/.config/secrets/env && bash -uc '. ~/.config/secrets/env && echo OK'
+# 4. Retrait des exports du .bashrc + sourcing gardé
+sed -i '/^export [A-Za-z_][A-Za-z_0-9]*=/d' ~/.bashrc
+printf '\n# Secrets locaux (ne jamais versionner)\n[ -f ~/.config/secrets/env ] && . ~/.config/secrets/env\n' >> ~/.bashrc
+chmod 600 ~/.bashrc ~/.config/secrets/env
+# 5. Tester un NOUVEAU terminal (variables chargées) avant de fermer l'ancien
+```
+
+Compléments : BitLocker activé sur le disque Windows (Panneau de configuration → Chiffrement de lecteur), 2FA sur Telegram + Google + GitHub, Kaspersky conservé + mises à jour Windows automatiques.

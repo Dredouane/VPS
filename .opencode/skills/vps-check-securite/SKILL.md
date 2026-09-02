@@ -3,13 +3,14 @@ name: vps-check-securite
 description: >-
   Audit de non-régression sécurité du VPS nemo (REDACTED, SSH read-only) :
   sshd (port 2222, root/password désactivés, ciphers sans algo faible, drop-ins),
-  UFW (default deny, 2222 ALLOW, 8642/8650 DENY, 22000 restreint, DOCKER-USER),
-  Fail2ban (jail sshd), AIDE (base + cron aide-check-alert.sh + 99_custom),
-  daemon.json Docker, secrets /etc/secrets/hermes.env (600), hook PAM SSH,
-  sysctl durci, postfix loopback, snapd, unattended-upgrades, sudoers.
-  Use when the user says "check sécurité", "vps-check-securite", "vérifier le
-  hardening", "non-régression sécurité", "audit sécurité", or as part of
-  vps-check-full.
+  UFW (default deny, 2222 seul port ouvert, 8642/8650 DENY, 22000 FERMÉ,
+  DOCKER-USER), Fail2ban (jail sshd), AIDE (base + cron aide-check-alert.sh +
+  99_custom), sauvegardes quotidiennes (vps-backup.sh), Tailscale (enrôlement),
+  daemon.json Docker, secrets /etc/secrets/hermes.env (600), hook PAM SSH
+  (allowlist IP), sysctl durci, postfix loopback, snapd, unattended-upgrades,
+  sudoers. Use when the user says "check sécurité", "vps-check-securite",
+  "vérifier le hardening", "non-régression sécurité", "audit sécurité", or as
+  part of vps-check-full.
 ---
 
 # Check sécurité — audit hardening VPS (SSH read-only)
@@ -64,7 +65,7 @@ Les checks R1-R4 (repo local) ne dépendent pas du SSH — cf. skill
 |---|---|---|---|
 | S12 | UFW active | `sudo ufw status` | `Status: active` |
 | S13 | Default policy | `sudo ufw status verbose` | `Default: deny (incoming)` |
-| S14 | Règles ouvertes | `sudo ufw status \| grep -E '2222\|8642\|8650\|22000'` | `2222/tcp ALLOW` ; `8642/tcp DENY` ; `8650/tcp DENY` ; `22000/tcp ALLOW` **depuis REDACTED uniquement** |
+| S14 | Règles ouvertes | `sudo ufw status \| grep -E '2222\|8642\|8650\|22000'` | `2222/tcp ALLOW` ; `8642/tcp DENY` ; `8650/tcp DENY` ; **22000 : AUCUNE règle** (fermé le 01/09 — remplacé par Tailscale, cf. `EXPLICATION_SECURITE.md` §7.3) — une règle 22000 ALLOW résiduelle = **FAIL** |
 | S15 | Bloc UFW/Docker | `sudo grep -c 'BEGIN UFW AND DOCKER' /etc/ufw/after.rules` | ≥ 1 (bloc présent — critique : Docker court-circuite UFW) |
 | S16 | Chaîne DOCKER-USER | `sudo iptables -L DOCKER-USER -n` | contient une règle `DROP` finale (RETURN RFC1918/loopback/ESTABLISHED tolérés) |
 | S17 | daemon.json | `cat /etc/docker/daemon.json` | `no-new-privileges: true`, `live-restore: true`, log-opts `max-size 10m` / `max-file 3`, **aucune** clé `userns-remap` |
@@ -80,7 +81,7 @@ une liste figée complète de règles, uniquement les règles ci-dessus.
 | S19 | Jail sshd | `sudo fail2ban-client status` (liste) + `sudo fail2ban-client get sshd bantime` + `sudo grep -E '^(port\|bantime\|backend\|banaction)' /etc/fail2ban/jail.local` | jail `sshd` présente ; bantime **effectif** `86400` ; `port = 2222`, `backend = systemd`, `banaction = ufw` — un `bantime = 3600` en tête ([DEFAULT]) est toléré si la section [sshd] prime |
 | S20 | Base AIDE | `stat -c '%a' /var/lib/aide/aide.db` | présente, `600` |
 | S21 | Cron AIDE | `cat /etc/cron.d/aide` | planifié à 3h (`0 3 * * *`) appelant `/usr/local/bin/aide-check-alert.sh`, avec `%` **échappé** (`\%`) si log daté |
-| S22 | Exclusions churn `99_custom` | `cat /etc/aide/aide.conf.d/99_custom` | contient : `node_modules` ( agents + global), `/var/lib/docker`, `containerd`, data-dirs `hermes-fleet/*/data`, `.hermes` des 3 users, `syncthing`, `fail2ban`, `landscape`, `/run/containerd` (grep par mot-clé, ≥ 8 motifs) |
+| S22 | Exclusions churn `99_custom` | `cat /etc/aide/aide.conf.d/99_custom` | contient : `node_modules` (agents + global), `/var/lib/docker`, `containerd`, data-dirs `hermes-fleet/.*/data` (récursif — instances pro incluses), `.hermes` des 3 users (ou pattern `admin\|hermesrunner\|arev`), `syncthing`, `fail2ban`, `landscape`, `/run/containerd`, `/run/docker`, `/var/lib/aide`, `/var/lib/tailscale`, `/var/backups`, `obsidian-vault` (grep par mot-clé, ≥ 10 motifs) |
 | S23 | Dernier check AIDE | `ls -lt /var/log/aide/ \| head -3` | log récent (< 26 h) — si `found differences` dans le dernier log → `~ WARN` à investiguer (peut être légitime après changement volontaire) |
 
 ## Checks — Secrets & utilisateurs
@@ -106,6 +107,14 @@ une liste figée complète de règles, uniquement les règles ci-dessus.
 | S35 | sysctl durci (runtime) | `sysctl -n kernel.kptr_restrict kernel.dmesg_restrict kernel.perf_event_paranoid kernel.yama.ptrace_scope kernel.unprivileged_bpf_disabled` | `2`, `1`, `3`, `2`, `1` |
 | S36 | Unattended-upgrades | `systemctl is-enabled unattended-upgrades` | `enabled` |
 
+## Checks — Sauvegardes & Tailscale (01/09/2026)
+
+| # | Check | Commande | Attendu |
+|---|---|---|---|
+| S37 | Sauvegarde quotidienne | `ls -la /etc/cron.d/vps-backup` + `cat /etc/cron.d/vps-backup` + `sudo stat -c '%a %U:%G' /usr/local/bin/vps-backup.sh` + `ls -1t /var/backups/vps-fleet/fleet-*.tar.gz \| head -1` (mtime < 26 h) + `tail -3 /var/log/vps-backup.log` | cron `30 4 * * * root` ; script `700 root:root` ; archive récente 600 ; log sans erreur |
+| S38 | Tailscale enrôlé | `systemctl is-active tailscaled` + `sudo tailscale status \| head -2` + `sudo tailscale ip -4` | `active` ; ligne du serveur `REDACTED` logged-in ; IP **REDACTED** |
+| S39 | Clé backup restreinte | `sudo grep backup-pull-nemo /home/admin/.ssh/authorized_keys` + `stat -c '%a' /usr/local/bin/vps-backup-serve.sh` + `sudo ls ~/.ssh/id_vps_backup 2>&1` | ligne `restrict,command="/usr/local/bin/vps-backup-serve.sh"` présente ; script `755` ; clé privée **ABSENTE du serveur** (elle n'existe que sur le PC local — FAIL si trouvée) |
+
 ## Rapport
 
 1. Tableau final `| Check | Statut | Détail |` groupé par domaine
@@ -125,3 +134,4 @@ une liste figée complète de règles, uniquement les règles ci-dessus.
 | Secrets/utilisateurs (S24-S30) | `Installation/RAPPORT_AUDIT_2026-08-30.md` §5.1 (R1/R2 : migration /etc/secrets, suppression ubuntu) |
 | Supervision/PAM (S31-S32) | `Installation/RAPPORT_AUDIT_2026-08-30.md` §5.5 |
 | Isolation (S33-S36) | `Installation/RAPPORT_AUDIT_2026-08-30.md` §1.5 + `DOCUMENTATION_VPS.md` §6 (TO DO Sécurité) |
+| Sauvegardes/Tailscale/clé backup (S37-S39) | `Installation/EXPLICATION_SECURITE.md` §4 (points 2-3-4) + §7 (procédures) |
