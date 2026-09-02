@@ -11,8 +11,8 @@ description: >
   transfert), contenu nouveau vs historique cité, position, agrégat de
   chaîne — avec statut RAG (déjà indexé / nouveau, lazy backfill des
   anciens mails). Enchaîne sur la classification LLM et le SAVE DB :
-  chaîne (cap_email_chains via rpc_cap_arev_chain_upsert) + emails
-  (cap_emails via rpc_cap_arev_email_upsert).
+  chaîne (cap_email_chains via rpc_cap_chain_upsert) + emails
+  (cap_emails via rpc_cap_email_upsert).
 
 # Aucun secret : les accès DB passent par les RPC via MCP supabase (C5)
 secrets: []

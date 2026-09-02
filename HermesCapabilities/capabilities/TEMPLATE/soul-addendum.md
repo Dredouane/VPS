@@ -11,7 +11,7 @@
 
 ## Ce que l'agent doit refuser (lié à cette capability)
 
-1. [Refus 1 — ex: exécuter du SQL hors des RPC dédiées]
+1. [Refus 1 — ex: exécuter du SQL hors des RPC génériques]
 2. [Refus 2 — ex: accéder aux données d'autres clients]
 3. [Refus 3 — ex: transmettre les credentials de la capability]
 

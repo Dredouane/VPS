@@ -13,7 +13,7 @@ service key.
 |---|---|
 | [manifest.yaml](manifest.yaml) | Contrat : secrets `SUPABASE_URL` + `SUPABASE_RPC_KEY`, MCP `supabase`, skill `rag-search` |
 | [decision.md](decision.md) | Analyse natif/mix/sidecar (MCP catalog vérifié 30/08 v0.20.6) |
-| [skill.md](skill.md) | Skill `rag-search` (recherche par similarité, RPC dédiées) |
+| [skill.md](skill.md) | Skill `rag-search` (recherche par similarité, RPC génériques) |
 | [mcp.json](mcp.json) | Config MCP supabase (secrets par référence) |
 | [soul-addendum.md](soul-addendum.md) | Clauses sait/peut/refuse/escalade |
 | [tests/test.sh](tests/test.sh) | Contrat hérité TEMPLATE + checks C5 + intégration VPS |
@@ -23,7 +23,7 @@ service key.
 | Variable | Rôle |
 |---|---|
 | `SUPABASE_URL` | URL du projet Supabase du client |
-| `SUPABASE_RPC_KEY` | Clé du rôle capability (RLS + EXECUTE sur `rpc_cap_<slug>_*`) — **jamais la service key** |
+| `SUPABASE_RPC_KEY` | Clé du rôle capability (RLS + EXECUTE sur `rpc_cap_*`) — **jamais la service key** |
 
 ## À faire en M2 (implémentation)
 
@@ -31,7 +31,7 @@ service key.
 > · Schéma/RPC/RLS : [`../../sql/arev/`](../../sql/arev/) (source de vérité, D9)
 
 1. Supabase : créer le schéma `cap_arev` (table `documents` + pgvector),
-   le rôle capability (RLS), les RPC `rpc_cap_<slug>_search|upsert|delete`
+   le rôle capability (RLS), les RPC génériques `rpc_cap_doc_search|doc_upsert` (+ doc_delete à ajouter si besoin)
    — projet TEST d'abord, puis prod client.
 2. Valider le wiring MCP sur `hermes-arev-pro` : `hermes mcp install supabase`
    + env (émuler `capability-attach.sh arev rag-supabase --dry-run` puis réel).

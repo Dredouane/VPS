@@ -78,7 +78,7 @@ Hermes** (le catalogue MCP et les skills bundlées évoluent vite) :
 ## 4. Sécurité transversale (non négociable)
 
 1. **Supabase** : jamais la `service key` dans un agent. Accès via MCP +
-   **RLS + RPC dédiées par client** (`rpc_cap_<slug>_*`), clé = rôle capability
+   **RLS + RPC génériques** (`rpc_cap_*` avec slug + `CLIENT_RPC_SECRET`), clé = publishable
    limité. Projet Supabase **test** séparé pour les tests unitaires.
 2. **Gmail** : OAuth scope minimal (`gmail.readonly` + labels), un
    compte/adresse aliasé par client, refresh token dans `client.env` (600).

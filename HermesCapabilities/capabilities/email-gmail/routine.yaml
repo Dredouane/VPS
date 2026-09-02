@@ -15,5 +15,5 @@ routines:
       (thread-parser, classification, OCR PJ, embeddings, RAG upsert,
       expert-router, expert-facturation), puis marquer traité:
       python3 /opt/data/code/email-gmail/imap_mark_done.py <uids>.
-      Terminer par rpc_cap_arev_pipeline_log (compteurs du run).
+      Terminer par rpc_cap_pipeline_log (compteurs du run).
       Max 5 threads par run. Silencieux (aucune notification).

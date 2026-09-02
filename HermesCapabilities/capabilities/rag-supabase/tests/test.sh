@@ -38,9 +38,9 @@ for v in $(python3 -c "import yaml;print(' '.join(yaml.safe_load(open('$CAP_DIR/
     esac
 done
 
-# skill.md: pas de SQL direct documenté, RPC dédiées présentes
-if grep -q 'rpc_cap_<slug>_search' "$CAP_DIR/skill.md" && ! grep -qiE 'select \* from|delete from|insert into' "$CAP_DIR/skill.md"; then
-    ok "skill.md — RPC dédiées, pas de SQL direct"
+# skill.md: pas de SQL direct documenté, RPC génériques présentes
+if grep -q 'rpc_cap_doc_search' "$CAP_DIR/skill.md" && ! grep -qiE 'select \* from|delete from|insert into' "$CAP_DIR/skill.md"; then
+    ok "skill.md — RPC génériques, pas de SQL direct"
 else
     fail "skill.md — SQL direct ou RPC manquante"
 fi

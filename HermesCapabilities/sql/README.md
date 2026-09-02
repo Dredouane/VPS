@@ -2,7 +2,7 @@
 
 > **Un seul projet Supabase multi-tenant** (clients, tests, prod) — le slug
 > discrimine : tables génériques `public.cap_*` avec colonne `client_slug`,
-> RPC dédiées par slug avec le slug **hardcodé** dans la fonction.
+> RPC génériques + secret par slug avec le slug **hardcodé** dans la fonction.
 > Tout est versionné git et **append-only** (migrations numérotées).
 
 ## Conventions

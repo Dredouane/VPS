@@ -2,7 +2,7 @@
 name: rag-search
 description: >-
   Recherche par similarité dans le RAG Supabase du client (pgvector via MCP
-  supabase, RPC dédiées). À utiliser quand l'agent a besoin de retrouver des
+  supabase, RPC génériques). À utiliser quand l'agent a besoin de retrouver des
   documents/extraits indexés (emails, pièces jointes, notes) pour répondre
   à une demande métier.
 ---
@@ -30,7 +30,7 @@ pgvector) pour ancrer les réponses de l'agent sur ses documents métier.
    compact (une requête = une intention).
 2. Obtenir l'embedding de la requête (capability `rag-embeddings`).
 3. Appeler la RPC dédiée via MCP `supabase` :
-   `rpc_cap_<slug>_search(query_embedding, match_count)` — **jamais de SQL
+   `rpc_cap_doc_search(slug, secret, query_embedding, match_count)` — **jamais de SQL
    direct**, jamais d'autre schéma que `cap_<slug>`.
 4. Restituer : titre, source, date, extrait pertinent (citer, ne pas
    inventer). Si aucun résultat pertinent (score faible) → le dire.
@@ -39,5 +39,5 @@ pgvector) pour ancrer les réponses de l'agent sur ses documents métier.
 
 - Le RAG ne contient que ce qui a été indexé — ne pas présenter une absence
   de résultat comme une vérité métier.
-- Toute écriture passe par `rpc_cap_<slug>_upsert` / `_delete` (capability
+- Toute écriture passe par `rpc_cap_doc_upsert` / (`doc_delete` à ajouter si besoin) (capability
   rag-supabase), jamais de DDL.

@@ -18,7 +18,7 @@
 | D5 | Embeddings = **Gemini text-embedding-004, 768d, figé** | OpenAI 1536d · embeddings locaux |
 | D6 | Facturation : **auto-upsert + statut `extracted`** | Propose-then-write · seuil de confiance |
 | D7 | **UN projet Supabase multi-tenant** (clients, tests, prod) — tables génériques `cap_*` + colonne `client_slug`, le slug drive tout | Projet TEST séparé · schéma par slug (obsolète) |
-| D8 | Accès DB = **RPC dédiées par slug** (`rpc_cap_<slug>_*`, slug hardcodé) sur tables génériques ; RLS deny-all ; clé publishable | Service key directe · accès tables direct |
+| D8 | Accès DB = **RPC génériques** `rpc_cap_*` (slug + **`CLIENT_RPC_SECRET`** par client vérifiés dans `cap_clients`) sur tables génériques ; RLS deny-all ; clé publishable | Service key directe · accès tables direct · RPC per-slug hardcodées (v2, retirées 01/09) |
 | D9 | **`sql/generic/` + `sql/<slug>/`** = source de vérité ; runner `supabase-sql.sh` + tracker `cap_migrations` | SQL dispersé · scripts tout-slug |
 | D10 | **Filtre +AREV strict** — boîte multi-clients par alias | Traiter toute la boîte |
 | D11 | **Silencieux** — zéro Telegram, traçabilité `pipeline_runs` | Notifications TG par email traité |
@@ -116,7 +116,7 @@ confiance hybride* (seuil non calibré au départ — réévaluable après retou
 Supabase** héberge tout le projet Hermes — tous les clients, les tests ET la
 prod. Le **slug de l'instance discrimine tout** : tables génériques
 `public.cap_*` avec colonne `client_slug`, et le slug drive toutes les
-requêtes SQL/RAG via les **RPC dédiées par slug**. La webapp CRUD du client
+requêtes SQL/RAG via les **RPC génériques + secret par slug**. La webapp CRUD du client
 consommera ces tables (même projet, zéro synchronisation).
 
 **D7-ter (01/09) — Registry + intégrité** : table générique
@@ -137,19 +137,29 @@ par smoke tests admin-side sur le même projet, lignes marquées + cleanup) ;
 *schéma par client (`cap_<slug>`)* (v1 — remplacé par colonne `client_slug`) ;
 *registry purement git sans SQL* (fantômes possibles).
 
-## D8 — RPC dédiées par slug, RLS deny-all, clé publishable ✅ (révisé 31/08)
+## D8 — RPC génériques + secret par slug, RLS deny-all ✅ (v3, 01/09)
 
-**Décision** : chaque slug a ses **RPC dédiées** `rpc_cap_<slug>_*` en
-`security definer` (search_path figé, slug **hardcodé** dans la fonction —
-l'agent arev ne peut toucher QUE ses lignes). Les tables génériques sont en
-**RLS deny-all + grants révoqués** : la clé publishable (anon) ne peut que
-EXÉCUTER les RPC.
+**Décision (v3 — révision suite revue utilisateur)** : les RPC per-slug
+hardcodées (`rpc_cap_arev_*`, v2) créaient une duplication ×N clients
+(l'agent/webapp devait cibler des noms de fonctions différents par slug).
+**V3** : **une seule série de RPC génériques** `rpc_cap_*` avec signature
+commune `(p_client_slug, p_rpc_secret, …)` — la garde `cap_auth_client`
+valide le couple contre `cap_clients` (statut='active') et retourne le slug.
+Le secret (`CLIENT_RPC_SECRET`, 24 octets hex) est **généré par le runner** à
+la déclaration et écrit dans `client.env` (600). Les tables génériques restent
+RLS deny-all + grants révoqués : la clé publishable seule ne suffit plus — il
+faut aussi le secret du slug.
 
-**Risque résiduel documenté** : une clé publishable unique pour le projet →
-un agent compromis pourrait appeler les RPC d'un autre slug. Mitigations :
-clés jamais publiques (agents sur notre VPS, secrets 600 hors git) ;
-**évolution D8-bis** si multi-clients réels : JWT par client avec claim slug +
-policies RLS sur `client_slug = claim`. Accepté pour M2 (un seul client réel).
+**Nettoyage** : les 9 RPC per-slug sont **droppées** (clean swap —
+`arev/003_rpc_deprecate.sql`, rien en prod). La webApp utilisera **les mêmes
+tables génériques** (service key) sans sauter de fonctions selon le slug.
+
+**Évolution D8-bis (future)** : JWT par client (claim slug + RLS) si besoin
+de rotation/expiration fine. Risque résiduel : secret par slug dans
+`client.env` (600, hors git) — même exposition que les autres secrets du
+client.
+
+## D8-v2 (historique — remplacé par v3)
 
 ## D9 — sql/ générique + dédié, runner avec tracker ✅ (révisé 31/08)
 
@@ -168,7 +178,7 @@ RLS, RPC), smoke tests + cleanup admin.
 **Décision** : `REDACTED_EMAIL` est une **boîte contrôlée** destinée au
 multi-clients par alias Gmail (`+AREV`, `+CLIENT2`…). L'agent AREV ne traite
 que les messages dont les destinataires contiennent `+AREV`. Chaque client
-aura : son OAuth (refresh token dédié), son filtre +TAG, ses RPC hardcodées.
+aura : son OAuth (refresh token dédié), son filtre +TAG, ses RPC génériques scellées par secret client.
 
 ## D11 — Silencieux : zéro Telegram ✅
 

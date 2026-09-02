@@ -10,7 +10,7 @@ description: >
   Permet à l'agent d'indexer des documents (texte extrait, ex. emails/OCR)
   dans Supabase pgvector (embeddings fournis par la capability rag-embeddings,
   hors périmètre ici) et de rechercher par similarité pour répondre aux
-  demandes métier. Écriture/lecture exclusivement via RPC dédiées par client.
+  demandes métier. Écriture/lecture exclusivement via RPC génériques par client.
 
 # Secrets requis dans HermesConfig/clients/<slug>/client.env (600)
 # SUPABASE_URL       : URL du projet Supabase du client
@@ -18,8 +18,8 @@ description: >
 #                      — JAMAIS SUPABASE_SERVICE_KEY
 secrets: [SUPABASE_URL, SUPABASE_RPC_KEY]
 
-# Vars non secrètes — le slug est porté par les RPC dédiées (D7-v2) :
-# tables génériques public.cap_* + client_slug, RPC rpc_cap_<slug>_*
+# Vars non secrètes — le slug est porté par les RPC génériques (D7-v2) :
+# tables génériques public.cap_* + client_slug, RPC génériques rpc_cap_* (slug + CLIENT_RPC_SECRET)
 env: {}
 
 # MCP natif Hermes (catalogue, vérifié 30/08 v0.20.6)

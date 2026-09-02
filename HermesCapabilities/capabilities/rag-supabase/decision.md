@@ -23,15 +23,15 @@ webapp CRUD desservie par le même projet).
 assurée par le modèle d'accès :
 
 - Clé **limitée** (`SUPABASE_RPC_KEY`) = rôle Postgres dédié capability, avec
-  RLS + droits `EXECUTE` sur les RPC `rpc_cap_<slug>_*` uniquement. **Jamais
+  RLS + droits `EXECUTE` sur les RPC génériques `rpc_cap_*` uniquement. **Jamais
   la service key** (full-access).
 - Schéma/pgvector dédié par client (`cap_<slug>`), table `documents`
   (`id, client_id, source, title, content, embedding vector, metadata jsonb,
   created_at`).
 - RPC exposées (M2, à créer côté Supabase) :
-  - `rpc_cap_<slug>_search(query_embedding, match_count)` → similarité
-  - `rpc_cap_<slug>_upsert(doc_id, source, title, content, embedding, metadata)`
-  - `rpc_cap_<slug>_delete(doc_id)`
+  - `rpc_cap_doc_search(slug, secret, query_embedding, match_count)` → similarité
+  - `rpc_cap_doc_upsert(slug, secret, kind, message_id, content, embedding, …)`
+  - `rpc_cap_doc_delete` (à ajouter si besoin — hors scope M2)
 - Embeddings : hors périmètre de C5 — fournis par la capability
   `rag-embeddings` (C4, mix : API Gemini/OpenRouter). DeepSeek n'en fournit
   pas.

@@ -24,7 +24,7 @@ flowchart LR
     HC -->|"spawn-hermes-pro.sh"| INST
     HCAP -->|"capability-attach.sh<br/>manifests → MCP, skills,<br/>routines, SOUL, secrets"| INST
     HI -.->|"consomme volets 1+2"| HCAP
-    INST <-->|"RPC rpc_cap_arev_*<br/>(rôle limité, RLS)"| SUPA
+    INST <-->|"RPC génériques rpc_cap_*<br/>(slug + secret) — (rôle limité, RLS)"| SUPA
     INST <-->|"OAuth gmail.modify,<br/>filtre +AREV"| GMAIL
 ```
 
@@ -46,7 +46,7 @@ flowchart TB
         FACT["expert-facturation<br/>extraction JSON strict"]
     end
     subgraph DB[("Supabase — même projet que la webapp CRUD")]
-        RPC["RPC rpc_cap_arev_*<br/>doc_status · doc_upsert · doc_search<br/>email_upsert · facture_find · facture_upsert<br/>pipeline_log"]
+        RPC["RPC génériques rpc_cap_*<br/>(slug + secret) — doc_status · doc_upsert · doc_search<br/>email_upsert · facture_find · facture_upsert<br/>pipeline_log"]
         TBL["cap_arev : documents (pgvector 768)<br/>emails · factures · pipeline_runs"]
     end
     POLL -->|"threads"| TP

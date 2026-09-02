@@ -25,7 +25,7 @@ Puis **sauvegarder** chaîne + emails en DB (cap_email_chains + cap_emails).
 l'agrégation de chaîne sont des problèmes de **parsing** : ils doivent être
 idempotents et non-régressifs (D3). Le module est **pur** : entrée =
 thread.json du spool + liste optionnelle des message_ids déjà en RAG (fournie
-par l'orchestrateur via `rpc_cap_arev_doc_status`) ; sortie = structure
+par l'orchestrateur via `rpc_cap_doc_status`) ; sortie = structure
 complète (contrat §2.2 de PIPELINE). Le **SAVE DB** (chains + emails) est
 fait par l'orchestrateur via les RPC (`chain_upsert`, `email_upsert`) — le
 module reste sans I/O.

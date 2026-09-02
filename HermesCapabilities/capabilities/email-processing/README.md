@@ -29,8 +29,8 @@ utilisateur 01/09).
  "stats": {total, new, known, roles}}
 ```
 
-**Save DB (orchestrateur)** : `rpc_cap_arev_chain_upsert(...)` (1×) +
-`rpc_cap_arev_email_upsert(...)` (par mail) — statut `received`, puis
+**Save DB (orchestrateur)** : `rpc_cap_chain_upsert(...)` (1×) +
+`rpc_cap_email_upsert(...)` (par mail) — statut `received`, puis
 `processed` après RAG/experts. Déjà appliqué + smoke OK (01/09).
 
 ## Historique

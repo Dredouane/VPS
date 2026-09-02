@@ -13,7 +13,7 @@
 | Boîte | `REDACTED_EMAIL` (contrôlée), filtre **destinataire contient `+AREV`** |
 | Déclencheur | cron `*/10 8-19 * * *` (silencieux 20h-08h), **≤ 5 threads/run** |
 | Idempotence | label Gmail `ia-traite` (posé en fin de pipeline) + `doc_status` par message_id |
-| Écritures | RPC `rpc_cap_arev_*` (security definer, client hardcodé) — direct dès M2.6 |
+| Écritures | RPC génériques `rpc_cap_*` (slug + `CLIENT_RPC_SECRET`, D8-v3) — direct dès M2.6 |
 | Observabilité | `pipeline_runs` + `hermes cron incidents` — **aucune notification** |
 
 ## 2. Contrats des modules `code/` (déterministes, stdlib Python uniquement)
@@ -36,15 +36,15 @@
 
 | | |
 |---|---|
-| Entrée | un thread.json du spool (sortie 2.1) + liste optionnelle des message_ids déjà en RAG (`rpc_cap_arev_doc_status`, fournie par l'orchestrateur) |
+| Entrée | un thread.json du spool (sortie 2.1) + liste optionnelle des message_ids déjà en RAG (`rpc_cap_doc_status`, fournie par l'orchestrateur) |
 | Traitement | rôle (nouveau/reponse/transfert — sujet Re:/Tr:/Fwd:, headers, quotes), séparation **contenu nouveau** vs **segments cités** (FR/EN/Outlook, fixtures verrouillées), position chronologique, agrégat de chaîne (sujet normalisé, participants, bornes de dates) |
 | Sortie | `{"thread_id", "chain": {subject, participants, messages_count, first/last_message_at}, "mails": [{message_id, uid, role, position, new_content, quoted_segments[], attachments, rag_status: known\|new}], "stats"}` |
 | Garantie | idempotent (re-parse = même résultat), fixtures multilingues ; **`Tr:` = transfert FR**, `Re:` = réponse |
 
-**SAVE DB (exigence 01/09 — par l'orchestrateur après le parser, via MCP supabase C5)** :
-1. `rpc_cap_arev_chain_upsert(thread_id, subject, participants, count, first, last)` → 1× (chaîne, idempotent)
-2. `rpc_cap_arev_email_upsert(message_id, thread_id, role, from, subject, date, classification, resume, status='received')` → **par mail** (chaîne complète, y compris anciens mails lazy)
-3. `rpc_cap_arev_doc_status(message_ids)` avant indexation → ne ré-indexer que `new`
+**SAVE DB (exigence 01/09 — par l'orchestrateur après le parser, via MCP supabase C5)** — RPC **génériques** avec `p_client_slug` + `p_rpc_secret` (env `CLIENT_SLUG`/`CLIENT_RPC_SECRET`, D8-v3) :
+1. `rpc_cap_chain_upsert(slug, secret, thread_id, subject, participants, count, first, last)` → 1× (chaîne, idempotent)
+2. `rpc_cap_email_upsert(slug, secret, message_id, thread_id, role, from, subject, date, classification, resume, status='received')` → **par mail** (chaîne complète, y compris anciens mails lazy)
+3. `rpc_cap_doc_status(slug, secret, message_ids)` avant indexation → ne ré-indexer que `new`
 
 ### 2.3 `ocr_gemini.py` — OCR de TOUTES les pièces jointes (D4)
 
@@ -116,11 +116,12 @@ tout — D7-v2/D9-v2) :
   (`client_slug → slug`). Gérée par le runner uniquement.
 - `cap_migrations` — tracker du runner (supabase-sql.sh).
 
-**RPC dédiées slug arev** (`sql/arev/001_rpc.sql`, security definer, slug
-hardcodé) : `rpc_cap_arev_doc_status`, `doc_upsert` (ordre positional :
-kind, message_id, content, embedding, puis optionnels), `doc_search`
-(borne ≤20), `email_upsert`, `facture_find`, `facture_upsert`
-(non-rétrogradation des factures validées), `pipeline_log`.
+**RPC génériques** (`sql/generic/006_rpc_generic.sql`, security definer,
+slug + secret par client — D8-v3) : `rpc_cap_doc_status`, `rpc_cap_doc_upsert`
+(ordre positional : slug, secret, kind, message_id, content, embedding, puis
+optionnels), `rpc_cap_doc_search` (borne ≤20), `rpc_cap_email_upsert`,
+`rpc_cap_chain_upsert/get`, `rpc_cap_facture_find/upsert` (non-rétrogradation
+des factures validées), `rpc_cap_pipeline_log`.
 Les skills lisent les définitions copiées dans `data/sql/` (D9).
 
 ## 6. Non-régression (verrous)
