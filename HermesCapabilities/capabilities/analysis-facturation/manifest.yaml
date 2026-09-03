@@ -1,0 +1,29 @@
+# Contrat de capability — analysis-facturation (C6)
+# Chain of Experts : router + expert facturation — écriture via RPC génériques.
+
+id: analysis-facturation
+version: 0.1.0
+title: "Expert facturation — extraction structurée et upsert SQL"
+type: natif
+description: >
+  Chain of Experts (D2) : le skill expert-router décide quels experts sont
+  concernés par un mail ; l'expert facturation assemble le contexte complet
+  (mail + OCR vérifié de la PJ — nombres pré-validés par le check montant
+  C3) et crée/met à jour la facture structurée dans Supabase
+  (rpc_cap_facture_upsert, statut 'extracted' — D6) pour la webApp CRUD
+  et les autres agents. Les définitions SQL vivent dans data/sql/ (D9).
+
+secrets: []                  # accès DB via MCP supabase C5 (slug + CLIENT_RPC_SECRET)
+
+env: {}
+
+mcp: []                      # réutilise le MCP supabase de C5
+
+skills: [expert-router, expert-facturation]
+routines: []                 # déclenché par le pipeline email (C1/C2)
+code: []                     # l'extraction structurée vient de C3 (déjà vérifiée)
+
+mounts: {}
+
+soul_addendum: soul-addendum.md
+tests: tests/

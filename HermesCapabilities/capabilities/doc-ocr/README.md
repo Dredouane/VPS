@@ -28,8 +28,8 @@ factures — enchaîne un **adaptateur SLM** (reformat JSON canonique) puis un
 
 | Variable | Rôle |
 |---|---|
-| `GEMINI_API_KEY` | Vision #1 + adaptateur Flash (valeur SUREN_GEMINI_API_KEY réutilisable) |
-| `OPENROUTER_API_KEY` | Vision #2 (valeur SUREN_OPENROUTER_API_KEY) |
+| `VPS_GEMINI_API_KEY` | Vision #1 + adaptateur Flash (valeur SUREN_VPS_GEMINI_API_KEY réutilisable) |
+| `VPS_OPEN_ROUTER_API_KEY` | Vision #2 (valeur SUREN_VPS_OPEN_ROUTER_API_KEY) |
 
 Env : `OCR_OPENROUTER_MODEL=openai/gpt-4o-mini`, `OCR_INVOICE_TOLERANCE=0.02`.
 

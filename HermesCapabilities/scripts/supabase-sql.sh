@@ -7,7 +7,7 @@
 #   ./supabase-sql.sh <slug> all [--yes] [--smoke]
 #   ./supabase-sql.sh <slug> --file generic/001_schema.sql [--yes]
 #
-# URL admin: $SUPERBASE_VPS_DB_URL (bashrc local, jamais affichée).
+# URL admin: $VPS_SUPERBASE_VPS_DB_URL (bashrc local, jamais affichée).
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -57,11 +57,11 @@ get_var() {  # $1 = nom de variable → valeur littérale (stdout)
     printf '%s' "$line"
 }
 
-if [ -z "${SUPERBASE_VPS_DB_URL:-}" ]; then
-    SUPERBASE_VPS_DB_URL="$(get_var SUPERBASE_VPS_DB_URL)"
+if [ -z "${VPS_SUPERBASE_VPS_DB_URL:-}" ]; then
+    VPS_SUPERBASE_VPS_DB_URL="$(get_var VPS_SUPERBASE_VPS_DB_URL)"
 fi
-[ -n "${SUPERBASE_VPS_DB_URL:-}" ] || die "SUPERBASE_VPS_DB_URL absente (bashrc local)"
-PSQL=(psql "$SUPERBASE_VPS_DB_URL" -v ON_ERROR_STOP=1 --no-psqlrc -q)
+[ -n "${VPS_SUPERBASE_VPS_DB_URL:-}" ] || die "VPS_SUPERBASE_VPS_DB_URL absente (bashrc local)"
+PSQL=(psql "$VPS_SUPERBASE_VPS_DB_URL" -v ON_ERROR_STOP=1 --no-psqlrc -q)
 
 # client.env du client (HermesConfig voisin) — pour CLIENT_RPC_SECRET (D8-v3)
 HC_BASE="${HERMESCONFIG_BASE:-$(cd "$BASE_DIR/.." && pwd)/HermesConfig}"
@@ -159,7 +159,7 @@ ensure_client_secret() {
 # ---------------------------------------------------------------- status
 if [ "$CMD" = "status" ]; then
     echo "── Migrations Supabase (projet unique multi-tenant) ──"
-    echo "    (URL masquée — SUPERBASE_VPS_DB_URL)"
+    echo "    (URL masquée — VPS_SUPERBASE_VPS_DB_URL)"
     "${PSQL[@]}" -c "$TRACKER_SQL" >/dev/null 2>&1 || die "Connexion/psql impossible (pooler ?)"
     while IFS= read -r f; do
         if is_applied "$f"; then ok   "appliqué   : $f"

@@ -35,8 +35,8 @@ HT+TVA == TTC) sans jamais inventer de valeur.
    Σ lignes == HT, HT+TVA == TTC (±0,02). Reformat invalide = `sums_ok null`
    (pas de check, pas d'invention). Résultat annoté pour l'expert C6.
 
-Clés existantes réutilisées : `GEMINI_API_KEY` (vision #1 + adaptateur) et
-`OPENROUTER_API_KEY` (vision #2, famille différente) — déjà présentes dans
+Clés existantes réutilisées : `VPS_GEMINI_API_KEY` (vision #1 + adaptateur) et
+`VPS_OPEN_ROUTER_API_KEY` (vision #2, famille différente) — déjà présentes dans
 les secrets du VPS. Plan B extracteur : Tesseract sidecar (qualité/complexité
 — écarté sauf besoin confidentialité renforcée).
 

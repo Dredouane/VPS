@@ -1,0 +1,32 @@
+# Contrat de capability — ged-r2
+# Archivage R2 Cloudflare des fichiers bruts email (slug = sous-dossier client).
+
+id: ged-r2
+version: 0.1.0
+title: "GED — archivage R2 Cloudflare des emails bruts"
+type: mix
+description: >
+  Sauvegarde générique (code pur, appelée à la fin de l'extraction email)
+  des fichiers bruts du spool (thread.json + pièces jointes) vers Cloudflare
+  R2 (S3-compatible, SigV4 stdlib). Le slug est le sous-dossier client :
+  <prefix>/<slug>/emails/<thread_id>/<fichier> — exigence 01/09.
+
+secrets:
+  - VPS_GED_CLOUDFLARE_S3_EU_ENDPOINT
+  - VPS_GED_CLOUDFLARE_BUCKET_NAME
+  - VPS_GED_CLOUDFLARE_ACCESS_KEY_ID
+  - VPS_GED_CLOUDFLARE_SECRET_ACCESS_KEY
+  - VPS_GED_CLOUDFLARE_TOKEN
+
+env:
+  GED_EMAIL_PREFIX: "emails"
+
+mcp: []
+skills: [ged-archive]
+routines: []              # déclenché par la routine email-poll (C1) après extraction
+code: [r2_client, ged_save]
+
+mounts: {}
+
+soul_addendum: soul-addendum.md
+tests: tests/

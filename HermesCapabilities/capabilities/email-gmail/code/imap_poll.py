@@ -3,7 +3,7 @@
 
 Sortie stdout : résumé léger {"count", "thread_ids", "spool_dir"}.
 Spool : <spool_dir>/threads/<thread_id>/thread.json + att-<n>-<fichier-safe>.
-Entrée (env) : GMAIL_RECEPTION_IMAP_ADRESS, GMAIL_RECEPTION_IMAP_MDP,
+Entrée (env) : VPS_GMAIL_RECEPTION_IMAP_ADRESS, VPS_GMAIL_RECEPTION_IMAP_MDP,
   GMAIL_ALIAS_TAG (+AREV), GMAIL_LABEL_DONE (ia-traite), GMAIL_MAX_THREADS (5),
   GMAIL_SPOOL_DIR (/opt/data/spool/gmail), GMAIL_NEWER_THAN_DAYS (90).
 
@@ -148,7 +148,7 @@ def write_thread(spool_dir, thrid, messages):
 
 # ─────────────────────────────── IMAP (mince) ─────────────────────────────────
 def run(cfg):
-    user, mdp = cfg["GMAIL_RECEPTION_IMAP_ADRESS"], cfg["GMAIL_RECEPTION_IMAP_MDP"]
+    user, mdp = cfg["VPS_GMAIL_RECEPTION_IMAP_ADRESS"], cfg["VPS_GMAIL_RECEPTION_IMAP_MDP"]
     if not user or not mdp:
         raise RuntimeError("config manquante (IMAP_ADRESS/IMAP_MDP)")
     alias_tag = cfg.get("GMAIL_ALIAS_TAG") or "+AREV"
@@ -211,7 +211,7 @@ def run(cfg):
 
 def main():
     cfg = {k: os.environ.get(k, "") for k in (
-        "GMAIL_RECEPTION_IMAP_ADRESS", "GMAIL_RECEPTION_IMAP_MDP",
+        "VPS_GMAIL_RECEPTION_IMAP_ADRESS", "VPS_GMAIL_RECEPTION_IMAP_MDP",
         "GMAIL_ALIAS_TAG", "GMAIL_LABEL_DONE", "GMAIL_MAX_THREADS",
         "GMAIL_SPOOL_DIR", "GMAIL_NEWER_THAN_DAYS")}
     try:

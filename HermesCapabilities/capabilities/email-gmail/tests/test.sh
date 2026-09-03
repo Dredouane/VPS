@@ -78,10 +78,10 @@ else fail "unitaires imap_poll"
 fi
 
 # Intégration réelle (readonly) si creds — count >= 0 + structure
-if [ -n "${GMAIL_RECEPTION_IMAP_ADRESS:-}" ] && [ -n "${GMAIL_RECEPTION_IMAP_MDP:-}" ]; then
+if [ -n "${VPS_GMAIL_RECEPTION_IMAP_ADRESS:-}" ] && [ -n "${VPS_GMAIL_RECEPTION_IMAP_MDP:-}" ]; then
     TMPD="$(mktemp -d)"
-    if GMAIL_RECEPTION_IMAP_ADRESS="$GMAIL_RECEPTION_IMAP_ADRESS" \
-       GMAIL_RECEPTION_IMAP_MDP="$GMAIL_RECEPTION_IMAP_MDP" \
+    if VPS_GMAIL_RECEPTION_IMAP_ADRESS="$VPS_GMAIL_RECEPTION_IMAP_ADRESS" \
+       VPS_GMAIL_RECEPTION_IMAP_MDP="$VPS_GMAIL_RECEPTION_IMAP_MDP" \
        GMAIL_ALIAS_TAG="+AREV" GMAIL_MAX_THREADS="2" GMAIL_SPOOL_DIR="$TMPD" \
        python3 "$CODE/imap_poll.py" > /tmp/imap-poll-test.json 2>/tmp/imap-poll-test.err; then
         python3 -c "import json;d=json.load(open('/tmp/imap-poll-test.json'));assert isinstance(d.get('count'), int) and d['count'] >= 0 and 'spool_dir' in d" \

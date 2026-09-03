@@ -194,13 +194,15 @@ for CAP in "${CAPS[@]}"; do
         fi
     done
 
-    # 3. Skills
+    # 3. Skills — skills/<S>.md prioritaire, sinon skill.md unique (v1.1)
     for S in $CAP_SKILLS; do
+        SRC_MD="$CAP_DIR/skill.md"
+        [ -f "$CAP_DIR/skills/$S.md" ] && SRC_MD="$CAP_DIR/skills/$S.md"
         if [ "$DRY_RUN" = "1" ] || [ "$SELFTEST" = "1" ]; then
-            log "  [plan] skill '$S' → data/skills/$S/SKILL.md"
+            log "  [plan] skill '$S' ($(basename "$SRC_MD")) → data/skills/$S/SKILL.md"
         else
             mkdir -p "$DATA_DIR/skills/$S"
-            install -o 10000 -g 10000 -m 640 "$CAP_DIR/skill.md" "$DATA_DIR/skills/$S/SKILL.md"
+            install -o 10000 -g 10000 -m 640 "$SRC_MD" "$DATA_DIR/skills/$S/SKILL.md"
             ok "skill '$S' installée (emplacement custom à valider M2)"
             CHANGED=1
         fi

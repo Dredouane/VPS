@@ -21,9 +21,9 @@
 
 | Var | Usage |
 |---|---|
-| `SUPERBASE_VPS_DB_URL` | Connection string admin (pooler) — runner SQL |
-| `SUPERBASE_VPS_DB_PROJECT_URL` | URL REST du projet (agent, M2.1+) |
-| `SUPERBASE_VPS_DB_RPC_KEY` | Clé publishable (agent, M2.1+) — jamais service key |
+| `VPS_SUPERBASE_VPS_DB_URL` | Connection string admin (pooler) — runner SQL |
+| `VPS_SUPERBASE_VPS_DB_PROJECT_URL` | URL REST du projet (agent, M2.1+) |
+| `VPS_SUPERBASE_VPS_DB_RPC_KEY` | Clé publishable (agent, M2.1+) — jamais service key |
 
 > ⚠️ Le bashrc a un guard d'interactivité : le runner extrait les vars
 > **littéralement** (`grep` + strip de quotes, jamais `eval` — le mot de

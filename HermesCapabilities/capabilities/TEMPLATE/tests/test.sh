@@ -30,7 +30,9 @@ if cap_id != "TEMPLATE":
 if m.get("mcp"):
     assert os.path.isfile(os.path.join(cap_dir, "mcp.json")), "mcp non vide → mcp.json requis"
 if m.get("skills"):
-    assert os.path.isfile(os.path.join(cap_dir, "skill.md")), "skills non vide → skill.md requis"
+    assert os.path.isfile(os.path.join(cap_dir, "skill.md")) or \
+        all(os.path.isfile(os.path.join(cap_dir, "skills", s + ".md")) for s in m["skills"]), \
+        "skills non vide → skill.md OU skills/<id>.md pour chaque skill requis"
 if m.get("routines"):
     assert os.path.isfile(os.path.join(cap_dir, "routine.yaml")), "routines non vide → routine.yaml requis"
 if m.get("code"):

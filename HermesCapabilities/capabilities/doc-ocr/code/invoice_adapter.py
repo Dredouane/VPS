@@ -5,7 +5,7 @@ Reformate le texte gagnant (générique) en JSON facture canonique via Gemini
 Flash (SLM rapide). La sortie est TOUJOURS re-validée par invoice_check.py
 (le SLM n'est jamais le juge — D14). Échec de reformat = sums_ok null.
 Usage : python3 invoice_adapter.py <texte-gagnant.txt>
-Entrée : env GEMINI_API_KEY. Exit 0/2/3.
+Entrée : env VPS_GEMINI_API_KEY. Exit 0/2/3.
 """
 import json
 import os
@@ -69,9 +69,9 @@ def main() -> int:
     if not src or not os.path.isfile(src):
         print("usage: invoice_adapter.py <texte-gagnant.txt>", file=sys.stderr)
         return 1
-    key = os.environ.get("GEMINI_API_KEY", "")
+    key = os.environ.get("VPS_GEMINI_API_KEY", "")
     if not key:
-        print(json.dumps({"error": "GEMINI_API_KEY absente"}), file=sys.stderr)
+        print(json.dumps({"error": "VPS_GEMINI_API_KEY absente"}), file=sys.stderr)
         return 2
     text = open(src, encoding="utf-8").read()
     try:

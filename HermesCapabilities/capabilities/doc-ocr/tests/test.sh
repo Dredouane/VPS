@@ -85,7 +85,7 @@ fi
 
 # Intégration réseau (vision réelle) : nécessite clés + une image — test réel
 # à M2.6 sur vraie PJ. Ici SKIP propre.
-if [ -n "${GEMINI_API_KEY:-}" ] && [ -n "${OPENROUTER_API_KEY:-}" ]; then
+if [ -n "${VPS_GEMINI_API_KEY:-}" ] && [ -n "${VPS_OPEN_ROUTER_API_KEY:-}" ]; then
     skip "intégration vision réelle: clés présentes mais fixture image coûteuse — test à M2.6"
 else
     skip "intégration réseau (clés GEMINI/OPENROUTER absentes — normal en local)"

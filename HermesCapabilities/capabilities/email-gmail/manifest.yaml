@@ -10,10 +10,10 @@ description: >
   Lecture EXAMINE + BODY.PEEK (zéro mutation en lecture).
 
 # Secrets requis dans HermesConfig/clients/<slug>/client.env (600)
-# GMAIL_RECEPTION_IMAP_ADRESS : adresse de la boîte (ex: REDACTED_EMAIL)
-# GMAIL_RECEPTION_IMAP_MDP    : app password IMAP (2FA Gmail requise)
+# VPS_GMAIL_RECEPTION_IMAP_ADRESS : adresse de la boîte (ex: REDACTED_EMAIL)
+# VPS_GMAIL_RECEPTION_IMAP_MDP    : app password IMAP (2FA Gmail requise)
 # (orthographe 'ADRESS' conservée — convention existante du propriétaire)
-secrets: [GMAIL_RECEPTION_IMAP_ADRESS, GMAIL_RECEPTION_IMAP_MDP]
+secrets: [VPS_GMAIL_RECEPTION_IMAP_ADRESS, VPS_GMAIL_RECEPTION_IMAP_MDP]
 
 env:
   GMAIL_ALIAS_TAG: "+AREV"

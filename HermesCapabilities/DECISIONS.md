@@ -79,7 +79,7 @@ une capability dont les tests échouent.
 
 ## D4 — OCR : Gemini Vision ✅
 
-**Décision** : OCR des pièces jointes via **Gemini Vision** (`SUREN_GEMINI_API_KEY`,
+**Décision** : OCR des pièces jointes via **Gemini Vision** (`SUREN_VPS_GEMINI_API_KEY`,
 réutilisée — quota surveillé, clé dédiée AREV si friction). Qualité élevée sur
 factures scannées et photos chantier.
 
@@ -209,7 +209,7 @@ Vérifié **live en read-only (01/09)** : login OK, X-GM-RAW (recherche Gmail),
 X-GM-THRID (threading), X-GM-LABELS, label `ia-traite` à créer.
 
 **Pourquoi IMAP** :
-1. Creds **déjà en place** (`GMAIL_RECEPTION_IMAP_ADRESS/MDP`) — zéro setup Google Cloud.
+1. Creds **déjà en place** (`VPS_GMAIL_RECEPTION_IMAP_ADRESS/MDP`) — zéro setup Google Cloud.
 2. ⚠️ OAuth : une app en mode *Testing* non vérifiée → **refresh token expiré
    tous les 7 jours** (politique Google) — intenable en prod sans vérification d'app.
 3. Parsing **plus déterministe** : raw RFC822 → `email.parser` stdlib.
@@ -238,7 +238,7 @@ documents de TOUTES sortes — la sortie des extracteurs est **générique**
    Reformat invalide = `sums_ok: null` — jamais inventé. Un document
    non-facture n'a PAS de check montant.
 
-Extracteur #2 : **OpenRouter vision** (`SUREN_OPENROUTER_API_KEY` existante)
+Extracteur #2 : **OpenRouter vision** (`SUREN_VPS_OPEN_ROUTER_API_KEY` existante)
 — famille différente de Gemini = vraie diversité. Rejetés : juge unique
 fusionné, schéma imposé à tous les docs, Tesseract sidecar.
 

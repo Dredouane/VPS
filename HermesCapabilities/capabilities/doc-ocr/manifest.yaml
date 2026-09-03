@@ -17,9 +17,9 @@ description: >
   Sortie générique pour tout type de document.
 
 # Secrets requis dans HermesConfig/clients/<slug>/client.env (600)
-# GEMINI_API_KEY      : vision #1 + adaptateur SLM Flash (ex: valeur SUREN_GEMINI_API_KEY)
-# OPENROUTER_API_KEY  : vision #2 (ex: valeur SUREN_OPENROUTER_API_KEY)
-secrets: [GEMINI_API_KEY, OPENROUTER_API_KEY]
+# VPS_GEMINI_API_KEY      : vision #1 + adaptateur SLM Flash (ex: valeur SUREN_VPS_GEMINI_API_KEY)
+# VPS_OPEN_ROUTER_API_KEY  : vision #2 (ex: valeur SUREN_VPS_OPEN_ROUTER_API_KEY)
+secrets: [VPS_GEMINI_API_KEY, VPS_OPEN_ROUTER_API_KEY]
 
 env:
   OCR_OPENROUTER_MODEL: "openai/gpt-4o-mini"

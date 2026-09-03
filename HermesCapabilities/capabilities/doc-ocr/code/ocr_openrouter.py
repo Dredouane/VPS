@@ -3,7 +3,7 @@
 
 Même contrat que ocr_gemini.py — fournisseur DIFFÉRENT (famille GPT/Claude
 via OpenRouter) pour diversifier les extractions (D14).
-Entrée : fichier spool + env OPENROUTER_API_KEY, OCR_OPENROUTER_MODEL.
+Entrée : fichier spool + env VPS_OPEN_ROUTER_API_KEY, OCR_OPENROUTER_MODEL.
 Exit 0/2/3. Pures : parse_output partagé conceptuellement avec gemini.
 """
 import base64
@@ -75,10 +75,10 @@ def main() -> int:
     if len(sys.argv) < 2 or not os.path.isfile(sys.argv[1]):
         print("usage: ocr_openrouter.py <fichier>", file=sys.stderr)
         return 1
-    key = os.environ.get("OPENROUTER_API_KEY", "")
+    key = os.environ.get("VPS_OPEN_ROUTER_API_KEY", "")
     model = os.environ.get("OCR_OPENROUTER_MODEL", "openai/gpt-4o-mini")
     if not key:
-        print(json.dumps({"error": "OPENROUTER_API_KEY absente"}), file=sys.stderr)
+        print(json.dumps({"error": "VPS_OPEN_ROUTER_API_KEY absente"}), file=sys.stderr)
         return 2
     try:
         print(json.dumps(extract(sys.argv[1], key, model), ensure_ascii=False))

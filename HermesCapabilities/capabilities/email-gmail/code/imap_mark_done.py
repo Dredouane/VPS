@@ -7,7 +7,7 @@ s'il manque. UID EXPUNGE (RFC4315) — n'expunge QUE nos uids (fallback
 expunge global avec warn). Stdlib uniquement.
 
 Usage : python3 imap_mark_done.py <uid> [<uid>...]   (UIDs INBOX du poller)
-Entrée : env GMAIL_RECEPTION_IMAP_ADRESS, GMAIL_RECEPTION_IMAP_MDP,
+Entrée : env VPS_GMAIL_RECEPTION_IMAP_ADRESS, VPS_GMAIL_RECEPTION_IMAP_MDP,
          GMAIL_LABEL_DONE (ia-traite). Exit 0/2/3.
 """
 import imaplib
@@ -77,15 +77,15 @@ def main():
         print("usage: imap_mark_done.py <uid> [...]", file=sys.stderr)
         return 1
     cfg = {k: os.environ.get(k, "") for k in
-           ("GMAIL_RECEPTION_IMAP_ADRESS", "GMAIL_RECEPTION_IMAP_MDP",
+           ("VPS_GMAIL_RECEPTION_IMAP_ADRESS", "VPS_GMAIL_RECEPTION_IMAP_MDP",
             "GMAIL_LABEL_DONE")}
-    if not cfg["GMAIL_RECEPTION_IMAP_ADRESS"] or not cfg["GMAIL_RECEPTION_IMAP_MDP"]:
+    if not cfg["VPS_GMAIL_RECEPTION_IMAP_ADRESS"] or not cfg["VPS_GMAIL_RECEPTION_IMAP_MDP"]:
         print(json.dumps({"error": "config manquante"}), file=sys.stderr)
         return 2
     label_name = cfg["GMAIL_LABEL_DONE"] or "ia-traite"
     M = imaplib.IMAP4_SSL(IMAP_HOST, IMAP_PORT)
     try:
-        M.login(cfg["GMAIL_RECEPTION_IMAP_ADRESS"], cfg["GMAIL_RECEPTION_IMAP_MDP"])
+        M.login(cfg["VPS_GMAIL_RECEPTION_IMAP_ADRESS"], cfg["VPS_GMAIL_RECEPTION_IMAP_MDP"])
         M.select("INBOX")  # mode écriture requis (COPY/STORE/EXPUNGE)
         result = mark_done(M, uids, label_name)
     except (imaplib.IMAP4.error, RuntimeError) as e:

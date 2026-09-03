@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """HermesCapabilities — doc-ocr — extracteur #1 : Gemini Vision (générique).
 
-Entrée : chemin d'un fichier image/PDF (spool) + env GEMINI_API_KEY.
+Entrée : chemin d'un fichier image/PDF (spool) + env VPS_GEMINI_API_KEY.
 Sortie (stdout) : JSON générique {"extractor", "doc_type_hint", "confidence",
 "text"} — PAS de schéma facture ici (transcription fidèle, D14).
 Stdlib uniquement. Exit 0/2/3. Fonctions pures : build_prompt, parse_output.
@@ -100,9 +100,9 @@ def main() -> int:
     if len(sys.argv) < 2 or not os.path.isfile(sys.argv[1]):
         print("usage: ocr_gemini.py <fichier>", file=sys.stderr)
         return 1
-    key = os.environ.get("GEMINI_API_KEY", "")
+    key = os.environ.get("VPS_GEMINI_API_KEY", "")
     if not key:
-        print(json.dumps({"error": "GEMINI_API_KEY absente"}), file=sys.stderr)
+        print(json.dumps({"error": "VPS_GEMINI_API_KEY absente"}), file=sys.stderr)
         return 2
     try:
         print(json.dumps(extract(sys.argv[1], key), ensure_ascii=False))

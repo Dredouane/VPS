@@ -27,8 +27,8 @@ marquage `ia-traite` par déplacement (idempotent).
 
 | Variable | Rôle |
 |---|---|
-| `GMAIL_RECEPTION_IMAP_ADRESS` | Adresse de la boîte (`REDACTED_EMAIL` — orthographe conservée) |
-| `GMAIL_RECEPTION_IMAP_MDP` | App password IMAP (2FA Gmail requise ; IMAP activé — vérifié live 01/09) |
+| `VPS_GMAIL_RECEPTION_IMAP_ADRESS` | Adresse de la boîte (`REDACTED_EMAIL` — orthographe conservée) |
+| `VPS_GMAIL_RECEPTION_IMAP_MDP` | App password IMAP (2FA Gmail requise ; IMAP activé — vérifié live 01/09) |
 
 Env non secrètes : `GMAIL_ALIAS_TAG=+AREV`, `GMAIL_LABEL_DONE=ia-traite`,
 `GMAIL_MAX_THREADS=5`, `GMAIL_SPOOL_DIR`, `GMAIL_NEWER_THAN_DAYS=90`.

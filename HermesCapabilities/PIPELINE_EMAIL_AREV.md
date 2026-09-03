@@ -1,7 +1,7 @@
 # 📧 PIPELINE_EMAIL_AREV.md — Design détaillé du pipeline email + facturation
 
 > Implémentation M2 de l'agent AREV (`hermes-arev-pro`). Décisions : [`DECISIONS.md`](DECISIONS.md).
-> Schéma global : [`README.md`](README.md). Ce doc fixe les **contrats des
+> Schéma global : [`README.md`](README.md) · Clés & déploiement : [`DEPLOYMENT.md`](DEPLOYMENT.md). Ce doc fixe les **contrats des
 > modules** et les **règles non-négociables**.
 
 ---
@@ -26,11 +26,20 @@
 
 | | |
 |---|---|
-| Entrée | env : `GMAIL_RECEPTION_IMAP_ADRESS`, `GMAIL_RECEPTION_IMAP_MDP`, `GMAIL_ALIAS_TAG=+AREV`, `GMAIL_LABEL_DONE=ia-traite`, `GMAIL_MAX_THREADS=5`, `GMAIL_SPOOL_DIR`, `GMAIL_NEWER_THAN_DAYS=90` |
+| Entrée | env : `VPS_GMAIL_RECEPTION_IMAP_ADRESS`, `VPS_GMAIL_RECEPTION_IMAP_MDP`, `GMAIL_ALIAS_TAG=+AREV`, `GMAIL_LABEL_DONE=ia-traite`, `GMAIL_MAX_THREADS=5`, `GMAIL_SPOOL_DIR`, `GMAIL_NEWER_THAN_DAYS=90` |
 | Action | login SSL → **EXAMINE readonly** → `UID SEARCH X-GM-RAW` (`to:<alias> -label:ia-traite newer_than:90d`) → fetch `X-GM-THRID` → group par thread (≤5, récents d'abord) → fetch **BODY.PEEK[]** (jamais \Seen) → parsing RFC822 (`email.parser`) |
 | Spool | `<spool_dir>/threads/<thread_id>/thread.json` + **fichiers PJ** (`att-<n>-<fichier-safe>`) — stdout = résumé léger `{"count", "thread_ids", "spool_dir"}` |
 | Sortie thread.json | `{thread_id (X-GM-THRID), messages: [{uid, message_id (Message-ID canonique), header_from/to/subject/date, body_plain (plain préféré sinon html strip déterministe), attachments: [{filename, mime, size, path}]}]}` |
 | Erreurs | auth → exit 2 ; réseau/IMAP → exit 3 ; retries backoff |
+
+### 2.1bis `ged_save.py` — archivage R2 (GED, exigence 01/09)
+
+| | |
+|---|---|
+| Quand | **immédiatement après le polling réussi** (avant marquage), pour CHAQUE thread |
+| Action | upload du dossier spool (`thread.json` + PJ) vers R2 — clé `<GED_EMAIL_PREFIX>/<slug>/emails/<thread_id>/…` (slug = sous-dossier client) |
+| Code | `ged-r2/code/{r2_client,ged_save}.py` (SigV4 stdlib, vecteur AWS + réel vérifiés) |
+| Échec | **non bloquant** : consigné dans `pipeline_runs`, le pipeline continue |
 
 ### 2.2 `thread_parser.py` — le module bétonné (D3) + SAVE DB
 
@@ -59,7 +68,7 @@
 
 | | |
 |---|---|
-| Entrée | textes à indexer + `GEMINI_API_KEY` |
+| Entrée | textes à indexer + `VPS_GEMINI_API_KEY` |
 | Sortie | `{ "embedding": [768 floats], "model": "text-embedding-004" }` — dimension **figée** |
 
 ### 2.5 `imap_mark_done.py` — idempotence
@@ -68,6 +77,16 @@ Déplacement vers le label `ia-traite` (créé si absent) : `UID COPY` →
 `\Deleted` → **UID EXPUNGE ciblé** (jamais d'expunge global). Skip si déjà
 labelisé (X-GM-LABELS). Appelé UNIQUEMENT en fin de pipeline réussie —
 en cas d'erreur, le message reste en place et sera retraité au tick suivant.
+
+### 2.6bis Chain of Experts — capability `analysis-facturation` (M2.5)
+
+| | |
+|---|---|
+| `expert-router` | décide des experts concernés (JSON strict `{experts, confidence, reason}`) — facturation si `doc_type == facture` OU classification facturation + PJ/mots-clés |
+| `expert-facturation` | matching (`rpc_cap_facture_find`) + upsert (`rpc_cap_facture_upsert`, statut `extracted`, D6) — nombres **déjà vérifiés** par le check montant C3 ; numero absent = pas d'upsert (pipeline_runs) |
+| Sortie | facture structurée dans `cap_factures` → webApp CRUD + autres agents |
+
+**Clés & déploiement complet** : [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## 3. Skills LLM (Hermes)
 
