@@ -57,11 +57,15 @@ def embed(text: str, api_key: str, model: str = DEFAULT_MODEL,
         except urllib.error.HTTPError as e:
             if e.code in (401, 403):
                 raise RuntimeError(f"auth HTTP {e.code}") from e
+            try:
+                msg = json.loads(e.read().decode()).get("error", {}).get("message", "")
+            except Exception:
+                msg = ""
             if e.code == 429 and attempt < RETRY_ATTEMPTS:
                 import time
                 time.sleep(RETRY_BACKOFF_S * attempt)
                 continue
-            raise RuntimeError(f"HTTP {e.code}") from e
+            raise RuntimeError(f"HTTP {e.code}: {msg}") from e
         except urllib.error.URLError as e:
             if attempt < RETRY_ATTEMPTS:
                 import time

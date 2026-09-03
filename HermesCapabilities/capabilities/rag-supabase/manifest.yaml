@@ -16,7 +16,8 @@ description: >
 # SUPABASE_URL       : URL du projet Supabase du client
 # SUPABASE_RPC_KEY   : clé du rôle capability (RLS/RPC restreintes)
 #                      — JAMAIS SUPABASE_SERVICE_KEY
-secrets: [SUPABASE_URL, SUPABASE_RPC_KEY]
+secrets: [VPS_SUPERBASE_VPS_DB_PROJECT_URL, VPS_SUPERBASE_VPS_DB_RPC_KEY,
+  CLIENT_RPC_SECRET, CLIENT_SLUG]
 
 # Vars non secrètes — le slug est porté par les RPC génériques (D7-v2) :
 # tables génériques public.cap_* + client_slug, RPC génériques rpc_cap_* (slug + CLIENT_RPC_SECRET)
@@ -37,3 +38,5 @@ mounts: {}
 
 soul_addendum: soul-addendum.md
 tests: tests/
+
+code: [rpc_call]

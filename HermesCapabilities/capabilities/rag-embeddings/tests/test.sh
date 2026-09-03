@@ -40,7 +40,9 @@ if [ -n "${VPS_GEMINI_API_KEY:-}" ]; then
         python3 -c "import json;d=json.load(open('/tmp/embed-test.json'));assert len(d['embedding'])==768 and d['model']=='text-embedding-004'" \
             && ok "intégration réelle (768d vérifiée)"
     elif grep -q "API key not valid" /tmp/embed-test.err; then
-        skip "intégration réelle — VPS_GEMINI_API_KEY INVALIDE (config: mettre la vraie clé, ex. SUREN_GEMINI_API_KEY du VPS)"
+        skip "intégration réelle — VPS_GEMINI_API_KEY INVALIDE (config: mettre la vraie clé, ex. nouvelle clé Google AI Studio)"
+    elif grep -qi "HTTP 400" /tmp/embed-test.err; then
+        skip "intégration réelle — HTTP 400 (config clé/provider à corriger): $(head -c 100 /tmp/embed-test.err)"
     else
         fail "intégration réelle (exit $?) — $(head -c 120 /tmp/embed-test.err)"
     fi

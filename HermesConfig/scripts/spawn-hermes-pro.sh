@@ -150,16 +150,15 @@ else
 fi
 
 # --- 6. Rendu du compose + secrets.env ---------------------------------------
-# secrets.env = résolution finale (client.env + héritage /etc/secrets) — 600,
-# hors git, référencé par env_file: jamais de secret dans le YAML ni la CLI.
+# secrets.env = PASS-THROUGH COMPLET de client.env (v2.1 — D11/I11 étendu) :
+# toutes les vars du client (Telegram, LLM, capabilities VPS_*) arrivent au
+# conteneur via env_file — les secrets n'apparaissent jamais dans le YAML,
+# la CLI ou git. 600, hors git.
 SECRETS_FILE="$INSTANCE_DIR/secrets.env"
 umask 077
 {
-    printf 'TELEGRAM_BOT_TOKEN=%s\n' "$TELEGRAM_BOT_TOKEN"
-    printf 'TELEGRAM_ALLOWED_USERS=%s\n' "$TELEGRAM_ALLOWED_USERS"
-    printf 'HERMES_MODEL_PROVIDER=%s\n' "$HERMES_MODEL_PROVIDER"
-    printf 'HERMES_MODEL=%s\n' "$HERMES_MODEL"
-    printf 'DEEPSEEK_API_KEY=%s\n' "$DEEPSEEK_API_KEY"
+    echo "# Généré par spawn-hermes-pro.sh le $(date '+%Y-%m-%d %H:%M') — pass-through client.env"
+    grep -vE '^[[:space:]]*(#|$)' "$ENV_FILE" | sed 's/\r$//'
 } > "$SECRETS_FILE"
 chmod 600 "$SECRETS_FILE"
 

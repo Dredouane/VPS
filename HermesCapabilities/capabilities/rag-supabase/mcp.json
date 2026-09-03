@@ -4,8 +4,8 @@
   "source": "catalog",
   "install": "hermes mcp install supabase",
   "env": {
-    "SUPABASE_URL": "${SUPABASE_URL}",
-    "SUPABASE_KEY": "${SUPABASE_RPC_KEY}"
+    "SUPABASE_URL": "${VPS_SUPERBASE_VPS_DB_PROJECT_URL}",
+    "SUPABASE_KEY": "${VPS_SUPERBASE_VPS_DB_RPC_KEY}"
   },
   "notes": "RLS + RPC génériques rpc_cap_* uniquement (slug + CLIENT_RPC_SECRET en arguments). Projet Supabase TEST séparé pour les tests d'intégration (SUPABASE_URL/RPC_KEY de test)."
 }
