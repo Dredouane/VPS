@@ -4,7 +4,7 @@
 Helper unique pour les skills/agents : POST {PROJECT_URL}/rest/v1/rpc/<fn>
 avec slug + secret (D8-v3). Jamais de SQL direct, jamais de secret en CLI.
 
-Usage : python3 rpc_call.py <fn> <payload.json | - >
+Usage : python3 rpc_call.py <fn> [payload.json | "{...}" inline | -]
 Entrée : env VPS_SUPERBASE_VPS_DB_PROJECT_URL, VPS_SUPERBASE_VPS_DB_RPC_KEY,
          CLIENT_SLUG, CLIENT_RPC_SECRET.
 Sortie : corps de la réponse (JSON) — exit 0/2/3.
@@ -86,7 +86,14 @@ def main() -> int:
     payload = {}
     if len(sys.argv) > 2:
         src = sys.argv[2]
-        raw = sys.stdin.read() if src == "-" else open(src, encoding="utf-8").read()
+        if src == "-":
+            raw = sys.stdin.read()
+        elif src.strip().startswith("{"):
+            raw = src          # JSON inline (usage agent)
+        elif os.path.isfile(src):
+            raw = open(src, encoding="utf-8").read()
+        else:
+            raw = src
         payload = json.loads(raw or "{}")
     try:
         result = call(fn, client_payload(payload))

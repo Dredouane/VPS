@@ -1,12 +1,12 @@
 # Contrat de capability — rag-embeddings (C4)
-# Embeddings text-embedding-004 (768d figé — D5) via Gemini API stdlib.
+# Embeddings gemini-embedding-001 (768d figé — D5) via Gemini API stdlib.
 
 id: rag-embeddings
 version: 0.1.0
 title: "RAG — embeddings des contenus indexés"
 type: mix
 description: >
-  Génère les vecteurs 768d (text-embedding-004, Gemini) des contenus à
+  Génère les vecteurs 768d (gemini-embedding-001, Gemini) des contenus à
   indexer (contenu nouveau des mails, OCR des PJ). L'upsert en RAG passe
   par les RPC génériques C5 (rpc_cap_doc_upsert). Modèle FIGÉ (D5) :
   changer = réindexer tout le RAG.
@@ -14,7 +14,7 @@ description: >
 secrets: [VPS_GEMINI_API_KEY]
 
 env:
-  EMBED_MODEL: "text-embedding-004"
+  EMBED_MODEL: "gemini-embedding-001"
   EMBED_MAX_CHARS: "6000"
 
 mcp: []

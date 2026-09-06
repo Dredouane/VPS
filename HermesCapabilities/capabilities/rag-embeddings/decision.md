@@ -11,7 +11,7 @@ pour le RAG — modèle FIGÉ (D5 : changer = réindexer tout).
 
 | Option | Verdict |
 |---|---|
-| **Mix** : Gemini `text-embedding-004` (768d) via API stdlib — clé SUREN existante | ✅ **retenu** |
+| **Mix** : Gemini `gemini-embedding-001` (768d) via API stdlib — clé SUREN existante | ✅ **retenu** |
 | OpenAI embeddings (1536d) | ❌ nouvelle clé + dimension ≠ schéma actuel |
 | Embeddings locaux (Ollama) | ❌ brique de plus sur le VPS |
 | DeepSeek | ❌ n'expose pas d'API embeddings |

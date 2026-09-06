@@ -3,7 +3,7 @@
 ## Ce que l'agent sait / peut
 
 - L'agent sait générer les vecteurs 768d des contenus à indexer
-  (modèle figé text-embedding-004) et les passer à `rpc_cap_doc_upsert`.
+  (modèle figé gemini-embedding-001) et les passer à `rpc_cap_doc_upsert`.
 - L'agent peut vérifier la dimension (768) avant upsert — un vecteur de
   dimension invalide est rejeté par la RPC.
 

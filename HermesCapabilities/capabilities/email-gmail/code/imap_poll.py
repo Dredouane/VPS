@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""HermesCapabilities — email-gmail — poller IMAP déterministe (C1).
+r"""HermesCapabilities — email-gmail — poller IMAP déterministe (C1).
 
 Sortie stdout : résumé léger {"count", "thread_ids", "spool_dir"}.
 Spool : <spool_dir>/threads/<thread_id>/thread.json + att-<n>-<fichier-safe>.

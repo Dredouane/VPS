@@ -182,8 +182,8 @@ for CAP in "${CAPS[@]}"; do
                 case "$val" in "\${"*"}") varname="${val#\$\{}"; varname="${varname%\}}"; val="${!varname:-}" ;; esac
                 ENV_ARGS+=(-e "$k=$val")
             done < <(python3 -c "import json; [print(f'{k}={v}') for k,v in json.load(open('$CAP_DIR/mcp.json')).get('env',{}).items()]")
-            if docker exec "${ENV_ARGS[@]}" "$CONTAINER" hermes mcp install "$M" >/dev/null 2>&1 \
-               || docker exec "${ENV_ARGS[@]}" "$CONTAINER" hermes mcp add "$M" >/dev/null 2>&1; then
+            if docker exec "${ENV_ARGS[@]}" "$CONTAINER" /opt/hermes/.venv/bin/hermes mcp install "$M" >/dev/null 2>&1 \
+               || docker exec "${ENV_ARGS[@]}" "$CONTAINER" /opt/hermes/.venv/bin/hermes mcp add "$M" >/dev/null 2>&1; then
                 ok "MCP '$M' activé"
                 CHANGED=1
             else
@@ -233,7 +233,7 @@ for r in yaml.safe_load(open(sys.argv[1])).get("routines", []):
     print(f"{r['id']}\t{r.get('schedule','')}\t{(r.get('prompt') or '').strip()}\t{r.get('profile','')}")
 PY
             while IFS=$'\t' read -r rid rsched rprompt rprof; do
-                if docker exec "$CONTAINER" hermes cron create ${rprof:+--profile "$rprof"} "$rsched" "$rprompt" >/dev/null 2>&1; then
+                if docker exec "$CONTAINER" /opt/hermes/.venv/bin/hermes cron create ${rprof:+--profile "$rprof"} "$rsched" "$rprompt" >/dev/null 2>&1; then
                     ok "routine '$rid' créée ($rsched)"
                     CHANGED=1
                 else
@@ -272,12 +272,14 @@ done
 
 # --- 6bis. Définitions SQL client (D9) -------------------------------------------
 SQL_SRC="$CAPS_BASE/sql/$SLUG"
-if [ -d "$SQL_SRC" ]; then
+SQL_GEN="$CAPS_BASE/sql/generic"
+if [ -d "$SQL_SRC" ] || [ -d "$SQL_GEN" ]; then
     if [ "$DRY_RUN" = "1" ]; then
-        log "[plan] sql/$SLUG/ → data/sql/ (définitions pour les skills experts)"
+        log "[plan] sql/generic + sql/$SLUG → data/sql/ (définitions pour les skills experts)"
     else
         mkdir -p "$DATA_DIR/sql"
-        cp -f "$SQL_SRC"/*.sql "$DATA_DIR/sql/"
+        [ -d "$SQL_GEN" ] && cp -f "$SQL_GEN"/*.sql "$DATA_DIR/sql/"
+        [ -d "$SQL_SRC" ] && cp -f "$SQL_SRC"/*.sql "$DATA_DIR/sql/"
         chown -R 10000:10000 "$DATA_DIR/sql"
         chmod 640 "$DATA_DIR/sql"/*.sql
         ok "définitions SQL copiées (data/sql/) — source de vérité des skills"

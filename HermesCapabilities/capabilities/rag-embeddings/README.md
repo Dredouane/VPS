@@ -3,7 +3,7 @@
 **Type** : `mix` · **Statut** : M2.4 — code + tests, intégration réelle
 (embed "test" → 768d vérifié)
 
-Génère les vecteurs `text-embedding-004` (Gemini, **768d figé** — D5) des
+Génère les vecteurs `gemini-embedding-001` (Gemini, **768d figé** — D5) des
 contenus à indexer. Upsert RAG = C5 (`rpc_cap_doc_upsert`).
 
 ## Composants

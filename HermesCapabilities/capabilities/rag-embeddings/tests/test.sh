@@ -16,8 +16,8 @@ if python3 - "$CAP_DIR/code" <<'PY'
 import sys
 sys.path.insert(0, sys.argv[1])
 import embed_gemini as e
-p = e.build_payload("  contenu  ", "text-embedding-004", 6000)
-assert p["model"] == "models/text-embedding-004"
+p = e.build_payload("  contenu  ", "gemini-embedding-001", 6000)
+assert p["model"] == "models/gemini-embedding-001"
 assert p["content"]["parts"][0]["text"] == "contenu"
 try:
     e.build_payload("   ", "m", 100); assert False
@@ -37,7 +37,7 @@ fi
 if [ -n "${VPS_GEMINI_API_KEY:-}" ]; then
     if printf 'test embedding hermes' | VPS_GEMINI_API_KEY="$VPS_GEMINI_API_KEY" \
        python3 "$CAP_DIR/code/embed_gemini.py" - > /tmp/embed-test.json 2>/tmp/embed-test.err; then
-        python3 -c "import json;d=json.load(open('/tmp/embed-test.json'));assert len(d['embedding'])==768 and d['model']=='text-embedding-004'" \
+        python3 -c "import json;d=json.load(open('/tmp/embed-test.json'));assert len(d['embedding'])==768 and d['model']=='gemini-embedding-001'" \
             && ok "intégration réelle (768d vérifiée)"
     elif grep -q "API key not valid" /tmp/embed-test.err; then
         skip "intégration réelle — VPS_GEMINI_API_KEY INVALIDE (config: mettre la vraie clé, ex. nouvelle clé Google AI Studio)"

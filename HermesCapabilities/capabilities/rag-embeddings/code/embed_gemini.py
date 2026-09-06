@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """HermesCapabilities — rag-embeddings — vecteurs 768d via Gemini (C4, D5).
 
-Modèle FIGÉ : text-embedding-004 (768 dimensions) — changer = réindexer
+Modèle FIGÉ : gemini-embedding-001 (768 dimensions — text-embedding-004 retiré de l'API 01/09) — changer = réindexer
 tout le RAG. Stdlib uniquement (urllib). Texte tronqué à EMBED_MAX_CHARS
 (limite token du modèle) — le chunking avancé est hors scope M2.
 
@@ -18,7 +18,7 @@ import urllib.request
 
 API = ("https://generativelanguage.googleapis.com/v1beta/models/"
        "{model}:embedContent?key={key}")
-DEFAULT_MODEL = "text-embedding-004"
+DEFAULT_MODEL = "gemini-embedding-001"
 DIMENSIONS = 768
 RETRY_ATTEMPTS = 3
 RETRY_BACKOFF_S = 2
@@ -30,7 +30,8 @@ def build_payload(text: str, model: str, max_chars: int) -> dict:
     if not t:
         raise ValueError("texte vide")
     t = t[: max_chars]
-    return {"model": f"models/{model}", "content": {"parts": [{"text": t}]}}
+    return {"model": f"models/{model}", "content": {"parts": [{"text": t}]},
+            "outputDimensionality": DIMENSIONS}
 
 
 def parse_embedding(resp: dict) -> list:

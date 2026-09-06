@@ -12,6 +12,7 @@ Testées contre le vecteur officiel AWS SigV4 (test suite).
 import datetime
 import hashlib
 import hmac
+import re
 import urllib.parse
 import urllib.request
 
@@ -47,7 +48,9 @@ def sigv4_headers(method: str, url: str, payload: bytes,
         headers["x-amz-security-token"] = session_token
     signed_headers = ";".join(sorted(headers))
     canonical_headers = "".join(f"{k}:{headers[k]}\n" for k in sorted(headers))
-    canonical_query = u.query  # GET sans query dans notre usage
+    # canonical querystring: params triés + encodés (SigV4 §CanonicalURI/Query)
+    qpairs = sorted(urllib.parse.parse_qsl(u.query, keep_blank_values=True))
+    canonical_query = urllib.parse.urlencode(qpairs)
 
     canonical_request = (f"{method}\n{path}\n{canonical_query}\n"
                          f"{canonical_headers}\n{signed_headers}\n{payload_hash}")
@@ -112,6 +115,23 @@ def head_object(endpoint: str, bucket: str, key: str, cfg: dict) -> bool:
     url = object_url(endpoint, bucket, key)
     status, _ = _request("HEAD", url, b"", cfg)
     return status == 200
+
+
+def list_objects(endpoint: str, bucket: str, prefix: str, cfg: dict) -> list:
+    """ListObjectsV2 → liste de clés sous <prefix> (query triée = canonique)."""
+    qs = urllib.parse.urlencode(sorted([("list-type", "2"),
+                                        ("prefix", prefix.strip("/"))]))
+    url = f"{endpoint.rstrip('/')}/{bucket.strip('/')}/?{qs}"
+    headers = sigv4_headers("GET", url, b"", cfg["VPS_GED_CLOUDFLARE_ACCESS_KEY_ID"],
+                            cfg["VPS_GED_CLOUDFLARE_SECRET_ACCESS_KEY"], None,
+                            region=cfg.get("region", DEFAULT_REGION))
+    req = urllib.request.Request(url, headers=headers, method="GET")
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            xml = r.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(f"R2 LIST {e.code}") from e
+    return re.findall(r"<Key>([^<]+)</Key>", xml)
 
 
 def delete_object(endpoint: str, bucket: str, key: str, cfg: dict) -> int:

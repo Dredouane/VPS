@@ -48,6 +48,11 @@ echo "$SLUG" | grep -Eq '^[a-z0-9][a-z0-9_-]*$' || die "Slug invalide: '$SLUG' (
 [ -f "$TEMPLATE" ] || die "Template introuvable: $TEMPLATE"
 [ -f "$CONFIG_EXAMPLE" ] || die "Config exemple introuvable: $CONFIG_EXAMPLE"
 
+# Chemins d'instance (définis tôt — utilisés par l'idempotence de port §3)
+INSTANCE_DIR="$INSTANCES_DIR/$SLUG"
+DATA_DIR="$INSTANCE_DIR/data"
+VAULT_CLIENT_DIR="$VAULT_ROOT/$SLUG"
+
 # --- 1. Fichiers client ------------------------------------------------------
 CLIENT_DIR="$BASE_DIR/clients/$SLUG"
 ENV_FILE="$CLIENT_DIR/client.env"
@@ -112,9 +117,6 @@ fi
 ok "Port: 127.0.0.1:$PORT → 8642"
 
 # --- 4. Répertoires ----------------------------------------------------------
-INSTANCE_DIR="$INSTANCES_DIR/$SLUG"
-DATA_DIR="$INSTANCE_DIR/data"
-VAULT_CLIENT_DIR="$VAULT_ROOT/$SLUG"
 mkdir -p "$DATA_DIR"
 chown -R 10000:10000 "$DATA_DIR"
 chmod 700 "$DATA_DIR"

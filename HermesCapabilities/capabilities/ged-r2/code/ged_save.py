@@ -12,6 +12,7 @@ Sortie : JSON {"uploaded": [{key, size}], "bucket", "prefix"}.
 """
 import json
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -21,6 +22,10 @@ REQUIRED_ENV = ("VPS_GED_CLOUDFLARE_S3_EU_ENDPOINT",
                 "VPS_GED_CLOUDFLARE_BUCKET_NAME",
                 "VPS_GED_CLOUDFLARE_ACCESS_KEY_ID",
                 "VPS_GED_CLOUDFLARE_SECRET_ACCESS_KEY")
+
+# Denylist hygiène (jamais d'upload de secrets même si appelé sur le
+# mauvais dossier — leçon 01/09: /opt/data uploadait .env vers R2)
+DENY = re.compile(r"(^|/)(\.env|\.env\..*|auth\.json|auth\.lock|.*\.key|.*\.pem|.*\.db)$", re.I)
 
 
 def object_key(prefix: str, slug: str, thread_id: str, filename: str) -> str:
@@ -45,6 +50,8 @@ def save_thread(thread_dir: str, slug: str, cfg: dict, prefix: str = "emails") -
     for root, _, files in os.walk(thread_dir):
         for fn in sorted(files):
             path = os.path.join(root, fn)
+            if DENY.search(path):
+                continue
             rel = os.path.relpath(path, thread_dir)
             key = object_key(prefix, slug, thread_id, rel.replace(os.sep, "/"))
             with open(path, "rb") as f:

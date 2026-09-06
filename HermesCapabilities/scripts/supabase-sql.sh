@@ -45,9 +45,9 @@ die()  { fail "$*"; exit 1; }
 
 # URL admin (extraction LITTÉRALE depuis le bashrc — jamais eval: le mot de
 # passe peut contenir des $ qui seraient expandés; jamais affichée).
-get_var() {  # $1 = nom de variable → valeur littérale (stdout)
-    local line
-    line="$(grep -m1 "^export $1=" ~/.bashrc 2>/dev/null)"
+get_var() {  # $1 = nom de variable, $2 = fichier source optionnel → valeur littérale
+    local line src="${2:-$HOME/.bashrc}"
+    line="$(grep -m1 "^export $1=" "$src" 2>/dev/null)"
     [ -n "$line" ] || return 1
     line="${line#*=}"
     case "$line" in
@@ -58,9 +58,13 @@ get_var() {  # $1 = nom de variable → valeur littérale (stdout)
 }
 
 if [ -z "${VPS_SUPERBASE_VPS_DB_URL:-}" ]; then
-    VPS_SUPERBASE_VPS_DB_URL="$(get_var VPS_SUPERBASE_VPS_DB_URL)"
+    VPS_SUPERBASE_VPS_DB_URL="$(get_var VPS_SUPERBASE_VPS_DB_URL || true)"
 fi
-[ -n "${VPS_SUPERBASE_VPS_DB_URL:-}" ] || die "VPS_SUPERBASE_VPS_DB_URL absente (bashrc local)"
+if [ -z "${VPS_SUPERBASE_VPS_DB_URL:-}" ]; then
+    # VPS: secrets dans /etc/secrets/hermes.env (root)
+    VPS_SUPERBASE_VPS_DB_URL="$(get_var VPS_SUPERBASE_VPS_DB_URL /etc/secrets/hermes.env || true)"
+fi
+[ -n "${VPS_SUPERBASE_VPS_DB_URL:-}" ] || die "VPS_SUPERBASE_VPS_DB_URL absente (bashrc local ou /etc/secrets/hermes.env)"
 PSQL=(psql "$VPS_SUPERBASE_VPS_DB_URL" -v ON_ERROR_STOP=1 --no-psqlrc -q)
 
 # client.env du client (HermesConfig voisin) — pour CLIENT_RPC_SECRET (D8-v3)

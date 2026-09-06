@@ -37,7 +37,7 @@ flowchart TB
         POLL["gmail_poll.py<br/>OAuth, filtre +AREV,<br/>-label:ia-traite"]
         TP["thread_parser.py<br/>mailChain → mails structurés<br/>+ statut RAG (déjà/nouveau)"]
         OCR["ocr_gemini.py<br/>TOUTES les PJ → texte + confiance"]
-        EMB["embed_gemini.py<br/>text-embedding-004 · 768d"]
+        EMB["embed_gemini.py<br/>gemini-embedding-001 · 768d"]
         LBL["gmail_label.py<br/>pose label ia-traite"]
     end
     subgraph SKILLS["Skills LLM (Hermes)"]

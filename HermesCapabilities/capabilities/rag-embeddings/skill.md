@@ -1,7 +1,7 @@
 ---
 name: rag-embed
 description: >-
-  Génère le vecteur 768d (text-embedding-004) d'un contenu à indexer
+  Génère le vecteur 768d (gemini-embedding-001) d'un contenu à indexer
   (mail nouveau, OCR de PJ) avant l'upsert RAG (C5). Modèle FIGÉ — changer
   = réindexation complète.
 ---

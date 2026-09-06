@@ -15,7 +15,7 @@
 | D2 | **Expert = skill** dans le même agent (Chain of Experts) | Bot Hermes réel dès M2 · sidecar agent dédié |
 | D3 | Thread-parser = **code déterministe bétonné** (pas de LLM) | Parsing LLM des quotes |
 | D4 | OCR = **Gemini Vision** (clé SUREN réutilisée) | Tesseract local · Firecrawl API |
-| D5 | Embeddings = **Gemini text-embedding-004, 768d, figé** | OpenAI 1536d · embeddings locaux |
+| D5 | Embeddings = **Gemini gemini-embedding-001, 768d, figé** | OpenAI 1536d · embeddings locaux |
 | D6 | Facturation : **auto-upsert + statut `extracted`** | Propose-then-write · seuil de confiance |
 | D7 | **UN projet Supabase multi-tenant** (clients, tests, prod) — tables génériques `cap_*` + colonne `client_slug`, le slug drive tout | Projet TEST séparé · schéma par slug (obsolète) |
 | D8 | Accès DB = **RPC génériques** `rpc_cap_*` (slug + **`CLIENT_RPC_SECRET`** par client vérifiés dans `cap_clients`) sur tables génériques ; RLS deny-all ; clé publishable | Service key directe · accès tables direct · RPC per-slug hardcodées (v2, retirées 01/09) |
