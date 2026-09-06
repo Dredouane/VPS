@@ -1,0 +1,20 @@
+# Dépendances & builds
+node_modules/
+.next/
+.turbo/
+dist/
+out/
+coverage/
+
+# Environnement — JAMAIS de secrets versionnés
+.env
+.env.*
+!.env.example
+
+# Next.js
+next-env.d.ts
+*.tsbuildinfo
+
+# OS / éditeurs
+.DS_Store
+*.log

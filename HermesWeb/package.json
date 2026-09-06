@@ -1,0 +1,28 @@
+{
+  "name": "hermesweb",
+  "private": true,
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "vitest run",
+    "gen:openapi": "tsx scripts/generate-openapi.ts",
+    "gen:api-types": "openapi-typescript openapi/openapi.yaml -o packages/api-types/src/generated/schema.d.ts",
+    "gen:db-types": "supabase gen types typescript --linked -o packages/api-types/src/generated/database.types.ts || echo 'WARN: Supabase CLI non liée — database.types.ts non régénéré'",
+    "gen-all": "pnpm gen:openapi && pnpm gen:api-types && pnpm gen:db-types",
+    "gen:check": "pnpm gen:openapi && pnpm gen:api-types && git diff --exit-code -- openapi/ packages/api-types/src/generated/"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "tsx": "^4.20.0",
+    "turbo": "^2.5.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.0",
+    "yaml": "^2.8.0"
+  }
+}

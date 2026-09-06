@@ -1,0 +1,4 @@
+@import "@hermesweb/ui/globals.css";
+
+/* Scan des sources du design system (Tailwind v4, monorepo) */
+@source "../../../../packages/ui/src";

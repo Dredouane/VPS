@@ -1,0 +1,51 @@
+name: HermesWeb CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "HermesWeb/**"
+      - "HermesCapabilities/sql/generic/**"
+      - ".github/workflows/hermesweb.yml"
+  pull_request:
+    paths:
+      - "HermesWeb/**"
+      - "HermesCapabilities/sql/generic/**"
+      - ".github/workflows/hermesweb.yml"
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: HermesWeb
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: HermesWeb/pnpm-lock.yaml
+
+      - name: Activer pnpm (corepack)
+        run: corepack enable pnpm
+
+      - name: Installer
+        run: pnpm install --frozen-lockfile
+
+      # Dérive SQL ↔ openapi.yaml ↔ types : FAIL si un artefact n'est pas à jour
+      - name: Vérifier pipeline contrats
+        run: pnpm gen:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

@@ -38,6 +38,13 @@ VPS/
 │   ├── pipelines/             ← Compositions de capabilities (chaînes métier)
 │   └── scripts/               ← capability-test.sh + capability-attach.sh
 │
+├── HermesWeb/                 ← 🌐 WebApp backoffice clients (Next.js 16)
+│   ├── README.md              ← Stack, pipeline contrats, phases
+│   ├── DECISIONS.md           ← ADR (Next.js, openapi.yaml généré, Cloud Run)
+│   ├── apps/web/              ← Front + API route handlers (1 déploiement)
+│   ├── packages/              ← ui (design system) + api-types (générés)
+│   └── openapi/               ← openapi.yaml GÉNÉRÉ depuis sql/generic
+│
 ├── .gitignore                 ← Exclusions (backup.tar.gz, secrets, logs…)
 │
 └── (non versionnés, locaux uniquement)
@@ -52,6 +59,8 @@ ssh nemo                # admin@REDACTED:2222 (clé REDACTED)
 syncthing-gui           # tunnel SSH → GUI Syncthing du VPS (http://localhost:8384)
 # Agent pro client (flotte HermesConfig v2) :
 cd HermesConfig && ./scripts/spawn-hermes-pro.sh <slug>   # sur le VPS
+# WebApp backoffice (P0-P1 : monorepo + pipeline contrats) :
+cd HermesWeb && pnpm dev && pnpm gen:check                # génère/vérifie openapi.yaml
 ```
 
 ## 🛡️ Skills de non-régression

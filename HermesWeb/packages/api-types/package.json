@@ -1,0 +1,14 @@
+{
+  "name": "@hermesweb/api-types",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Types GÉNÉRÉS — ne pas éditer à la main. Source : openapi/openapi.yaml (généré depuis HermesCapabilities/sql/generic).",
+  "exports": {
+    "./schema": {
+      "types": "./src/generated/schema.d.ts"
+    },
+    "./database": {
+      "types": "./src/generated/database.types.ts"
+    }
+  }
+}
