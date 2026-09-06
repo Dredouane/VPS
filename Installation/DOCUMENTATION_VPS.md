@@ -290,3 +290,27 @@ sudo fail2ban-client status sshd
 # Test manuel de l'alerte Telegram
 sudo /usr/local/bin/telegram-alert.sh "Test" "message de test"
 ```
+
+---
+
+## 8. Incident & durcissement — 01 au 06/09/2026
+
+### Incident : réseau public figé 3 jours (03/09 10:47 → 06/09 ~15:03)
+- Symptôme : SSH public, ICMP et tailnet tous injoignables, mais l'OS vivant (cron AIDE/backup ont tourné, alertes Telegram parties). UFW/fail2ban/authorized_keys vérifiés — **aucun lien avec nos changements**.
+- Cause exacte non déterminée dans les journaux (aucune entrée networkd/kernel sur la fenêtre) — incident réseau probable côté VM/hôte Contabo.
+- Résolution : reboot volontaire le 06/09 à 15:03 (shutdown propre dans les journaux).
+- **Test de persistance après reboot : RÉUSSI** — tout est revenu automatiquement (sshd, 6 agents Telegram connected, tailscaled, fail2ban, crons).
+
+### Durcissements appliqués (01-06/09)
+- **Tailscale** installé (serveur REDACTED), port 22000 fermé définitivement.
+- **Sauvegardes** : cron 4h30 → `/var/backups/vps-fleet/` (1,3 Go, rétention 7 j) + clé dédiée restreinte (`id_vps_backup`, `restrict,command=`) + rapatriement auto PC (`vps-backup-pull.sh` + schtasks) + NAS Synology documenté.
+- **Clés SSH** : passphrase sur `REDACTED`, fonction `vps` (agent au socket fixe), archive GPG (`backup-keys.sh`), `authorized_keys` pruné à 2 lignes.
+- **Token bot @pipou200bot roté** (01/09) — ⚠️ leçon : le même token sert le runner natif → mettre à jour AUSSI `/home/hermesrunner/.hermes/.env` à chaque rotation.
+- **leanConstruction uniformisé** (gateway uid 10000, compose régénéré).
+- **AIDE v4** : exclusions de churn exhaustives (maintenance apt/notifier, /run/*, swap, instances pro), heartbeat quotidien **🟢 OK / 🚨 NOK** sur Telegram avec **triage LLM (DeepSeek)** + fallback brut, logs conservés 7 jours (purge 5h).
+- **Clavier console VNC en AZERTY** (`/etc/vconsole.conf` KEYMAP=fr) + **swap 2G** (`/swapfile`, fstab) + **fail2ban `ignoreip` REDACTED** (jamais de ban accidentel de l'IP admin).
+
+### Protocole alertes AIDE
+1. 🟢 `OK` → rien à faire (maintenance/bénéfique, détail dans `/var/log/aide/` 7 j).
+2. 🚨 `NOK` → vérifier les chemins listés : session Doer en cours = attendu (vérifier avec l'agent), sinon investiguer.
+3. Après une fenêtre de déploiement : régénérer la base (`/tmp/regen-aide.sh` à recréer si `/tmp` purgé : `aideinit --force -y` → `mv aide.db.new aide.db`).
