@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { Badge } from "@alinea/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@alinea/ui/components/card";
+import { PageHeader } from "@alinea/ui/components/page-header";
 import {
   Table,
   TableBody,
@@ -82,12 +83,10 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-muted-foreground text-sm">
-          Pipeline email → facturation (silencieux, consultation D11)
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Pipeline email → facturation (silencieux, consultation D11)"
+      />
 
       {loading ? (
         <p className="text-muted-foreground text-sm">Chargement…</p>

@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@alinea/ui/components/card";
+import { PageHeader } from "@alinea/ui/components/page-header";
 import {
   Table,
   TableBody,
@@ -63,12 +64,10 @@ export default function AdminPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Admin</h1>
-        <p className="text-muted-foreground text-sm">
-          Registry clients (runner D9, lecture) + utilisateurs webapp
-        </p>
-      </div>
+      <PageHeader
+        title="Admin"
+        description="Registry clients (runner D9, lecture) + utilisateurs webapp"
+      />
 
       {err ? <p className="text-destructive text-sm">{err.error?.message}</p> : null}
 

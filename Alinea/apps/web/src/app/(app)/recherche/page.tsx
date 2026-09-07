@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@alinea/ui/components/card";
 import { Input } from "@alinea/ui/components/input";
+import { PageHeader } from "@alinea/ui/components/page-header";
 
 import { api, apiErrorMessage } from "@/lib/api-client";
 
@@ -30,13 +31,10 @@ export default function RecherchePage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold">Recherche RAG</h1>
-        <p className="text-muted-foreground text-sm">
-          Recherche sémantique sur les documents indexés (emails + pièces
-          jointes OCR)
-        </p>
-      </div>
+      <PageHeader
+        title="Recherche RAG"
+        description="Recherche sémantique sur les documents indexés (emails + pièces jointes OCR)"
+      />
 
       <form
         className="flex gap-2"

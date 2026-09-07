@@ -1,7 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Inbox } from "lucide-react";
 
 import { Badge } from "@alinea/ui/components/badge";
 import { Button } from "@alinea/ui/components/button";
@@ -14,15 +16,16 @@ import {
   TableHeader,
   TableRow,
 } from "@alinea/ui/components/table";
+import { PageHeader } from "@alinea/ui/components/page-header";
 
 import { api, queryKeys } from "@/lib/api-client";
 import { EMAIL_STATUSES, type EmailStatus } from "@/lib/enums";
 
 const PAGE_SIZE = 25;
-type Status = EmailStatus;
 
 export default function EmailsPage() {
-  const [status, setStatus] = useState<Status | undefined>(undefined);
+  const router = useRouter();
+  const [status, setStatus] = useState<EmailStatus | undefined>(undefined);
   const [offset, setOffset] = useState(0);
 
   const emails = useQuery({
@@ -36,61 +39,87 @@ export default function EmailsPage() {
   const items = emails.data?.data?.items ?? [];
   const total = emails.data?.data?.total ?? 0;
 
+  const statusBadge = (s: string) =>
+    s === "error" ? (
+      <Badge variant="destructive">error</Badge>
+    ) : s === "processed" ? (
+      <Badge variant="success">processed</Badge>
+    ) : (
+      <Badge variant="warning">received</Badge>
+    );
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Emails</h1>
-        <div className="flex flex-wrap gap-1">
-          <Button
-            size="sm"
-            variant={status === undefined ? "default" : "outline"}
-            onClick={() => {
-              setStatus(undefined);
-              setOffset(0);
-            }}
-          >
-            Tous
-          </Button>
-          {EMAIL_STATUSES.map((s) => (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Emails — traitement"
+        description="Registre de traitement du pipeline (statuts, retries, erreurs). Les conversations vivent dans Chaînes."
+        actions={
+          <div className="flex flex-wrap gap-1">
             <Button
-              key={s}
               size="sm"
-              variant={status === s ? "default" : "outline"}
+              variant={status === undefined ? "default" : "outline"}
               onClick={() => {
-                setStatus(s);
+                setStatus(undefined);
                 setOffset(0);
               }}
             >
-              {s}
+              Tous
             </Button>
-          ))}
-        </div>
-      </div>
+            {EMAIL_STATUSES.map((s) => (
+              <Button
+                key={s}
+                size="sm"
+                variant={status === s ? "default" : "outline"}
+                onClick={() => {
+                  setStatus(s);
+                  setOffset(0);
+                }}
+              >
+                {s}
+              </Button>
+            ))}
+          </div>
+        }
+      />
 
-      <Card>
-        <CardContent>
+      <Card className="py-0">
+        <CardContent className="px-0">
           {emails.isLoading ? (
-            <p className="text-muted-foreground text-sm">Chargement…</p>
+            <div className="flex flex-col gap-3 p-6">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="h-10 animate-pulse rounded-md bg-accent" />
+              ))}
+            </div>
           ) : emails.error ? (
-            <p className="text-destructive text-sm">
+            <p className="text-destructive p-6 text-sm">
               {(emails.error as { error?: { message?: string } }).error?.message}
             </p>
+          ) : items.length === 0 ? (
+            <div className="p-6">
+              <p className="text-muted-foreground text-sm">
+                Aucun email{status ? ` (${status})` : ""}.
+              </p>
+            </div>
           ) : (
             <>
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Reçu le</TableHead>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="pl-6">Reçu le</TableHead>
                     <TableHead>De</TableHead>
-                    <TableHead>Sujet</TableHead>
+                    <TableHead className="max-w-64">Sujet</TableHead>
                     <TableHead>Classification</TableHead>
                     <TableHead>Statut</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {items.map((m) => (
-                    <TableRow key={m.id}>
-                      <TableCell>
+                    <TableRow
+                      key={m.id}
+                      className="cursor-pointer"
+                      onClick={() => router.push(`/emails/${m.id}`)}
+                    >
+                      <TableCell className="pl-6 whitespace-nowrap">
                         {m.mail_date
                           ? new Date(m.mail_date).toLocaleString("fr-FR")
                           : "—"}
@@ -101,29 +130,19 @@ export default function EmailsPage() {
                       <TableCell className="max-w-64 truncate">
                         {m.subject ?? "—"}
                       </TableCell>
-                      <TableCell>{m.classification ?? "—"}</TableCell>
                       <TableCell>
-                        {m.status === "error" ? (
-                          <Badge variant="destructive">error</Badge>
-                        ) : m.status === "processed" ? (
-                          <Badge variant="success">processed</Badge>
+                        {m.classification ? (
+                          <Badge variant="secondary">{m.classification}</Badge>
                         ) : (
-                          <Badge variant="warning">received</Badge>
+                          <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
+                      <TableCell>{statusBadge(m.status)}</TableCell>
                     </TableRow>
                   ))}
-                  {items.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-muted-foreground">
-                        Aucun email{status ? ` (${status})` : ""}.
-                      </TableCell>
-                    </TableRow>
-                  ) : null}
                 </TableBody>
               </Table>
-
-              <div className="text-muted-foreground mt-3 flex items-center justify-between text-sm">
+              <div className="text-muted-foreground flex items-center justify-between border-t px-6 py-3 text-sm">
                 <span>
                   {total} résultat{total > 1 ? "s" : ""}
                   {status ? ` · ${status}` : ""}
