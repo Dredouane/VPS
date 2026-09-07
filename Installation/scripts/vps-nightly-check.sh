@@ -47,7 +47,7 @@ TS=$(tailscale ip -4 2>/dev/null | head -1)
 B=$(ls -1t /var/backups/vps-fleet/fleet-*.tar.gz 2>/dev/null | head -1)
 if [ -n "$B" ]; then
   AGE=$(( ($(date +%s) - $(stat -c %Y "$B")) / 3600 ))
-  [ "$AGE" -le 26 ] && ok "Backup : récent (${AGE}h)" || bad "Backup : trop ancien (${AGE}h)"
+  [ "$AGE" -le 26 ] && ok "Backup : $(basename "$B") ($(du -h "$B" | cut -f1), il y a ${AGE}h)" || bad "Backup : $(basename "$B") trop ancien (${AGE}h)"
 else
   bad "Backup : aucune archive"
 fi
