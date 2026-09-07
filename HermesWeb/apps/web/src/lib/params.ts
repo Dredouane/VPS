@@ -19,19 +19,19 @@ export function parsePagination(sp: URLSearchParams): {
 }
 
 /** Paramètre enum (valeurs = contrat). */
-export function parseEnumParam(
+export function parseEnumParam<T extends string>(
   sp: URLSearchParams,
   name: string,
-  allowed: readonly string[]
-): string | undefined {
+  allowed: readonly T[]
+): T | undefined {
   const raw = sp.get(name);
   if (raw === null) return undefined;
-  if (!allowed.includes(raw)) {
+  if (!allowed.includes(raw as T)) {
     throw new ApiError(
       400,
       "invalid_param",
       `${name} doit être : ${allowed.join(" | ")}`
     );
   }
-  return raw;
+  return raw as T;
 }

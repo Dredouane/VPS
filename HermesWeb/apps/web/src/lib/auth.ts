@@ -33,6 +33,13 @@ export async function requireAuth(): Promise<AuthContext> {
     .eq("user_id", user.id)
     .maybeSingle();
   if (error) {
+    if (/invalid api key/i.test(error.message)) {
+      throw new ApiError(
+        503,
+        "supabase_unconfigured",
+        "SUPABASE_SERVICE_KEY absente ou invalide (voir .env.example)"
+      );
+    }
     throw new ApiError(502, "app_user_lookup_failed", error.message);
   }
   if (!appUser || !appUser.actif) {

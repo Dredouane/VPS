@@ -123,7 +123,26 @@ pipeline_version). En attendant : `GET /files/{documentId}` renvoie
 `404 r2_key_unavailable` si la clé manque. Évolution : `doc_upsert` avec
 `r2_key` dans metadata (additif, non bloquant — échec R2 déjà non bloquant).
 
+## W13 — Bootstrap admin : SQL direct via psql admin ✅ (P4)
+
+`auth.users`/`auth.identities` insérés via l'URL postgres admin (pattern
+runner D9) — pas besoin de service key pour la mise en service. Piège
+découvert : GoTrue de ce projet filtre par `instance_id` — il DOIT valoir
+`00000000-0000-0000-0000-000000000000` sinon « Invalid login credentials »
+malgré un hash bcrypt correct. `scripts/bootstrap-admin.ts` (REST admin)
+demande la service key — alternative quand elle sera configurée.
+
+## W14 — NEXT_PUBLIC_* : build-time ET runtime ✅ (P5)
+
+Le bundle client inline les NEXT_PUBLIC_* au build (`.env.production`,
+pattern surenSaas + trap cleanup) ; les route handlers les lisent au
+runtime → elles sont donc aussi passées en `--set-env-vars` Cloud Run.
+Secrets sensibles : Secret Manager (`hermesweb-*`) via `--set-secrets`.
+La service key du projet Hermes (`sb_secret_`) n'existe que dans le
+dashboard Supabase — seule action utilisateur restante pour activer l'API
+en TEST (le deploy.sh la propage ensuite).
+
 ## Historique
 
 - 2026-09-06 : création (session stack webapp) — P0/P1, puis P2 (007+008
-  appliquées via runner) et P3 (route handlers v1, 14 routes).
+  appliquées via runner) et P3 (route handlers v1, 14 routes), P4 (UI) et P5 (Cloud Run test).

@@ -47,6 +47,8 @@ pnpm gen-all      # régénère tout (①②③)
 pnpm gen:check    # vérifie la non-dérive (utilisé en CI)
 pnpm dev          # apps/web en dev
 pnpm build && pnpm test
+pnpm tsx scripts/bootstrap-admin.ts <email>   # compte admin webapp (one-off)
+./scripts/deploy.sh test   # déploiement Cloud Run (voir .env.test.example)
 ```
 
 ## 🔒 Sécurité (invariants)
@@ -65,9 +67,12 @@ pnpm build && pnpm test
 | P1 | Pipeline contrats SQL→OpenAPI→types | ✅ |
 | P2 | Migrations `007_app_users` + `008_rpc_web_search` (runner D9) | ✅ appliquées |
 | P3 | Route Handlers v1 (14 routes, auth, Ajv, search R2/GED, admin) | ✅ |
-| P4 | UI (auth, dashboard, factures + validation D6, recherche) | ⏳ |
-| P5 | Déploiement Cloud Run (Dockerfile standalone + script) | ⏳ |
+| P4 | UI (login, dashboard, factures + validation D6, emails, recherche, admin) | ✅ |
+| P5 | Déploiement Cloud Run (Dockerfile standalone + `deploy.sh`) | ✅ TEST déployé |
 | P6+ | PWA (Serwist) · Capacitor · pont Hermes (Tailscale) | ⏳ |
+
+> Test : https://hermesweb-test-REDACTED-ew.a.run.app — auth active, il reste
+> à coller la `sb_secret_` (dashboard Supabase) dans `.env.test` puis re-`deploy.sh test`.
 
 Décisions : [`DECISIONS.md`](DECISIONS.md)
 
