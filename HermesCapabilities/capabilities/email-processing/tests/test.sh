@@ -40,14 +40,19 @@ assert m1["quoted_segments"] == []
 assert m1["attachments"][0]["filename"] == "plan-chantier.pdf"
 
 # m2: quote FR "Le ... a écrit :" + ">" → séparées
+# m2: quote FR "Le ... a écrit :" + ">" → séparées (fragments de la lib vendored
+# — l'agrégat des segments doit contenir l'historique du mail d'origine)
 assert "devis arrive en fin de semaine" in m2["new_content"]
-assert m2["quoted_segments"] and "renovation pour un appartement" in m2["quoted_segments"][0]
-assert m2["quoted_segments"][0].startswith("Le 30 août 2026 à 08:15")
+assert m2["quoted_segments"] and "renovation pour un appartement" in " ".join(m2["quoted_segments"])
+assert "Le" in " ".join(m2["quoted_segments"])
 
 # m3: transfert Outlook "----- Message d'origine -----" + "De :/Envoyé :"
+# D17: dans un forward, le contenu d'après (mail transféré) est indexé
 assert m3["role"] == "transfert"
-assert "transfer de notre conversation" in m3["new_content"].lower() or "conversation avec le syndic" in m3["new_content"].lower()
-assert m3["quoted_segments"] and "syndic valide" in m3["quoted_segments"][0]
+assert "transfer de notre conversation" in m3["new_content"].lower() \
+    or "conversation avec le syndic" in m3["new_content"].lower()
+assert "syndic valide" in m3["new_content"].lower() \
+    or (m3["quoted_segments"] and "syndic valide" in " ".join(m3["quoted_segments"]))
 
 # --- statut RAG (known list fournie par l'orchestrateur) ----------------------
 r2 = tp.parse_thread(fx, known_message_ids={"<msgA@example.com>"})

@@ -141,6 +141,8 @@ A10. Sous-projet HermesCapabilities (volet 2 — compétences modulaires) :
      `HermesCapabilities/capabilities/analysis-facturation/skills/expert-facturation.md`,
      `HermesCapabilities/capabilities/analysis-facturation/tests/test.sh`,
      `HermesCapabilities/DEPLOYMENT.md`,
+     `HermesCapabilities/WEBAPP_DATA_MAPPING.md`,
+     `HermesCapabilities/capabilities/email-processing/code/vendor/mailparser_reply/parser.py`,
      `HermesCapabilities/capabilities/email-gmail/tests/fixtures/rfc822_sample_plain.eml`,
      `HermesCapabilities/scripts/gmail-oauth-setup.sh`,
      `HermesCapabilities/capabilities/rag-supabase/manifest.yaml`,

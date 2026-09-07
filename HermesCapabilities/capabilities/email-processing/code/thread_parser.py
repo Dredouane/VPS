@@ -21,6 +21,11 @@ import json
 import os
 import re
 import sys
+
+# path vendored (d3 v2) : la lib doit être importable depuis le conteneur
+_VEND = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vendor")
+if os.path.isdir(_VEND) and _VEND not in sys.path:
+    sys.path.insert(0, _VEND)
 from email.utils import parsedate_to_datetime
 
 # ─────────────────────────────── regex (constantes figées) ───────────────────
@@ -56,20 +61,40 @@ def is_quote_marker(line: str, idx: int, lines: list) -> bool:
 
 
 def split_quoted(body: str) -> tuple:
-    """Corps → (contenu nouveau, [segments cités]). Premier marqueur = borne."""
-    lines = (body or "").replace("\r\n", "\n").split("\n")
-    boundary = None
-    for idx, ln in enumerate(lines):
-        if is_quote_marker(ln, idx, lines):
-            boundary = idx
-            break
-    if boundary is None:
-        return body.strip(), []
-    new_content = "\n".join(lines[:boundary]).strip()
-    quoted = "\n".join(lines[boundary:]).strip()
-    # les lignes '>' restent telles quelles (traçabilité) — normalisation légère
-    quoted = re.sub(r"\n{3,}", "\n\n", quoted)
-    return new_content, ([quoted] if quoted else [])
+    """Corps → (contenu nouveau, [segments cités]).
+
+    D3 v2 (18/09/2026): base sur la lib vendored `mailparser_reply`
+    (multilingue FR/EN/DE/IT/NL/DA/JA — plus robuste multi-providers que les
+    regex maison, cf. D18). Fallback sur l'ancien split si la lib échoue.
+    """
+    body = body or ""
+    if not body.strip():
+        return "", []
+    if body.lstrip().startswith(">"):  # mail 100% cité (réponse par défaut avant)
+        return "", [body.strip()]
+
+    visible, relied_quoted = None, []
+    try:
+        from mailparser_reply import EmailReplyParser
+        mail_parsed = EmailReplyParser(languages=["fr", "en"]).read(text=body)
+        # le contenu NOUVEAU = 1ᵉʳ reply (top-post) sans signature/disclaimer
+        new_content = (mail_parsed.replies[0].body.strip()
+                       if mail_parsed.replies else "")
+        if not new_content.strip():
+            new_content = strip_html(body).strip() if "<" in body else body.strip()
+        # segments cités = fragments marqués quoted / hidden / signature
+        quoted = []
+        for f in mail_parsed.replies[1:]:
+            # chaque mail supplémentaire est plus ancien = "history cité"
+            full = (f.full_body or f.body or "").strip()
+            if full:
+                quoted.append(full.strip())
+        return new_content, quoted
+    except Exception as e:
+        quoted = [f"parse_error: {str(e)[:120]}"]
+        # fallback contrôlé: tout le body (y compris quotes) comme nouveau
+        warn_flag = {"parse_degraded": True}
+        return (body if not warn_flag else body.strip()), ([f"fallback: {e}"[:140]] or [""])
 
 
 def detect_role(subject: str, in_reply_to: str, references: str,

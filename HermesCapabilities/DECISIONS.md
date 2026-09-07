@@ -27,6 +27,9 @@
 | D14 | OCR = **2 extracteurs vision** (Gemini + OpenRouter) + **deux juges séparés** : général (code, toujours) / montants (bifurcation facture, code) avec adaptateur SLM Flash | Juge unique fusionné (revue 01/09) · un seul extracteur · schéma imposé à tous les docs |
 | D15 | **Facture = PJ-sourced only** — la donnée structurée provient exclusivement d'une PJ facture OCR-vérifiée ; un nième forward sans PJ = RAG + chaîne seulement, jamais d'écrasement. Identification "traité ou pas" par mail (message_id, 3 niveaux : label, doc_status, facture_find) | Créer/mettre à jour des factures depuis le texte d'un mail de discussion |
 | D15-bis | **Orchestrateur déterministe** `run_pipeline.py` = colonne vertébrale du pipeline ; skills LLM greffées via le prompt de routine | Chaîne orchestrée par LLM fragile |
+| D16 | Confiance dégradée : **extracteur indisponible → ×0,85** vs deux extracteurs divergents → ×0,7 (distinguer "absent" de "désaccord") | ×0,7 uniforme (trop pessimiste) |
+| D17 | **Forward = enveloppe ignorée** — traitement dès le mail d'après (skip cover + bloc header) ; `from` = expéditeur réel ; facture = PJ-sourced (D15) | Indexer le texte de l'enveloppe du forward |
+| D18 | **Vendoring** `mail-parser-reply` v1.36 (MIT, fr/en/de/it/nl/da/ja) dans le code — séparation replies/quotes robuste multi-providers sans pip runtime | Parser maison regex · SLM parse · pip runtime (I11) |
 | D11-ter | Headless : routines sur le **profil default** (le scheduler ne consomme que lui) — profil ops = Desktop uniquement | Routines sur profils secondaires headless (ne tirent pas) |
 
 ---
@@ -262,6 +265,27 @@ Existant : un even $VPS_EXÉCUT… *n/a*.
 (2.0 retiré de l'API — 404), embeddings `text-embedding-004` →
 **`gemini-embedding-001`** (768d via outputDimensionality). Leçon :
 **vérifier la disponibilité des modèles à chaque déploiement de clé**.
+
+## D18 — Vendoring mail-parser-reply ✅ (recherche 01/09)
+
+**Décision** : la séparation replies/quotes (fragile entre Gmail FR/Outlook
+FR/EN/clients mobiles) est déléguée à la lib **mail-parser-reply** v1.36
+(MIT, multilingue **fr inclus** de base + en/de/it/nl/da/ja, maintenue,
+pure Python), **vendorée** dans
+`capabilities/email-processing/code/vendor/mailparser_reply/` — licence
+conservée, version pinée, mise à jour = re-vendoring.
+**Pas de pip runtime** (I11) ni Dockerfile (le vendoring est du code versionné).
+
+**Pourquoi pas les IDs Gmail** : `X-GM-THRID` regroupe les messages de NOTRE
+boîte — le fil interne d'un forward n'existe que comme texte dans le corps →
+le parsing texte reste indispensable pour l'affichage webApp "gmail-like".
+Plan B (M3) : flag `parse_degraded` → SLM si la lib échoue sur un provider
+exotique (idée conservée).
+
+**Limitation connue** : le dedup RAG des attachments est sur le contenu OCR
+(md5 du texte) — deux runs force-attachments peuvent créer des docs
+duplicates si l'OCR varie légèrement (fix file-md5 dedup prévu M3 ; le
+chemin normal mails_new ne crée pas de doublons).
 
 ## Historique
 

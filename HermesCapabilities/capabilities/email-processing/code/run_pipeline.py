@@ -96,18 +96,22 @@ def run(max_threads, dry, force_attachments=False):
             if dry:
                 result["threads"].append(dict(entry, dry=True))
                 continue
+            r2_map = {}
             try:
                 ged = ged_save.save_thread(os.path.dirname(spool_path), slug,
                                            ged_save.cfg_from_env(),
                                            env.get("GED_EMAIL_PREFIX") or "emails")
                 entry["ged_uploaded"] = ged["count"]
+                r2_map = {u.get("file"): u.get("key") for u in ged.get("uploaded", [])
+                          if u.get("file") and u.get("key")}
             except RuntimeError as e:
                 entry["errors"] += 1
                 entry.setdefault("warn", []).append(f"ged: {e}")
             done_uids = []
             for m in mails:
                 doc_meta = {"from": m["from"], "date": m["date_iso"],
-                            "classification": m["role"], "pipeline_version": "m2.6"}
+                            "classification": m["role"], "pipeline_version": "m2.6",
+                            "r2_key": r2_map.get("thread.json")}
                 try:
                     emb = embed_gemini.embed(m["new_content"], key_gemini,
                                              env.get("EMBED_MODEL") or "gemini-embedding-001",
@@ -154,9 +158,14 @@ def run(max_threads, dry, force_attachments=False):
                                     "doc_type_hint": "autre", "confidence": 0.0})
                     ex1, ex2 = exs[0], exs[1]
                     verdict = ocr_judge.judge(ex1, ex2)
+                    # convention ged_save: att-{i+1}-{safe_name} — l'ordre des
+                    # attachments (i) correspond exactement à l'ordre doc_upsert
+                    r2_key_att = r2_map.get(f"att-{entry['attachments_ocr']}-{att.get('safe_name', '')}") \
+                                 or r2_map.get("thread.json")
                     meta = {**doc_meta, "filename": att["filename"], "mime": att["mime"],
                             "ocr": {k: verdict[k] for k in
-                                    ("winner", "agreement", "low_agreement", "doc_type")}}
+                                    ("winner", "agreement", "low_agreement", "doc_type")},
+                            "r2_key": r2_key_att}
                     text = ex1["text"] if verdict["winner"] == "gemini" else ex2["text"]
                     if verdict["doc_type"] == "facture" and key_gemini:
                         try:

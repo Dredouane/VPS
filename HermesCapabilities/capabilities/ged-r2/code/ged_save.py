@@ -60,7 +60,7 @@ def save_thread(thread_dir: str, slug: str, cfg: dict, prefix: str = "emails") -
                 r2_client.put_object(cfg["VPS_GED_CLOUDFLARE_S3_EU_ENDPOINT"],
                                      cfg["VPS_GED_CLOUDFLARE_BUCKET_NAME"],
                                      key, data, cfg)
-                uploaded.append({"key": key, "size": len(data)})
+                uploaded.append({"key": key, "size": len(data), "file": rel})
             except RuntimeError as e:
                 errors.append(str(e))
     return {"uploaded": uploaded, "errors": errors, "count": len(uploaded),
