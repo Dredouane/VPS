@@ -106,7 +106,7 @@ fi
 
 echo ""
 echo "=========================================="
-echo -e "${GREEN}✅ HERMESWEB $ENV_NAME DÉPLOYÉ${NC}"
+echo -e "${GREEN}✅ ALINEA $ENV_NAME DÉPLOYÉ${NC}"
 echo "=========================================="
 echo -e "${BLUE}🌐 URL : $SERVICE_URL${NC}"
 echo -e "${BLUE}🔧 Build : $BUILD_ID${NC}"
