@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
     const sp = new URL(req.url).searchParams;
     const { limit, offset } = parsePagination(sp);
     const status = parseEnumParam(sp, "status", EMAIL_STATUSES);
+    const threadId = sp.get("thread_id") ?? undefined;
 
     const admin = getAdminClient();
     let query = admin
@@ -22,6 +23,7 @@ export async function GET(req: NextRequest) {
       .select("*", { count: "exact" })
       .eq("client_slug", ctx.clientSlug);
     if (status) query = query.eq("status", status);
+    if (threadId) query = query.eq("thread_id", threadId);
     const { data, error, count } = await query
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);

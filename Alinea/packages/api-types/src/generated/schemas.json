@@ -5,10 +5,7 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": "string",
           "format": "uuid"
         },
         "client_slug": {
@@ -107,6 +104,7 @@
         }
       },
       "required": [
+        "id",
         "client_slug",
         "numero",
         "fournisseur",
@@ -122,10 +120,7 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": "string",
           "format": "uuid"
         },
         "client_slug": {
@@ -249,10 +244,7 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": "string",
           "format": "uuid"
         },
         "client_slug": {
@@ -332,6 +324,7 @@
         }
       },
       "required": [
+        "id",
         "client_slug",
         "message_id",
         "status",
@@ -366,10 +359,7 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": "string",
           "format": "uuid"
         },
         "client_slug": {
@@ -416,6 +406,7 @@
         }
       },
       "required": [
+        "id",
         "client_slug",
         "thread_id",
         "participants",
@@ -449,10 +440,7 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": "string",
           "format": "uuid"
         },
         "client_slug": {
@@ -517,6 +505,7 @@
         }
       },
       "required": [
+        "id",
         "client_slug",
         "kind",
         "message_id",
@@ -553,10 +542,7 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": "string",
           "format": "uuid"
         },
         "client_slug": {
@@ -604,6 +590,7 @@
         }
       },
       "required": [
+        "id",
         "client_slug",
         "run_at",
         "run_trigger",
@@ -641,10 +628,7 @@
       "additionalProperties": false,
       "properties": {
         "slug": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "nom": {
           "type": "string"
@@ -678,6 +662,7 @@
         }
       },
       "required": [
+        "slug",
         "nom",
         "statut",
         "rpc_prefix",
@@ -710,10 +695,7 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": "string",
           "format": "uuid"
         },
         "user_id": {
@@ -744,6 +726,7 @@
         }
       },
       "required": [
+        "id",
         "user_id",
         "client_slug",
         "role",
@@ -757,10 +740,7 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": "string",
           "format": "uuid"
         },
         "user_id": {
@@ -818,6 +798,67 @@
     "uuid": {
       "type": "string",
       "format": "uuid"
+    },
+    "threadIdParam": {
+      "type": "string",
+      "minLength": 1,
+      "description": "X-GM-THRID Gmail."
+    },
+    "ChainDetail": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "chain": {
+          "$ref": "#/components/schemas/EmailChain"
+        },
+        "mails": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/ChainMail"
+          }
+        },
+        "factures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Facture"
+          }
+        }
+      },
+      "required": [
+        "chain",
+        "mails",
+        "factures"
+      ]
+    },
+    "ChainMail": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "email": {
+          "$ref": "#/components/schemas/Email"
+        },
+        "content": {
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/Document"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Contenu extrait du mail (cap_documents kind=email)."
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Document"
+          }
+        }
+      },
+      "required": [
+        "email",
+        "attachments"
+      ]
     },
     "Error": {
       "type": "object",

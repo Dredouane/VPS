@@ -15,5 +15,12 @@ export function pickFacturePatch(
       "Seule la transition de statut est permise (D6) : { statut }"
     );
   }
+  if (body.statut === "extracted") {
+    throw new ApiError(
+      400,
+      "forbidden_statut",
+      "Le statut 'extracted' appartient au pipeline — jamais écrit par la webapp (D6)"
+    );
+  }
   return { statut: body.statut };
 }

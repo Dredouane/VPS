@@ -39,6 +39,14 @@ describe("pickFacturePatch (D6)", () => {
       expect((e as ApiError).code).toBe("statut_required");
     }
   });
+  it("interdit la cible 'extracted' (statut pipeline, D6)", () => {
+    try {
+      pickFacturePatch({ statut: "extracted" });
+      expect.unreachable();
+    } catch (e) {
+      expect((e as ApiError).code).toBe("forbidden_statut");
+    }
+  });
 });
 
 describe("validation Ajv pilotée par le contrat", () => {

@@ -169,7 +169,9 @@ function parseColumnSegment(rawSegment: string): SqlColumn | null {
   const [pgType, modifiers] = typeAndRest;
   const modLower = modifiers.toLowerCase();
 
-  const nullable = !/\bnot\s+null\b/.test(modLower);
+  // `primary key` implique NOT NULL (même sans le mot-clé explicite)
+  const nullable =
+    !/\bnot\s+null\b/.test(modLower) && !/\bprimary\s+key\b/.test(modLower);
   const hasDefault = /\bdefault\b/.test(modLower);
 
   let enumValues: string[] | null = null;

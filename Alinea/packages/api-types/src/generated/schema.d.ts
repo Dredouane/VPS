@@ -110,6 +110,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/chains/{threadId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Détail d'une chaîne (vue gmail-like composite)
+         * @description Shape suggéré par WEBAPP_DATA_MAPPING.md §5 : chaîne + mails chronologiques (mail_date) avec contenu et PJ (parent_message_id) + factures liées (email_message_id ∈ mails).
+         */
+        get: operations["getChainDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/documents": {
         parameters: {
             query?: never;
@@ -239,7 +259,7 @@ export interface components {
     schemas: {
         Facture: {
             /** Format: uuid */
-            id?: string | null;
+            id: string;
             client_slug: string;
             numero: string;
             fournisseur: string;
@@ -267,7 +287,7 @@ export interface components {
         };
         FactureUpdate: {
             /** Format: uuid */
-            id?: string | null;
+            id?: string;
             client_slug?: string;
             numero?: string;
             fournisseur?: string;
@@ -300,7 +320,7 @@ export interface components {
         };
         Email: {
             /** Format: uuid */
-            id?: string | null;
+            id: string;
             client_slug: string;
             message_id: string;
             thread_id?: string | null;
@@ -328,7 +348,7 @@ export interface components {
         };
         EmailChain: {
             /** Format: uuid */
-            id?: string | null;
+            id: string;
             client_slug: string;
             /** @description X-GM-THRID (gmail) */
             thread_id: string;
@@ -353,7 +373,7 @@ export interface components {
         };
         Document: {
             /** Format: uuid */
-            id?: string | null;
+            id: string;
             client_slug: string;
             /** @enum {string} */
             kind: "email" | "attachment";
@@ -379,7 +399,7 @@ export interface components {
         };
         PipelineRun: {
             /** Format: uuid */
-            id?: string | null;
+            id: string;
             client_slug: string;
             /** Format: date-time */
             run_at: string;
@@ -400,7 +420,7 @@ export interface components {
             total: number;
         };
         Client: {
-            slug?: string | null;
+            slug: string;
             nom: string;
             /** @enum {string} */
             statut: "active" | "suspended" | "archived";
@@ -420,7 +440,7 @@ export interface components {
         };
         AppUser: {
             /** Format: uuid */
-            id?: string | null;
+            id: string;
             /** Format: uuid */
             user_id: string;
             client_slug: string;
@@ -434,7 +454,7 @@ export interface components {
         };
         AppUserInsert: {
             /** Format: uuid */
-            id?: string | null;
+            id?: string;
             /** Format: uuid */
             user_id: string;
             client_slug: string;
@@ -453,6 +473,19 @@ export interface components {
         };
         /** Format: uuid */
         uuid: string;
+        /** @description X-GM-THRID Gmail. */
+        threadIdParam: string;
+        ChainDetail: {
+            chain: components["schemas"]["EmailChain"];
+            mails: components["schemas"]["ChainMail"][];
+            factures: components["schemas"]["Facture"][];
+        };
+        ChainMail: {
+            email: components["schemas"]["Email"];
+            /** @description Contenu extrait du mail (cap_documents kind=email). */
+            content?: components["schemas"]["Document"] | null;
+            attachments: components["schemas"]["Document"][];
+        };
         Error: {
             error: {
                 code: string;
@@ -708,6 +741,8 @@ export interface operations {
             query?: {
                 /** @description Filtre par statut de traitement. */
                 status?: "received" | "processed" | "error";
+                /** @description Filtre par chaîne (X-GM-THRID). */
+                thread_id?: string;
                 /** @description Taille de page (max 200). */
                 limit?: number;
                 /** @description Offset de pagination. */
@@ -840,11 +875,66 @@ export interface operations {
             };
         };
     };
+    getChainDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                threadId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Détail d'une chaîne (vue gmail-like composite) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChainDetail"];
+                };
+            };
+            /** @description Requête invalide (validation OpenAPI) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Ressource introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listDocuments: {
         parameters: {
             query?: {
                 /** @description Filtre par thread Gmail. */
                 thread_id?: string;
+                /** @description Filtre par mail (contenu kind=email de ce message_id). */
+                message_id?: string;
+                /** @description Filtre les PJ portées par ce mail. */
+                parent_message_id?: string;
+                /** @description Filtre par type de document. */
+                kind?: "email" | "attachment";
                 /** @description Taille de page (max 200). */
                 limit?: number;
                 /** @description Offset de pagination. */

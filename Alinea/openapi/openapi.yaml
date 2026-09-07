@@ -201,6 +201,12 @@ paths:
               - processed
               - error
           description: Filtre par statut de traitement.
+        - name: thread_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtre par chaîne (X-GM-THRID).
         - name: limit
           in: query
           required: false
@@ -318,6 +324,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /api/v1/chains/{threadId}:
+    get:
+      operationId: getChainDetail
+      tags:
+        - emails
+      summary: Détail d'une chaîne (vue gmail-like composite)
+      description: "Shape suggéré par WEBAPP_DATA_MAPPING.md §5 : chaîne + mails chronologiques
+        (mail_date) avec contenu et PJ (parent_message_id) + factures liées (email_message_id ∈
+        mails)."
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            description: X-GM-THRID Gmail.
+      responses:
+        "200":
+          description: Détail d'une chaîne (vue gmail-like composite)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChainDetail"
+        "400":
+          description: Requête invalide (validation OpenAPI)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Ressource introuvable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /api/v1/documents:
     get:
       operationId: listDocuments
@@ -331,6 +379,27 @@ paths:
           schema:
             type: string
           description: Filtre par thread Gmail.
+        - name: message_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtre par mail (contenu kind=email de ce message_id).
+        - name: parent_message_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtre les PJ portées par ce mail.
+        - name: kind
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - email
+              - attachment
+          description: Filtre par type de document.
         - name: limit
           in: query
           required: false
@@ -626,9 +695,7 @@ components:
       additionalProperties: false
       properties:
         id:
-          type:
-            - string
-            - "null"
+          type: string
           format: uuid
         client_slug:
           type: string
@@ -697,6 +764,7 @@ components:
           type: string
           format: date-time
       required:
+        - id
         - client_slug
         - numero
         - fournisseur
@@ -710,9 +778,7 @@ components:
       additionalProperties: false
       properties:
         id:
-          type:
-            - string
-            - "null"
+          type: string
           format: uuid
         client_slug:
           type: string
@@ -799,9 +865,7 @@ components:
       additionalProperties: false
       properties:
         id:
-          type:
-            - string
-            - "null"
+          type: string
           format: uuid
         client_slug:
           type: string
@@ -856,6 +920,7 @@ components:
           type: string
           format: date-time
       required:
+        - id
         - client_slug
         - message_id
         - status
@@ -882,9 +947,7 @@ components:
       additionalProperties: false
       properties:
         id:
-          type:
-            - string
-            - "null"
+          type: string
           format: uuid
         client_slug:
           type: string
@@ -917,6 +980,7 @@ components:
           type: string
           format: date-time
       required:
+        - id
         - client_slug
         - thread_id
         - participants
@@ -942,9 +1006,7 @@ components:
       additionalProperties: false
       properties:
         id:
-          type:
-            - string
-            - "null"
+          type: string
           format: uuid
         client_slug:
           type: string
@@ -989,6 +1051,7 @@ components:
           type: string
           format: date-time
       required:
+        - id
         - client_slug
         - kind
         - message_id
@@ -1017,9 +1080,7 @@ components:
       additionalProperties: false
       properties:
         id:
-          type:
-            - string
-            - "null"
+          type: string
           format: uuid
         client_slug:
           type: string
@@ -1051,6 +1112,7 @@ components:
             - integer
             - "null"
       required:
+        - id
         - client_slug
         - run_at
         - run_trigger
@@ -1080,9 +1142,7 @@ components:
       additionalProperties: false
       properties:
         slug:
-          type:
-            - string
-            - "null"
+          type: string
         nom:
           type: string
         statut:
@@ -1106,6 +1166,7 @@ components:
           type: string
           format: date-time
       required:
+        - slug
         - nom
         - statut
         - rpc_prefix
@@ -1130,9 +1191,7 @@ components:
       additionalProperties: false
       properties:
         id:
-          type:
-            - string
-            - "null"
+          type: string
           format: uuid
         user_id:
           type: string
@@ -1154,6 +1213,7 @@ components:
           type: string
           format: date-time
       required:
+        - id
         - user_id
         - client_slug
         - role
@@ -1165,9 +1225,7 @@ components:
       additionalProperties: false
       properties:
         id:
-          type:
-            - string
-            - "null"
+          type: string
           format: uuid
         user_id:
           type: string
@@ -1208,6 +1266,46 @@ components:
     uuid:
       type: string
       format: uuid
+    threadIdParam:
+      type: string
+      minLength: 1
+      description: X-GM-THRID Gmail.
+    ChainDetail:
+      type: object
+      additionalProperties: false
+      properties:
+        chain:
+          $ref: "#/components/schemas/EmailChain"
+        mails:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChainMail"
+        factures:
+          type: array
+          items:
+            $ref: "#/components/schemas/Facture"
+      required:
+        - chain
+        - mails
+        - factures
+    ChainMail:
+      type: object
+      additionalProperties: false
+      properties:
+        email:
+          $ref: "#/components/schemas/Email"
+        content:
+          oneOf:
+            - $ref: "#/components/schemas/Document"
+            - type: "null"
+          description: Contenu extrait du mail (cap_documents kind=email).
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Document"
+      required:
+        - email
+        - attachments
     Error:
       type: object
       additionalProperties: false

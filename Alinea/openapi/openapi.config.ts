@@ -125,6 +125,11 @@ export const openApiConfig: OpenApiConfig = {
           },
           description: "Filtre par statut de traitement.",
         },
+        {
+          name: "thread_id",
+          schema: { type: "string" },
+          description: "Filtre par chaîne (X-GM-THRID).",
+        },
         LIMIT_PARAM,
         OFFSET_PARAM,
       ],
@@ -148,6 +153,19 @@ export const openApiConfig: OpenApiConfig = {
       listOf: "EmailChain",
       queryParams: [LIMIT_PARAM, OFFSET_PARAM],
     },
+    {
+      method: "get",
+      path: "/api/v1/chains/{threadId}",
+      operationId: "getChainDetail",
+      tag: "emails",
+      summary: "Détail d'une chaîne (vue gmail-like composite)",
+      description:
+        "Shape suggéré par WEBAPP_DATA_MAPPING.md §5 : chaîne + mails " +
+        "chronologiques (mail_date) avec contenu et PJ (parent_message_id) " +
+        "+ factures liées (email_message_id ∈ mails).",
+      responseSchema: "ChainDetail",
+      pathParams: { threadId: "threadIdParam" },
+    },
     // ── Documents (RAG / GED) ──
     {
       method: "get",
@@ -158,6 +176,21 @@ export const openApiConfig: OpenApiConfig = {
       listOf: "Document",
       queryParams: [
         { name: "thread_id", schema: { type: "string" }, description: "Filtre par thread Gmail." },
+        {
+          name: "message_id",
+          schema: { type: "string" },
+          description: "Filtre par mail (contenu kind=email de ce message_id).",
+        },
+        {
+          name: "parent_message_id",
+          schema: { type: "string" },
+          description: "Filtre les PJ portées par ce mail.",
+        },
+        {
+          name: "kind",
+          schema: { type: "string", enum: ["email", "attachment"] },
+          description: "Filtre par type de document.",
+        },
         LIMIT_PARAM,
         OFFSET_PARAM,
       ],
@@ -234,6 +267,46 @@ export const openApiConfig: OpenApiConfig = {
   ],
   extraSchemas: {
     uuid: { type: "string", format: "uuid" },
+    threadIdParam: {
+      type: "string",
+      minLength: 1,
+      description: "X-GM-THRID Gmail.",
+    },
+    ChainDetail: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        chain: { $ref: "#/components/schemas/EmailChain" },
+        mails: {
+          type: "array",
+          items: { $ref: "#/components/schemas/ChainMail" },
+        },
+        factures: {
+          type: "array",
+          items: { $ref: "#/components/schemas/Facture" },
+        },
+      },
+      required: ["chain", "mails", "factures"],
+    },
+    ChainMail: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        email: { $ref: "#/components/schemas/Email" },
+        content: {
+          oneOf: [
+            { $ref: "#/components/schemas/Document" },
+            { type: "null" },
+          ],
+          description: "Contenu extrait du mail (cap_documents kind=email).",
+        },
+        attachments: {
+          type: "array",
+          items: { $ref: "#/components/schemas/Document" },
+        },
+      },
+      required: ["email", "attachments"],
+    },
     Error: {
       type: "object",
       additionalProperties: false,
