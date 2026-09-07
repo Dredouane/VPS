@@ -43,6 +43,13 @@ const header = [
 const yamlBody = yamlStringify(doc, { lineWidth: 100, aliasDuplicateObjects: false });
 writeFileSync(outPath, header + yamlBody);
 
+// Composants en JSON brut — consommés par la validation runtime Ajv (apps/web)
+const schemasPath = join(hermesWebRoot, "packages", "api-types", "src", "generated", "schemas.json");
+writeFileSync(
+  schemasPath,
+  JSON.stringify({ schemas: doc.components.schemas }, null, 2) + "\n"
+);
+
 const schemaCount = Object.keys(doc.components.schemas).length;
 const opCount = openApiConfig.operations.length;
 console.log(`✓ openapi.yaml généré : ${tables.length} tables, ${schemaCount} schémas, ${opCount} opérations`);

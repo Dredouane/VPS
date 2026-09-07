@@ -9,6 +9,7 @@
     },
     "./database": {
       "types": "./src/generated/database.types.ts"
-    }
+    },
+    "./schemas.json": "./src/generated/schemas.json"
   }
 }

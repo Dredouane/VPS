@@ -87,7 +87,43 @@ Phase 1 : responsive (shadcn). Phase 2 : PWA (Serwist — installable, offline
 shell). Capacitor 8 si stores/push natif. Expo/RN rejeté (2ᵉ paradigme de
 rendu, coût double — recherche 2026 : consensus LOB « PWA first »).
 
+## W9 — Lecteurs webapp SQL : namespace `rpc_web_*` scellé par GRANT ✅ (P2/P3)
+
+Les RPC `rpc_cap_*` exigent `(slug, rpc_secret)` — modèle AGENT. La webapp
+(D8-v3 : service key) n'a PAS les secrets agents. Deux namespaces distincts :
+
+- `rpc_cap_*` — agent, publishable + secret, `grant anon, authenticated`
+- `rpc_web_*` — webapp, **pas de secret**, `revoke public/anon/authenticated`
+  + `grant execute to service_role` uniquement (001 lecture vectorielle
+  impossible via PostgREST : opérateur `<=>`)
+
+`008_rpc_web_search.sql` : `rpc_web_doc_search(p_client_slug, p_query_embedding,
+p_match_count, p_kind)`. L'invariant du runner (« RPC per-slug: 0 ») reste
+intact. Pas de JWT par client (D8-bis) tant que le scoping en code suffit.
+
+## W10 — Embeddings webapp = miroir EXACT du pipeline ✅ (P3)
+
+Le code pipeline (M2.6) utilise `gemini-embedding-001` + `outputDimensionality:
+768` (évolution du texte D5 qui citait text-embedding-004) — la recherche
+webapp reproduit le même modèle, la même dimension, la même troncation
+(6000 chars), sinon l'espace vectoriel diverge.
+
+## W11 — PATCH facture = transition de statut uniquement ✅ (P3)
+
+D6 appliqué strictement : le handler ne mappe que `{ statut }` (l'appartenance
+à l'enum CHECK est garantie par la validation Ajv du contrat). Les autres
+champs de FactureUpdate sont refusés (`400 statut_required`). Scoping
+`client_slug` systématique (jamais pris de la requête).
+
+## W12 — GED : `metadata.r2_key` à produire par le pipeline (évolution) ⏳
+
+Le pipeline M2.6 archive les bruts dans R2 mais n'écrit pas la clé objet dans
+`cap_documents.metadata` (metadata actuelles : from/date/classification/
+pipeline_version). En attendant : `GET /files/{documentId}` renvoie
+`404 r2_key_unavailable` si la clé manque. Évolution : `doc_upsert` avec
+`r2_key` dans metadata (additif, non bloquant — échec R2 déjà non bloquant).
+
 ## Historique
 
-- 2026-09-06 : création (session stack webapp — P0+P1 réalisées, commit unique
-  pour séparer ce travail des autres sessions opencode).
+- 2026-09-06 : création (session stack webapp) — P0/P1, puis P2 (007+008
+  appliquées via runner) et P3 (route handlers v1, 14 routes).

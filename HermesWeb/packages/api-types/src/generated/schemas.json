@@ -1,0 +1,991 @@
+{
+  "schemas": {
+    "Facture": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "client_slug": {
+          "type": "string"
+        },
+        "numero": {
+          "type": "string"
+        },
+        "fournisseur": {
+          "type": "string"
+        },
+        "fournisseur_identifiant": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "objet": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "date_facture": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "date_echeance": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "montant_ht": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "montant_tva": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "montant_ttc": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "devise": {
+          "type": "string"
+        },
+        "statut": {
+          "type": "string",
+          "enum": [
+            "extracted",
+            "valide",
+            "rejete",
+            "paye",
+            "archive"
+          ]
+        },
+        "confiance": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "email_message_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "extraction": {},
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "client_slug",
+        "numero",
+        "fournisseur",
+        "devise",
+        "statut",
+        "extraction",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "FactureUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "client_slug": {
+          "type": "string"
+        },
+        "numero": {
+          "type": "string"
+        },
+        "fournisseur": {
+          "type": "string"
+        },
+        "fournisseur_identifiant": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "objet": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "date_facture": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "date_echeance": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "montant_ht": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "montant_tva": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "montant_ttc": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "devise": {
+          "type": "string"
+        },
+        "statut": {
+          "type": "string",
+          "enum": [
+            "extracted",
+            "valide",
+            "rejete",
+            "paye",
+            "archive"
+          ]
+        },
+        "confiance": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "email_message_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "extraction": {},
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "FactureList": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Facture"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total pour la pagination offset."
+        }
+      },
+      "required": [
+        "items",
+        "total"
+      ]
+    },
+    "Email": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "client_slug": {
+          "type": "string"
+        },
+        "message_id": {
+          "type": "string"
+        },
+        "thread_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "thread_role": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "from_addr": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "subject": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mail_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "classification": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resume": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "received",
+            "processed",
+            "error"
+          ]
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "attempts": {
+          "type": "integer"
+        },
+        "raw_metadata": {},
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "client_slug",
+        "message_id",
+        "status",
+        "attempts",
+        "raw_metadata",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "EmailList": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Email"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total pour la pagination offset."
+        }
+      },
+      "required": [
+        "items",
+        "total"
+      ]
+    },
+    "EmailChain": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "client_slug": {
+          "type": "string"
+        },
+        "thread_id": {
+          "type": "string",
+          "description": "X-GM-THRID (gmail)"
+        },
+        "subject": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "sujet normalisé (sans Re:/Tr:)"
+        },
+        "participants": {
+          "description": "adresses dédupliquées"
+        },
+        "messages_count": {
+          "type": "integer"
+        },
+        "first_message_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "last_message_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "client_slug",
+        "thread_id",
+        "participants",
+        "messages_count",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "EmailChainList": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/EmailChain"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total pour la pagination offset."
+        }
+      },
+      "required": [
+        "items",
+        "total"
+      ]
+    },
+    "Document": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "client_slug": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "email",
+            "attachment"
+          ]
+        },
+        "message_id": {
+          "type": "string"
+        },
+        "thread_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "thread_role": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "nouveau",
+            "reponse",
+            "transfert"
+          ]
+        },
+        "parent_message_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "type": "string"
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "content": {
+          "type": "string"
+        },
+        "content_md5": {
+          "type": "string"
+        },
+        "metadata": {},
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "client_slug",
+        "kind",
+        "message_id",
+        "source",
+        "content",
+        "content_md5",
+        "metadata",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "DocumentList": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Document"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total pour la pagination offset."
+        }
+      },
+      "required": [
+        "items",
+        "total"
+      ]
+    },
+    "PipelineRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "client_slug": {
+          "type": "string"
+        },
+        "run_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "run_trigger": {
+          "type": "string"
+        },
+        "threads_seen": {
+          "type": "integer"
+        },
+        "mails_new": {
+          "type": "integer"
+        },
+        "mails_known": {
+          "type": "integer"
+        },
+        "attachments_ocr": {
+          "type": "integer"
+        },
+        "docs_indexed": {
+          "type": "integer"
+        },
+        "factures_upserted": {
+          "type": "integer"
+        },
+        "errors": {
+          "type": "integer"
+        },
+        "last_error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "duration_ms": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "client_slug",
+        "run_at",
+        "run_trigger",
+        "threads_seen",
+        "mails_new",
+        "mails_known",
+        "attachments_ocr",
+        "docs_indexed",
+        "factures_upserted",
+        "errors"
+      ]
+    },
+    "PipelineRunList": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/PipelineRun"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total pour la pagination offset."
+        }
+      },
+      "required": [
+        "items",
+        "total"
+      ]
+    },
+    "Client": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "slug": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nom": {
+          "type": "string"
+        },
+        "statut": {
+          "type": "string",
+          "enum": [
+            "active",
+            "suspended",
+            "archived"
+          ]
+        },
+        "referent": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "référent (email / nom), optionnel"
+        },
+        "rpc_prefix": {
+          "type": "string",
+          "description": "ex: rpc_cap_arev_"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "nom",
+        "statut",
+        "rpc_prefix",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "ClientList": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Client"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total pour la pagination offset."
+        }
+      },
+      "required": [
+        "items",
+        "total"
+      ]
+    },
+    "AppUser": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "client_slug": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "admin",
+            "backoffice",
+            "terrain"
+          ]
+        },
+        "actif": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "user_id",
+        "client_slug",
+        "role",
+        "actif",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "AppUserInsert": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "client_slug": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "admin",
+            "backoffice",
+            "terrain"
+          ]
+        },
+        "actif": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "user_id",
+        "client_slug"
+      ]
+    },
+    "AppUserList": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/AppUser"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total pour la pagination offset."
+        }
+      },
+      "required": [
+        "items",
+        "total"
+      ]
+    },
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "Error": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "message"
+          ]
+        }
+      },
+      "required": [
+        "error"
+      ]
+    },
+    "Me": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "admin",
+            "backoffice",
+            "terrain"
+          ]
+        },
+        "client_slug": {
+          "type": "string"
+        },
+        "client_nom": {
+          "type": "string",
+          "description": "Nom du client (registry)."
+        },
+        "actif": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "user_id",
+        "email",
+        "role",
+        "client_slug",
+        "actif"
+      ]
+    },
+    "DocumentSearchRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Texte de recherche."
+        },
+        "match_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 5,
+          "description": "Nombre max de résultats (borne rpc_cap_doc_search)."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "email",
+            "attachment"
+          ]
+        }
+      },
+      "required": [
+        "query"
+      ]
+    },
+    "DocumentSearchResults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/DocumentSearchResult"
+          }
+        }
+      },
+      "required": [
+        "items"
+      ]
+    },
+    "DocumentSearchResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "email",
+            "attachment"
+          ]
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "content": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "JSON libre."
+        },
+        "similarity": {
+          "type": "number",
+          "description": "1 - distance cosinus (0..1)."
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "content",
+        "metadata",
+        "similarity"
+      ]
+    },
+    "PresignedFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL signée R2 (GET)."
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Expiration de l'URL (TTL court)."
+        }
+      },
+      "required": [
+        "url",
+        "expires_at"
+      ]
+    }
+  }
+}

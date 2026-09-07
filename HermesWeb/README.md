@@ -63,10 +63,25 @@ pnpm build && pnpm test
 |---|---|---|
 | P0 | Scaffolding monorepo + CI | ✅ |
 | P1 | Pipeline contrats SQL→OpenAPI→types | ✅ |
-| P2 | Migration `007_app_users.sql` (runner) | ⏳ fichier prêt, non appliqué |
-| P3 | Route Handlers v1 (factures, emails, runs, search, R2 presign) | ⏳ |
+| P2 | Migrations `007_app_users` + `008_rpc_web_search` (runner D9) | ✅ appliquées |
+| P3 | Route Handlers v1 (14 routes, auth, Ajv, search R2/GED, admin) | ✅ |
 | P4 | UI (auth, dashboard, factures + validation D6, recherche) | ⏳ |
 | P5 | Déploiement Cloud Run (Dockerfile standalone + script) | ⏳ |
 | P6+ | PWA (Serwist) · Capacitor · pont Hermes (Tailscale) | ⏳ |
 
 Décisions : [`DECISIONS.md`](DECISIONS.md)
+
+## 🔌 API v1 (routes, contractées par openapi.yaml)
+
+- `GET /api/v1/me` — rôle + client (mapping `app_users`)
+- `GET /api/v1/factures[?statut=]` · `GET/PATCH /api/v1/factures/{id}`
+  — PATCH = **transition de statut uniquement** (D6)
+- `GET /api/v1/emails[?status=]` · `GET /api/v1/emails/{id}` · `GET /api/v1/chains`
+- `GET /api/v1/documents[?thread_id=]` · `POST /api/v1/documents/search`
+  (recherche RAG : embeddings miroir pipeline + `rpc_web_doc_search`)
+- `GET /api/v1/runs` (D11) · `GET /api/v1/files/{documentId}` (R2 presign)
+- Admin : `GET /api/v1/admin/clients` · `GET/POST /api/v1/admin/users` ·
+  `DELETE /api/v1/admin/users/{userId}`
+
+En local sans secrets, les routes répondent `503 supabase_unconfigured`
+(comportement attendu — voir `.env.example`).
