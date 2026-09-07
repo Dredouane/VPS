@@ -38,7 +38,7 @@ VPS/
 │   ├── pipelines/             ← Compositions de capabilities (chaînes métier)
 │   └── scripts/               ← capability-test.sh + capability-attach.sh
 │
-├── HermesWeb/                 ← 🌐 WebApp backoffice clients (Next.js 16)
+├── Alinea/                 ← 🌐 WebApp backoffice clients (Next.js 16)
 │   ├── README.md              ← Stack, pipeline contrats, phases
 │   ├── DECISIONS.md           ← ADR (Next.js, openapi.yaml généré, Cloud Run)
 │   ├── apps/web/              ← Front + API route handlers (1 déploiement)
@@ -60,7 +60,7 @@ syncthing-gui           # tunnel SSH → GUI Syncthing du VPS (http://localhost:
 # Agent pro client (flotte HermesConfig v2) :
 cd HermesConfig && ./scripts/spawn-hermes-pro.sh <slug>   # sur le VPS
 # WebApp backoffice (P0-P1 : monorepo + pipeline contrats) :
-cd HermesWeb && pnpm dev && pnpm gen:check                # génère/vérifie openapi.yaml
+cd Alinea && pnpm dev && pnpm gen:check                # génère/vérifie openapi.yaml
 ```
 
 ## 🛡️ Skills de non-régression

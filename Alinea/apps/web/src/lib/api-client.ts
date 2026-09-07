@@ -4,7 +4,7 @@ import createClient from "openapi-fetch";
 import type {
   components,
   paths,
-} from "@hermesweb/api-types/schema";
+} from "@alinea/api-types/schema";
 
 /** Client API typé par le contrat généré (same-origin, cookies de session). */
 export const api = createClient<paths>({ baseUrl: "" });

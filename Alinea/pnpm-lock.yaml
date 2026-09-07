@@ -29,10 +29,10 @@ importers:
 
   apps/web:
     dependencies:
-      '@hermesweb/api-types':
+      '@alinea/api-types':
         specifier: workspace:*
         version: link:../../packages/api-types
-      '@hermesweb/ui':
+      '@alinea/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@supabase/ssr':

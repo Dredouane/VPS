@@ -1,10 +1,10 @@
 # ⚠️ FICHIER GÉNÉRÉ — NE PAS ÉDITER À LA MAIN
 # Source de vérité : HermesCapabilities/sql/generic/*.sql (D9)
-#   + HermesWeb/openapi/openapi.config.ts (exposition + opérations)
+#   + Alinea/openapi/openapi.config.ts (exposition + opérations)
 # Régénération : `pnpm gen:openapi` · Vérification : `pnpm gen:check`
 openapi: 3.1.0
 info:
-  title: Hermes Web API
+  title: Alinea API
   version: 0.1.0
   description: "API du backoffice clients PME (HermesFleet). Données : projet Supabase multi-tenant
     (tables cap_*, slug = client). Auth : session Supabase. GÉNÉRÉ depuis

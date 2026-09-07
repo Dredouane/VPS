@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
-import { Badge } from "@hermesweb/ui/components/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@hermesweb/ui/components/card";
+import { Badge } from "@alinea/ui/components/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@alinea/ui/components/card";
 import {
   Table,
   TableBody,
@@ -12,7 +12,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@hermesweb/ui/components/table";
+} from "@alinea/ui/components/table";
 
 import { api, queryKeys } from "@/lib/api-client";
 

@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-import { Button } from "@hermesweb/ui/components/button";
-import { cn } from "@hermesweb/ui/lib/utils";
+import { Button } from "@alinea/ui/components/button";
+import { cn } from "@alinea/ui/lib/utils";
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -45,7 +45,7 @@ export function Shell({
       {/* Header mobile + barre commune */}
       <header className="bg-background sticky top-0 z-20 border-b lg:hidden">
         <div className="flex items-center justify-between px-4 py-3">
-          <span className="font-semibold">Hermes Web</span>
+          <span className="font-semibold">Alinea</span>
           <Button variant="ghost" size="sm" onClick={logout}>
             Quitter
           </Button>
@@ -72,7 +72,7 @@ export function Shell({
         {/* Sidebar desktop */}
         <aside className="bg-background sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r lg:flex">
           <div className="px-5 py-5">
-            <p className="font-semibold">Hermes Web</p>
+            <p className="font-semibold">Alinea</p>
             <p className="text-muted-foreground text-xs">
               {clientNom ?? "—"}
             </p>

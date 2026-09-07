@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { Button } from "@hermesweb/ui/components/button";
-import { Card, CardContent } from "@hermesweb/ui/components/card";
+import { Button } from "@alinea/ui/components/button";
+import { Card, CardContent } from "@alinea/ui/components/card";
 import {
   Table,
   TableBody,
@@ -13,9 +13,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@hermesweb/ui/components/table";
-import { StatutFactureBadge } from "@hermesweb/ui/components/statut-facture-badge";
-import { cn } from "@hermesweb/ui/lib/utils";
+} from "@alinea/ui/components/table";
+import { StatutFactureBadge } from "@alinea/ui/components/statut-facture-badge";
+import { cn } from "@alinea/ui/lib/utils";
 
 import { api, queryKeys, type Facture } from "@/lib/api-client";
 import { FACTURE_STATUTS, type FactureStatut } from "@/lib/enums";

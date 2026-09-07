@@ -1,24 +1,24 @@
-name: HermesWeb CI
+name: Alinea CI
 
 on:
   push:
     branches: [main]
     paths:
-      - "HermesWeb/**"
+      - "Alinea/**"
       - "HermesCapabilities/sql/generic/**"
-      - ".github/workflows/hermesweb.yml"
+      - ".github/workflows/alinea.yml"
   pull_request:
     paths:
-      - "HermesWeb/**"
+      - "Alinea/**"
       - "HermesCapabilities/sql/generic/**"
-      - ".github/workflows/hermesweb.yml"
+      - ".github/workflows/alinea.yml"
 
 jobs:
   ci:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: HermesWeb
+        working-directory: Alinea
     steps:
       - uses: actions/checkout@v4
 
@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: HermesWeb/pnpm-lock.yaml
+          cache-dependency-path: Alinea/pnpm-lock.yaml
 
       - name: Activer pnpm (corepack)
         run: corepack enable pnpm

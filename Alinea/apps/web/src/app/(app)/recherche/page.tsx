@@ -3,15 +3,15 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import { Badge } from "@hermesweb/ui/components/badge";
-import { Button } from "@hermesweb/ui/components/button";
+import { Badge } from "@alinea/ui/components/badge";
+import { Button } from "@alinea/ui/components/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@hermesweb/ui/components/card";
-import { Input } from "@hermesweb/ui/components/input";
+} from "@alinea/ui/components/card";
+import { Input } from "@alinea/ui/components/input";
 
 import { api, apiErrorMessage } from "@/lib/api-client";
 

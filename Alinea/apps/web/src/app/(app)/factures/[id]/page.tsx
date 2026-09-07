@@ -4,15 +4,15 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Button } from "@hermesweb/ui/components/button";
+import { Button } from "@alinea/ui/components/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@hermesweb/ui/components/card";
-import { Separator } from "@hermesweb/ui/components/separator";
-import { StatutFactureBadge } from "@hermesweb/ui/components/statut-facture-badge";
+} from "@alinea/ui/components/card";
+import { Separator } from "@alinea/ui/components/separator";
+import { StatutFactureBadge } from "@alinea/ui/components/statut-facture-badge";
 
 import { api, apiErrorMessage, queryKeys } from "@/lib/api-client";
 

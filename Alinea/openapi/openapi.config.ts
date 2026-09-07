@@ -1,7 +1,7 @@
 import type { OpenApiConfig } from "../scripts/lib/types";
 
 /**
- * Configuration du contrat API HermesWeb.
+ * Configuration du contrat API Alinea.
  *
  * - Les schémas Row/Insert/Update sont DÉRIVÉS du SQL (source de vérité) ;
  * - Ici on déclare : quelles tables sont exposées, les colonnes exclues
@@ -23,7 +23,7 @@ const OFFSET_PARAM = {
 
 export const openApiConfig: OpenApiConfig = {
   info: {
-    title: "Hermes Web API",
+    title: "Alinea API",
     version: "0.1.0",
     description:
       "API du backoffice clients PME (HermesFleet). Données : projet Supabase " +

@@ -1,4 +1,4 @@
-# HermesWeb — 1 seul service Cloud Run (front Next.js + API route handlers)
+# Alinea — 1 seul service Cloud Run (front Next.js + API route handlers)
 FROM node:22-alpine AS base
 RUN corepack enable pnpm
 
@@ -11,7 +11,7 @@ COPY packages/ui/package.json packages/ui/
 COPY packages/api-types/package.json packages/api-types/
 RUN pnpm install --frozen-lockfile
 COPY . .
-RUN pnpm --filter @hermesweb/web build
+RUN pnpm --filter @alinea/web build
 
 FROM node:22-alpine AS run
 WORKDIR /app

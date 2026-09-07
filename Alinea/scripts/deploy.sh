@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# deploy.sh — Déploiement HermesWeb sur GCP Cloud Run (1 service : front + API)
+# deploy.sh — Déploiement Alinea sur GCP Cloud Run (1 service : front + API)
 # Usage : ./scripts/deploy.sh test|prod
 # Pattern adapté du script de déploiement surenSaas (env file, BUILD_ID git,
 # trap cleanup, nettoyage Artifact Registry keep-3) — adaptations : backend
@@ -58,10 +58,10 @@ upsert_secret() {
 }
 
 echo -e "${YELLOW}🔐 Secrets (Secret Manager)...${NC}"
-upsert_secret "hermesweb-supabase-service-key" "$SUPABASE_SERVICE_KEY"
-upsert_secret "hermesweb-gemini-api-key" "$GEMINI_API_KEY"
-upsert_secret "hermesweb-r2-access-key-id" "$R2_ACCESS_KEY_ID"
-upsert_secret "hermesweb-r2-secret-access-key" "$R2_SECRET_ACCESS_KEY"
+upsert_secret "alinea-supabase-service-key" "$SUPABASE_SERVICE_KEY"
+upsert_secret "alinea-gemini-api-key" "$GEMINI_API_KEY"
+upsert_secret "alinea-r2-access-key-id" "$R2_ACCESS_KEY_ID"
+upsert_secret "alinea-r2-secret-access-key" "$R2_SECRET_ACCESS_KEY"
 
 # NEXT_PUBLIC_* : inlinées au BUILD (pattern .env.production du projet surenSaas)
 cd "$APP_DIR"
@@ -85,7 +85,7 @@ gcloud run deploy "$SERVICE_NAME" \
   $SECRET_PROJECT \
   --allow-unauthenticated \
   --set-env-vars "BUILD_ID=$BUILD_ID,ENVIRONMENT=$ENV_NAME,NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY,R2_S3_ENDPOINT=$R2_S3_ENDPOINT,R2_BUCKET=$R2_BUCKET" \
-  --set-secrets "SUPABASE_SERVICE_KEY=hermesweb-supabase-service-key:latest,GEMINI_API_KEY=hermesweb-gemini-api-key:latest,R2_ACCESS_KEY_ID=hermesweb-r2-access-key-id:latest,R2_SECRET_ACCESS_KEY=hermesweb-r2-secret-access-key:latest" \
+  --set-secrets "SUPABASE_SERVICE_KEY=alinea-supabase-service-key:latest,GEMINI_API_KEY=alinea-gemini-api-key:latest,R2_ACCESS_KEY_ID=alinea-r2-access-key-id:latest,R2_SECRET_ACCESS_KEY=alinea-r2-secret-access-key:latest" \
   --memory 512Mi \
   --cpu 1 \
   --concurrency 80 \

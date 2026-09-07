@@ -1,4 +1,4 @@
-# 📜 DECISIONS.md — Registre des décisions HermesWeb
+# 📜 DECISIONS.md — Registre des décisions Alinea
 
 > Style ADR (comme `HermesCapabilities/DECISIONS.md`). Session
 > « stack webapp » du 06/09/2026 — recherche 2026 documentée, arbitrages
@@ -137,7 +137,7 @@ demande la service key — alternative quand elle sera configurée.
 Le bundle client inline les NEXT_PUBLIC_* au build (`.env.production`,
 pattern surenSaas + trap cleanup) ; les route handlers les lisent au
 runtime → elles sont donc aussi passées en `--set-env-vars` Cloud Run.
-Secrets sensibles : Secret Manager (`hermesweb-*`) via `--set-secrets`.
+Secrets sensibles : Secret Manager (`alinea-*`) via `--set-secrets`.
 La service key du projet Hermes (`sb_secret_`) n'existe que dans le
 dashboard Supabase — seule action utilisateur restante pour activer l'API
 en TEST (le deploy.sh la propage ensuite).

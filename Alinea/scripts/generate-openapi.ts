@@ -35,7 +35,7 @@ const doc = buildOpenApiDocument(openApiConfig, tables);
 const header = [
   "# ⚠️ FICHIER GÉNÉRÉ — NE PAS ÉDITER À LA MAIN",
   "# Source de vérité : HermesCapabilities/sql/generic/*.sql (D9)",
-  "#   + HermesWeb/openapi/openapi.config.ts (exposition + opérations)",
+  "#   + Alinea/openapi/openapi.config.ts (exposition + opérations)",
   "# Régénération : `pnpm gen:openapi` · Vérification : `pnpm gen:check`",
   "",
 ].join("\n");

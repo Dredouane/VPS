@@ -1,5 +1,5 @@
-import contract from "@hermesweb/api-types/schemas.json";
-import type { components } from "@hermesweb/api-types/schema";
+import contract from "@alinea/api-types/schemas.json";
+import type { components } from "@alinea/api-types/schema";
 
 /**
  * Énumérations dérivées du CONTRAT (jamais dupliquées à la main) :

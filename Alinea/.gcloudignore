@@ -1,0 +1,20 @@
+# Upload Cloud Build — miroir du .gitignore + exception build-time
+# (sans ce fichier, gcloud génère un ignore depuis .gitignore et exclut
+# apps/web/.env.production → NEXT_PUBLIC_* absentes du bundle client)
+.git
+.gitignore
+node_modules/
+.next/
+.turbo/
+dist/
+out/
+coverage/
+*.tsbuildinfo
+*.log
+.DS_Store
+
+# Environnements : TOUT exclu…
+.env*
+# …sauf le build-time public (NEXT_PUBLIC_* only, recréé par deploy.sh,
+# supprimé après via trap) — jamais .env.local / .env.test / .env.prod
+!apps/web/.env.production

@@ -1,5 +1,5 @@
 {
-  "name": "@hermesweb/api-types",
+  "name": "@alinea/api-types",
   "version": "0.1.0",
   "private": true,
   "description": "Types GÉNÉRÉS — ne pas éditer à la main. Source : openapi/openapi.yaml (généré depuis HermesCapabilities/sql/generic).",

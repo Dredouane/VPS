@@ -4,16 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { Button } from "@hermesweb/ui/components/button";
+import { Button } from "@alinea/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@hermesweb/ui/components/card";
-import { Input } from "@hermesweb/ui/components/input";
-import { Label } from "@hermesweb/ui/components/label";
+} from "@alinea/ui/components/card";
+import { Input } from "@alinea/ui/components/input";
+import { Label } from "@alinea/ui/components/label";
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -45,7 +45,7 @@ export default function LoginPage() {
     <main className="flex flex-1 items-center justify-center bg-muted/40 p-6">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-xl">Hermes Web</CardTitle>
+          <CardTitle className="text-xl">Alinea</CardTitle>
           <CardDescription>Backoffice clients PME</CardDescription>
         </CardHeader>
         <CardContent>

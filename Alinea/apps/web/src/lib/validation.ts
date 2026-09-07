@@ -2,7 +2,7 @@ import Ajv2020 from "ajv/dist/2020";
 import addFormats from "ajv-formats";
 
 import { ApiError } from "./api-error";
-import contract from "@hermesweb/api-types/schemas.json";
+import contract from "@alinea/api-types/schemas.json";
 
 /**
  * Validation runtime pilotée par le contrat : les schémas viennent de

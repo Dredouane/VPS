@@ -1,19 +1,19 @@
-import { Button } from "@hermesweb/ui/components/button";
+import { Button } from "@alinea/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@hermesweb/ui/components/card";
-import { Badge } from "@hermesweb/ui/components/badge";
+} from "@alinea/ui/components/card";
+import { Badge } from "@alinea/ui/components/badge";
 
 export default function Home() {
   return (
     <main className="flex flex-1 items-center justify-center p-8">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl">Hermes Web</CardTitle>
+          <CardTitle className="text-2xl">Alinea</CardTitle>
           <CardDescription>
             Backoffice clients PME — pipeline email → facturation
           </CardDescription>

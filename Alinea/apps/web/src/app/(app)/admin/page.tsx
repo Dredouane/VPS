@@ -2,14 +2,14 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "@hermesweb/ui/components/badge";
-import { Button } from "@hermesweb/ui/components/button";
+import { Badge } from "@alinea/ui/components/badge";
+import { Button } from "@alinea/ui/components/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@hermesweb/ui/components/card";
+} from "@alinea/ui/components/card";
 import {
   Table,
   TableBody,
@@ -17,7 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@hermesweb/ui/components/table";
+} from "@alinea/ui/components/table";
 
 import { api, apiErrorMessage, queryKeys } from "@/lib/api-client";
 

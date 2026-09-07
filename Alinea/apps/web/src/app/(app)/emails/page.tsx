@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { Badge } from "@hermesweb/ui/components/badge";
-import { Button } from "@hermesweb/ui/components/button";
-import { Card, CardContent } from "@hermesweb/ui/components/card";
+import { Badge } from "@alinea/ui/components/badge";
+import { Button } from "@alinea/ui/components/button";
+import { Card, CardContent } from "@alinea/ui/components/card";
 import {
   Table,
   TableBody,
@@ -13,7 +13,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@hermesweb/ui/components/table";
+} from "@alinea/ui/components/table";
 
 import { api, queryKeys } from "@/lib/api-client";
 import { EMAIL_STATUSES, type EmailStatus } from "@/lib/enums";

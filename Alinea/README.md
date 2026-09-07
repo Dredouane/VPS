@@ -1,4 +1,4 @@
-# 🌐 HermesWeb — WebApp backoffice clients PME
+# 🌐 Alinea — WebApp backoffice clients PME
 
 Volet **web** de la fabrique Hermes : sert les données du pipeline
 (`cap_*` Supabase, GED R2) aux end users — backoffice et terrain
@@ -20,7 +20,7 @@ Volet **web** de la fabrique Hermes : sert les données du pipeline
 ## 📂 Structure
 
 ```
-HermesWeb/
+Alinea/
 ├── apps/web/               ← Next.js (app + API dans le même déploiement)
 ├── packages/ui/            ← design system : tokens @theme + primitives shadcn
 ├── packages/api-types/     ← GÉNÉRÉ : schema.d.ts + database.types.ts
@@ -71,7 +71,7 @@ pnpm tsx scripts/bootstrap-admin.ts <email>   # compte admin webapp (one-off)
 | P5 | Déploiement Cloud Run (Dockerfile standalone + `deploy.sh`) | ✅ TEST déployé |
 | P6+ | PWA (Serwist) · Capacitor · pont Hermes (Tailscale) | ⏳ |
 
-> Test : https://hermesweb-test-REDACTED-ew.a.run.app — auth active, il reste
+> Test : https://alinea-test-REDACTED-ew.a.run.app — auth active, il reste
 > à coller la `sb_secret_` (dashboard Supabase) dans `.env.test` puis re-`deploy.sh test`.
 
 Décisions : [`DECISIONS.md`](DECISIONS.md)
