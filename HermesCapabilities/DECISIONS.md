@@ -25,6 +25,9 @@
 | D12 | **Rollout direct** + cadence 10 min / max 5 threads | Phase DRY_RUN · 30 min / 20 threads |
 | D13 | Réception = **IMAP app password** (creds existants, OAuth Testing = refresh expiré 7j, parsing RFC822 déterministe) | OAuth Gmail API (révisée 01/09) |
 | D14 | OCR = **2 extracteurs vision** (Gemini + OpenRouter) + **deux juges séparés** : général (code, toujours) / montants (bifurcation facture, code) avec adaptateur SLM Flash | Juge unique fusionné (revue 01/09) · un seul extracteur · schéma imposé à tous les docs |
+| D15 | **Facture = PJ-sourced only** — la donnée structurée provient exclusivement d'une PJ facture OCR-vérifiée ; un nième forward sans PJ = RAG + chaîne seulement, jamais d'écrasement. Identification "traité ou pas" par mail (message_id, 3 niveaux : label, doc_status, facture_find) | Créer/mettre à jour des factures depuis le texte d'un mail de discussion |
+| D15-bis | **Orchestrateur déterministe** `run_pipeline.py` = colonne vertébrale du pipeline ; skills LLM greffées via le prompt de routine | Chaîne orchestrée par LLM fragile |
+| D11-ter | Headless : routines sur le **profil default** (le scheduler ne consomme que lui) — profil ops = Desktop uniquement | Routines sur profils secondaires headless (ne tirent pas) |
 
 ---
 
@@ -241,6 +244,24 @@ documents de TOUTES sortes — la sortie des extracteurs est **générique**
 Extracteur #2 : **OpenRouter vision** (`SUREN_VPS_OPEN_ROUTER_API_KEY` existante)
 — famille différente de Gemini = vraie diversité. Rejetés : juge unique
 fusionné, schéma imposé à tous les docs, Tesseract sidecar.
+
+## D15 — Facturation : PJ-sourced + identification par mail ✅ (run réel 01/09)
+
+**Décision (exigence utilisateur)** : tous les emails de l'alias seront des
+**forwards** ; les anciens mails peuvent avoir déjà traité la facturation.
+Le mécanisme "déjà traité ou pas" = **identification par mail** (message_id),
+déjà en place à **3 niveaux** : (1) poller `-label:ia-traite`, (2)
+`rag_status` par message_id (`rpc_cap_doc_status`), (3) facture via
+`rpc_cap_facture_find(numero, fournisseur)` + non-rétrogradation (D6).
+
+*Nouveau* : la facture structurée ne provient **que** d'une PJ facture
+(OCR canonique pré-vérifié). Sans PJ → RAG + chaîne, jamais d'écrasement.
+Existant : un even $VPS_EXÉCUT… *n/a*.
+
+*Model drift 01/09* : vision passée `gemini-2.0-flash` → **`gemini-3.6-flash`**
+(2.0 retiré de l'API — 404), embeddings `text-embedding-004` →
+**`gemini-embedding-001`** (768d via outputDimensionality). Leçon :
+**vérifier la disponibilité des modèles à chaque déploiement de clé**.
 
 ## Historique
 

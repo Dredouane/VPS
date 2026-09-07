@@ -50,6 +50,12 @@
 | Sortie | `{"thread_id", "chain": {subject, participants, messages_count, first/last_message_at}, "mails": [{message_id, uid, role, position, new_content, quoted_segments[], attachments, rag_status: known\|new}], "stats"}` |
 | Garantie | idempotent (re-parse = même résultat), fixtures multilingues ; **`Tr:` = transfert FR**, `Re:` = réponse |
 
+**ORCHESTRATEUR déterministe (D15-bis)** : `email-processing/code/run_pipeline.py`
+enchaîne tout le §2 (poll → parse+save → GED → OCR → juge → bifurcation →
+embed → upsert → mark_done → log) — idempotent, `--max-threads`, `--dry-run`,
+`--force-attachments` (récupération). La routine cron l'appelle directement.
+Choisir 1 extracteur seul si l'autre échoue (dégradé, `low_agreement`).
+
 **SAVE DB (exigence 01/09 — par l'orchestrateur après le parser, via MCP supabase C5)** — RPC **génériques** avec `p_client_slug` + `p_rpc_secret` (env `CLIENT_SLUG`/`CLIENT_RPC_SECRET`, D8-v3) :
 1. `rpc_cap_chain_upsert(slug, secret, thread_id, subject, participants, count, first, last)` → 1× (chaîne, idempotent)
 2. `rpc_cap_email_upsert(slug, secret, message_id, thread_id, role, from, subject, date, classification, resume, status='received')` → **par mail** (chaîne complète, y compris anciens mails lazy)

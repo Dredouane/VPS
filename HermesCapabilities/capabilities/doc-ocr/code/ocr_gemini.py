@@ -15,7 +15,7 @@ import urllib.error
 import urllib.request
 
 API = ("https://generativelanguage.googleapis.com/v1beta/models/"
-       "gemini-2.0-flash:generateContent")
+       "gemini-3.6-flash:generateContent")
 PROMPT = (
     "Transcris fidèlement TOUT le texte visible de ce document, sans "
     "interprétation ni résumé. Indique ensuite le type de document "

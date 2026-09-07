@@ -46,9 +46,12 @@ def _post(url: str, payload: dict, key: str) -> dict:
 
 def extract(path: str, key: str, model: str) -> dict:
     ext = os.path.splitext(path)[1].lower().lstrip(".")
-    mime = {"pdf": "application/pdf", "png": "image/png",
-            "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp"}.get(
-                ext, "application/octet-stream")
+    if ext == "pdf":
+        # image_url data URI ne supporte pas les PDF via chat/completions
+        # (vérifié 01/09) — Gemini gère les PDF en inline_data
+        raise RuntimeError("PDF non supporté par OpenRouter (images uniquement)")
+    mime = {"png": "image/png", "jpg": "image/jpeg",
+            "jpeg": "image/jpeg", "webp": "image/webp"}.get(ext, "application/octet-stream")
     with open(path, "rb") as f:
         b64 = base64.b64encode(f.read()).decode()
     data_uri = f"data:{mime};base64,{b64}"

@@ -215,6 +215,7 @@ for CAP in "${CAPS[@]}"; do
         else
             mkdir -p "$DATA_DIR/code/$CAP_ID"
             cp -f "$CAP_DIR"/code/*.py "$DATA_DIR/code/$CAP_ID/"
+            [ -d "$CAP_DIR/schemas" ] && cp -rf "$CAP_DIR/schemas" "$DATA_DIR/code/$CAP_ID/"
             chown -R 10000:10000 "$DATA_DIR/code"
             chmod 640 "$DATA_DIR/code/$CAP_ID"/*.py
             ok "code copié: $CAP_CODE (data/code/$CAP_ID/)"

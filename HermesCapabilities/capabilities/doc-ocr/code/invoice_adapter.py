@@ -14,9 +14,17 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ocr_gemini import _post  # noqa: E402  (réseau mince partagé)
 
-SCHEMA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                           "..", "schemas", "invoice_extraction.json")
-ADAPTER_MODEL = "gemini-2.0-flash"
+ADAPTER_MODEL = "gemini-3.6-flash"
+
+
+def _schema_path():
+    """Repo: ../schemas · conteneur: ./schemas (double résolution)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    for c in (os.path.join(here, "..", "schemas"), os.path.join(here, "schemas")):
+        p = os.path.join(c, "invoice_extraction.json")
+        if os.path.isfile(p):
+            return p
+    raise RuntimeError("schemas/invoice_extraction.json introuvable")
 
 
 def build_prompt(text: str, schema_str: str) -> str:
@@ -40,7 +48,7 @@ def parse_adapter_output(raw: str) -> dict | None:
 
 
 def load_schema() -> str:
-    with open(SCHEMA_PATH, encoding="utf-8") as f:
+    with open(_schema_path(), encoding="utf-8") as f:
         return json.dumps(json.load(f), ensure_ascii=False)
 
 

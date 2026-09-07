@@ -71,6 +71,20 @@ def mark_done(M, uids, label_name):
             "folder_created": created, "expunge": expunged_via}
 
 
+def label_and_delete(cfg: dict, uids: list) -> dict:
+    """Wrapper complet : connexion + marquage + logout (pur côté appelant)."""
+    M = imaplib.IMAP4_SSL(IMAP_HOST, IMAP_PORT)
+    try:
+        M.login(cfg["VPS_GMAIL_RECEPTION_IMAP_ADRESS"], cfg["VPS_GMAIL_RECEPTION_IMAP_MDP"])
+        M.select("INBOX")  # mode écriture requis (COPY/STORE/EXPUNGE)
+        return mark_done(M, uids, cfg.get("GMAIL_LABEL_DONE") or "ia-traite")
+    finally:
+        try:
+            M.logout()
+        except Exception:
+            pass
+
+
 def main():
     uids = [u for u in sys.argv[1:] if u.strip().isdigit()]
     if not uids:
@@ -83,11 +97,8 @@ def main():
         print(json.dumps({"error": "config manquante"}), file=sys.stderr)
         return 2
     label_name = cfg["GMAIL_LABEL_DONE"] or "ia-traite"
-    M = imaplib.IMAP4_SSL(IMAP_HOST, IMAP_PORT)
     try:
-        M.login(cfg["VPS_GMAIL_RECEPTION_IMAP_ADRESS"], cfg["VPS_GMAIL_RECEPTION_IMAP_MDP"])
-        M.select("INBOX")  # mode écriture requis (COPY/STORE/EXPUNGE)
-        result = mark_done(M, uids, label_name)
+        result = label_and_delete(cfg, uids)
     except (imaplib.IMAP4.error, RuntimeError) as e:
         s = str(e)
         low = s.lower()

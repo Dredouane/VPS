@@ -19,6 +19,10 @@ du mail + OCR pré-vérifié, et la faire persister.
 
 1. **Contexte** : mail structuré (C2) + facture canonique (C3
    `invoice.verdict` — nombres DÉJÀ vérifiés : sums_ok).
+1bis. **D15 — PJ-sourced only** : la facture n'est créée/mise à jour **QUE
+   depuis une PJ facture (OCR canonique pré-vérifié)**. Un mail de discussion
+   sans PJ (relance, nième forward) = RAG + chaîne **uniquement** — jamais
+   d'upsert depuis du texte seul (anti-écrasement des factures traitsées).
 2. Matching : `rpc_cap_facture_find(slug, secret, numero, fournisseur)` —
    existe-t-elle déjà ?
 3. Upsert : `rpc_cap_facture_upsert(slug, secret, numero, fournisseur,
