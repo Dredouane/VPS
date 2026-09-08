@@ -40,6 +40,11 @@ RE_FWD_LINE = re.compile(r"^forwarded message", re.I)
 RE_QUOTE_LINE = re.compile(r"^\s*>")
 RE_OUTLOOK_DE = re.compile(r"^\s*(de|from)\s*:", re.I)
 RE_OUTLOOK_SENT = re.compile(r"^\s*(envoy\u00e9|sent|date)\s*:", re.I)
+RE_FORWARD_HEADER_BLOCK = re.compile(
+    r"(?:↓+|-+)\s*[Ff]orwarded message\s*[-↓]+\n"
+    r"(?:\w+\s*:[^\n]*\n)+"
+    r"\n?"  # blank line optionnelle avant le contenu
+)
 RE_ADDR = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 
 
@@ -60,18 +65,30 @@ def is_quote_marker(line: str, idx: int, lines: list) -> bool:
     return False
 
 
+RE_FORWARD_SEP = re.compile(
+    r"(?:─+|-+)\s*(?:Forwarded message|forwarded message|message trans(?:f|é)ri\w+)\s*[-─]+\n"
+    r"((?:\s*\w+\s*:[^\n]*\n)+)")
+
+
 def split_quoted(body: str) -> tuple:
     """Corps → (contenu nouveau, [segments cités]).
 
-    D3 v2 (18/09/2026): base sur la lib vendored `mailparser_reply`
-    (multilingue FR/EN/DE/IT/NL/DA/JA — plus robuste multi-providers que les
-    regex maison, cf. D18). Fallback sur l'ancien split si la lib échoue.
+    D3 v2 (01/09): D17 — si le corps contient un FORWARD HEADER BLOCK
+    ("---------- Forwarded message ---------\nDe :…\nÀ :…"), le texte
+    AVANT (l'enveloppe) est ignoré et le contenu APRÈS le bloc header est
+    le contenu NOUVEAU (le mail d'origine transféré). Fallback sur la lib
+    vendored mailparser_reply (multi-providers, cf. D18).
     """
-    body = body or ""
+    body = (body or "").replace("\r\n", "\n").replace("\r", "\n")
     if not body.strip():
         return "", []
     if body.lstrip().startswith(">"):  # mail 100% cité (réponse par défaut avant)
         return "", [body.strip()]
+
+    # D17: forward header block → tout ce qui suit = contenu nouveau
+    fwd_match = RE_FORWARD_HEADER_BLOCK.search(body)
+    if fwd_match:
+        return body[fwd_match.end():].strip(), []
 
     visible, relied_quoted = None, []
     try:
