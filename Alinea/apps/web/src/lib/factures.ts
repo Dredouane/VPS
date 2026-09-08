@@ -85,6 +85,7 @@ export function buildAuditEntry(
   for (const [field, to] of Object.entries(patch)) {
     changes[field] = { from: before[field] ?? null, to };
   }
-  const entry = { at: new Date().toISOString(), by: authorEmail, changes };
-  return { audit: { push: entry } };
+  // Retourne l'ENTRÉE seule (pas le wrapper push supabase-js) — le handler
+  // read-modify-write l'insère dans extraction.audit.
+  return { at: new Date().toISOString(), by: authorEmail, changes };
 }

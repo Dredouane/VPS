@@ -8,6 +8,7 @@ import {
   pickFacturePatch,
   pickFactureCorrection,
   buildAuditEntry,
+  FACTURE_EDITABLE_FIELDS,
 } from "@/lib/factures";
 import { getAdminClient } from "@/lib/supabase/admin";
 
@@ -56,6 +57,13 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
     // 1) Transition de statut (D6) — statut seul dans le corps
     if ("statut" in body) {
+      if (FACTURE_EDITABLE_FIELDS.some((f) => f in body)) {
+        throw new ApiError(
+          400,
+          "mixed_operation",
+          "Correction de valeurs et transition de statut sont deux actions distinctes"
+        );
+      }
       const patch = pickFacturePatch(body);
       const { data, error } = await admin
         .from("cap_factures")
@@ -81,7 +89,13 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     if (!before) throw new ApiError(404, "not_found", "Facture introuvable");
 
     const auditEntry = buildAuditEntry(auth.email, before, patch);
-    const extraction = (before.extraction ?? {}) as Record<string, unknown>;
+    // Le pipeline stocke extraction en STRING JSON — parser si nécessaire
+    const rawExtraction = before.extraction;
+    const extraction = (
+      typeof rawExtraction === "string"
+        ? JSON.parse(rawExtraction)
+        : rawExtraction ?? {}
+    ) as Record<string, unknown>;
     const audit = Array.isArray(extraction.audit) ? extraction.audit : [];
     const updatedExtraction = { ...extraction, audit: [...audit, auditEntry] };
 
