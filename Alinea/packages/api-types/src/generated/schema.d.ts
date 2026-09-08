@@ -130,6 +130,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/chains/{threadId}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historique du chat d'une conversation (persistant) */
+        get: operations["listChatMessages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chains/{threadId}/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Poser une question sur une conversation (assistant sourcé)
+         * @description Recherche vectorielle thread-scopée (C7) puis LLM avec sources citées. Question hors du fil → réponse honnête (C6). Historique persisté côté serveur (app_chat_messages).
+         */
+        post: operations["chatOnChain"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/documents": {
         parameters: {
             query?: never;
@@ -475,6 +512,33 @@ export interface components {
         uuid: string;
         /** @description X-GM-THRID Gmail. */
         threadIdParam: string;
+        ChatMessage: {
+            /** Format: uuid */
+            id: string;
+            thread_id: string;
+            /** @enum {string} */
+            role: "user" | "assistant";
+            content: string;
+            sources: components["schemas"]["ChatSource"][];
+            /** Format: date-time */
+            created_at: string;
+        };
+        ChatSource: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "email" | "attachment";
+            title: string | null;
+            similarity: number;
+        };
+        ChatMessageList: {
+            items: components["schemas"]["ChatMessage"][];
+            total: number;
+        };
+        ChatRequest: {
+            /** @description Question sur CET échange uniquement. */
+            question: string;
+        };
         ChainDetail: {
             chain: components["schemas"]["EmailChain"];
             mails: components["schemas"]["ChainMail"][];
@@ -893,6 +957,108 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChainDetail"];
+                };
+            };
+            /** @description Requête invalide (validation OpenAPI) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Ressource introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listChatMessages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                threadId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Historique du chat d'une conversation (persistant) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMessageList"];
+                };
+            };
+            /** @description Requête invalide (validation OpenAPI) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Ressource introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    chatOnChain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                threadId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Poser une question sur une conversation (assistant sourcé) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMessage"];
                 };
             };
             /** @description Requête invalide (validation OpenAPI) */

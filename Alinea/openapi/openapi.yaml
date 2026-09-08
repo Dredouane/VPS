@@ -366,6 +366,92 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /api/v1/chains/{threadId}/messages:
+    get:
+      operationId: listChatMessages
+      tags:
+        - emails
+      summary: Historique du chat d'une conversation (persistant)
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            description: X-GM-THRID Gmail.
+      responses:
+        "200":
+          description: Historique du chat d'une conversation (persistant)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessageList"
+        "400":
+          description: Requête invalide (validation OpenAPI)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Ressource introuvable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/v1/chains/{threadId}/chat:
+    post:
+      operationId: chatOnChain
+      tags:
+        - emails
+      summary: Poser une question sur une conversation (assistant sourcé)
+      description: Recherche vectorielle thread-scopée (C7) puis LLM avec sources citées. Question hors du
+        fil → réponse honnête (C6). Historique persisté côté serveur (app_chat_messages).
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            description: X-GM-THRID Gmail.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "201":
+          description: Poser une question sur une conversation (assistant sourcé)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessage"
+        "400":
+          description: Requête invalide (validation OpenAPI)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Ressource introuvable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /api/v1/documents:
     get:
       operationId: listDocuments
@@ -1270,6 +1356,83 @@ components:
       type: string
       minLength: 1
       description: X-GM-THRID Gmail.
+    ChatMessage:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+        thread_id:
+          type: string
+        role:
+          type: string
+          enum:
+            - user
+            - assistant
+        content:
+          type: string
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatSource"
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - thread_id
+        - role
+        - content
+        - sources
+        - created_at
+    ChatSource:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+            - email
+            - attachment
+        title:
+          type:
+            - string
+            - "null"
+        similarity:
+          type: number
+      required:
+        - id
+        - kind
+        - title
+        - similarity
+    ChatMessageList:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+        total:
+          type: integer
+      required:
+        - items
+        - total
+    ChatRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: Question sur CET échange uniquement.
+      required:
+        - question
     ChainDetail:
       type: object
       additionalProperties: false

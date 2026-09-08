@@ -9,6 +9,7 @@ import {
   APP_USER_ROLES,
 } from "../enums";
 import { validateAgainstContract } from "../validation";
+import { normalizeParticipants, docMetadata } from "../chains";
 
 describe("enums dérivées du contrat", () => {
   it("factures/emails/roles = CHECK SQL", () => {
@@ -109,5 +110,60 @@ describe("validation Ajv pilotée par le contrat", () => {
         similarity: 0.87,
       })
     ).not.toThrow();
+  });
+
+  it("ChatRequest : question requise, bornée à 2000 chars", () => {
+    expect(() =>
+      validateAgainstContract("ChatRequest", { question: "Qui était le destinataire ?" })
+    ).not.toThrow();
+    expect(() => validateAgainstContract("ChatRequest", { question: "" })).toThrow(
+      ApiError
+    );
+  });
+
+  it("ChatMessage : sources obligatoires (même vides)", () => {
+    expect(() =>
+      validateAgainstContract("ChatMessage", {
+        id: "019af0ad-4ac8-7052-a094-d1a1d5a9e3f1",
+        thread_id: "1863095446886822159",
+        role: "assistant",
+        content: "Le destinataire est Bouygues…",
+        sources: [],
+        created_at: "2026-09-08T12:00:00.000Z",
+      })
+    ).not.toThrow();
+    expect(() =>
+      validateAgainstContract("ChatMessage", {
+        id: "019af0ad-4ac8-7052-a094-d1a1d5a9e3f1",
+        thread_id: "1863095446886822159",
+        role: "assistant",
+        content: "x",
+        created_at: "2026-09-08T12:00:00.000Z",
+      })
+    ).toThrow(ApiError);
+  });
+});
+
+describe("normalizeParticipants (crash TKT-101)", () => {
+  it("string JSON double-encodée → array", () => {
+    expect(
+      normalizeParticipants('["a@x.fr", "b@y.fr"]')
+    ).toEqual(["a@x.fr", "b@y.fr"]);
+  });
+  it("array direct → tel quel", () => {
+    expect(normalizeParticipants(["a@x.fr"])).toEqual(["a@x.fr"]);
+  });
+  it("null / nombre / string simple → []", () => {
+    expect(normalizeParticipants(null)).toEqual([]);
+    expect(normalizeParticipants(42)).toEqual([]);
+    expect(normalizeParticipants("solo@x.fr")).toEqual(["solo@x.fr"]);
+  });
+});
+
+describe("docMetadata (jsonb défensif)", () => {
+  it("objet direct, string JSON, null → objet sûr", () => {
+    expect(docMetadata({ r2_key: "x" })).toEqual({ r2_key: "x" });
+    expect(docMetadata('{"r2_key":"x"}')).toEqual({ r2_key: "x" });
+    expect(docMetadata(null)).toEqual({});
   });
 });

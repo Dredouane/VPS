@@ -64,6 +64,7 @@ describe("parseSql — SQL réel du repo", () => {
 
   it("trouve les 7 tables (dont app_users 007)", () => {
     expect(tables.map((t) => t.name).sort()).toEqual([
+      "app_chat_messages",
       "app_users",
       "cap_clients",
       "cap_documents",

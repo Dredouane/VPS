@@ -166,6 +166,29 @@ export const openApiConfig: OpenApiConfig = {
       responseSchema: "ChainDetail",
       pathParams: { threadId: "threadIdParam" },
     },
+    {
+      method: "get",
+      path: "/api/v1/chains/{threadId}/messages",
+      operationId: "listChatMessages",
+      tag: "emails",
+      summary: "Historique du chat d'une conversation (persistant)",
+      responseSchema: "ChatMessageList",
+      pathParams: { threadId: "threadIdParam" },
+    },
+    {
+      method: "post",
+      path: "/api/v1/chains/{threadId}/chat",
+      operationId: "chatOnChain",
+      tag: "emails",
+      summary: "Poser une question sur une conversation (assistant sourcé)",
+      description:
+        "Recherche vectorielle thread-scopée (C7) puis LLM avec sources " +
+        "citées. Question hors du fil → réponse honnête (C6). Historique " +
+        "persisté côté serveur (app_chat_messages).",
+      responseSchema: "ChatMessage",
+      bodySchema: "ChatRequest",
+      pathParams: { threadId: "threadIdParam" },
+    },
     // ── Documents (RAG / GED) ──
     {
       method: "get",
@@ -271,6 +294,58 @@ export const openApiConfig: OpenApiConfig = {
       type: "string",
       minLength: 1,
       description: "X-GM-THRID Gmail.",
+    },
+    ChatMessage: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        id: { type: "string", format: "uuid" },
+        thread_id: { type: "string" },
+        role: { type: "string", enum: ["user", "assistant"] },
+        content: { type: "string" },
+        sources: {
+          type: "array",
+          items: { $ref: "#/components/schemas/ChatSource" },
+        },
+        created_at: { type: "string", format: "date-time" },
+      },
+      required: ["id", "thread_id", "role", "content", "sources", "created_at"],
+    },
+    ChatSource: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        id: { type: "string", format: "uuid" },
+        kind: { type: "string", enum: ["email", "attachment"] },
+        title: { type: ["string", "null"] },
+        similarity: { type: "number" },
+      },
+      required: ["id", "kind", "title", "similarity"],
+    },
+    ChatMessageList: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        items: {
+          type: "array",
+          items: { $ref: "#/components/schemas/ChatMessage" },
+        },
+        total: { type: "integer" },
+      },
+      required: ["items", "total"],
+    },
+    ChatRequest: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        question: {
+          type: "string",
+          minLength: 1,
+          maxLength: 2000,
+          description: "Question sur CET échange uniquement.",
+        },
+      },
+      required: ["question"],
     },
     ChainDetail: {
       type: "object",
