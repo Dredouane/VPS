@@ -1105,6 +1105,26 @@
         "similarity": {
           "type": "number",
           "description": "1 - distance cosinus (0..1)."
+        },
+        "thread_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Chaîne d'origine — lien vers le fil."
+        },
+        "facture_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Facture liée (document_id ou email_message_id)."
+        },
+        "facture_numero": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [

@@ -130,6 +130,11 @@ export const openApiConfig: OpenApiConfig = {
           schema: { type: "string" },
           description: "Filtre par chaîne (X-GM-THRID).",
         },
+        {
+          name: "message_id",
+          schema: { type: "string" },
+          description: "Filtre par message (Message-ID RFC).",
+        },
         LIMIT_PARAM,
         OFFSET_PARAM,
       ],
@@ -229,6 +234,28 @@ export const openApiConfig: OpenApiConfig = {
         "puis rpc_cap_doc_search. similarité = 1 - distance cosinus.",
       responseSchema: "DocumentSearchResults",
       bodySchema: "DocumentSearchRequest",
+    },
+    {
+      method: "get",
+      path: "/api/v1/factures/{id}/chat",
+      operationId: "listFactureChatMessages",
+      tag: "factures",
+      summary: "Historique du chat expert d'une facture (persistant)",
+      responseSchema: "ChatMessageList",
+      pathParams: { id: "uuid" },
+    },
+    {
+      method: "post",
+      path: "/api/v1/factures/{id}/chat",
+      operationId: "chatOnFacture",
+      tag: "factures",
+      summary: "Assistant expert : question sur la fiche et son dossier",
+      description:
+        "Contexte = fiche affichée + emails/PJ liés (isolation par facture). " +
+        "Historique persisté (app_chat_messages, clé facture:<id>).",
+      responseSchema: "ChatMessage",
+      bodySchema: "ChatRequest",
+      pathParams: { id: "uuid" },
     },
     // ── Pipeline runs (D11 : consultation) ──
     {
@@ -451,6 +478,15 @@ export const openApiConfig: OpenApiConfig = {
           type: "number",
           description: "1 - distance cosinus (0..1).",
         },
+        thread_id: {
+          type: ["string", "null"],
+          description: "Chaîne d'origine — lien vers le fil.",
+        },
+        facture_id: {
+          type: ["string", "null"],
+          description: "Facture liée (document_id ou email_message_id).",
+        },
+        facture_numero: { type: ["string", "null"] },
       },
       required: ["id", "kind", "content", "metadata", "similarity"],
     },

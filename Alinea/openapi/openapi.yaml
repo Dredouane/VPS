@@ -207,6 +207,12 @@ paths:
           schema:
             type: string
           description: Filtre par chaîne (X-GM-THRID).
+        - name: message_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtre par message (Message-ID RFC).
         - name: limit
           in: query
           required: false
@@ -551,6 +557,89 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/v1/factures/{id}/chat:
+    get:
+      operationId: listFactureChatMessages
+      tags:
+        - factures
+      summary: Historique du chat expert d'une facture (persistant)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Historique du chat expert d'une facture (persistant)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessageList"
+        "400":
+          description: Requête invalide (validation OpenAPI)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Ressource introuvable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: chatOnFacture
+      tags:
+        - factures
+      summary: "Assistant expert : question sur la fiche et son dossier"
+      description: Contexte = fiche affichée + emails/PJ liés (isolation par facture). Historique persisté
+        (app_chat_messages, clé facture:<id>).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "201":
+          description: "Assistant expert : question sur la fiche et son dossier"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessage"
+        "400":
+          description: Requête invalide (validation OpenAPI)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Ressource introuvable
           content:
             application/json:
               schema:
@@ -1570,6 +1659,20 @@ components:
         similarity:
           type: number
           description: 1 - distance cosinus (0..1).
+        thread_id:
+          type:
+            - string
+            - "null"
+          description: Chaîne d'origine — lien vers le fil.
+        facture_id:
+          type:
+            - string
+            - "null"
+          description: Facture liée (document_id ou email_message_id).
+        facture_numero:
+          type:
+            - string
+            - "null"
       required:
         - id
         - kind

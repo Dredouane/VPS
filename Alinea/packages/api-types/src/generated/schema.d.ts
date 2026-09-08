@@ -204,6 +204,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/factures/{id}/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historique du chat expert d'une facture (persistant) */
+        get: operations["listFactureChatMessages"];
+        put?: never;
+        /**
+         * Assistant expert : question sur la fiche et son dossier
+         * @description Contexte = fiche affichée + emails/PJ liés (isolation par facture). Historique persisté (app_chat_messages, clé facture:<id>).
+         */
+        post: operations["chatOnFacture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs": {
         parameters: {
             query?: never;
@@ -593,6 +614,11 @@ export interface components {
             metadata: Record<string, never>;
             /** @description 1 - distance cosinus (0..1). */
             similarity: number;
+            /** @description Chaîne d'origine — lien vers le fil. */
+            thread_id?: string | null;
+            /** @description Facture liée (document_id ou email_message_id). */
+            facture_id?: string | null;
+            facture_numero?: string | null;
         };
         PresignedFile: {
             /**
@@ -807,6 +833,8 @@ export interface operations {
                 status?: "received" | "processed" | "error";
                 /** @description Filtre par chaîne (X-GM-THRID). */
                 thread_id?: string;
+                /** @description Filtre par message (Message-ID RFC). */
+                message_id?: string;
                 /** @description Taille de page (max 200). */
                 limit?: number;
                 /** @description Offset de pagination. */
@@ -1174,6 +1202,108 @@ export interface operations {
             };
             /** @description Non authentifié */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listFactureChatMessages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Historique du chat expert d'une facture (persistant) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMessageList"];
+                };
+            };
+            /** @description Requête invalide (validation OpenAPI) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Ressource introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    chatOnFacture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Assistant expert : question sur la fiche et son dossier */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMessage"];
+                };
+            };
+            /** @description Requête invalide (validation OpenAPI) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Ressource introuvable */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
