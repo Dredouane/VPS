@@ -17,53 +17,77 @@ import { Skeleton } from "@alinea/ui/components/skeleton";
 
 import { api, apiErrorMessage, queryKeys } from "@/lib/api-client";
 
+export type ChatScope = { type: "chain" | "facture"; id: string };
+
 /**
- * Assistant « poser une question » sur une conversation (TKT-107) :
- * historique persistant (GET messages) + envoi (POST chat) avec sources
- * citées. Isolé au fil courant côté serveur (C7).
+ * Assistant sourcé réutilisable (TKT-107 conversation / TKT-203 facture) :
+ * historique persistant + envoi de question + sources citées.
  */
-export function ChatPanel({ threadId }: { threadId: string }) {
+export function ChatPanel({
+  scope,
+  suggestions,
+  title = "Assistant",
+  intro = "Répond à partir du contexte concerné uniquement — sources citées.",
+}: {
+  scope: ChatScope;
+  suggestions?: string[];
+  title?: string;
+  intro?: string;
+}) {
   const queryClient = useQueryClient();
   const [question, setQuestion] = useState("");
+  const [askedCount, setAskedCount] = useState(0);
+
+  const chatKey =
+    scope.type === "chain"
+      ? queryKeys.chains({ limit: 1, offset: 0 })
+      : queryKeys.facture(scope.id);
 
   const messages = useQuery({
-    queryKey: [...queryKeys.chains({ limit: 1, offset: 0 }), "chat", threadId],
+    queryKey: [...chatKey, "chat", scope.type, scope.id],
     queryFn: () =>
-      api.GET("/api/v1/chains/{threadId}/messages", {
-        params: { path: { threadId } },
-      }),
+      scope.type === "chain"
+        ? api.GET("/api/v1/chains/{threadId}/messages", {
+            params: { path: { threadId: scope.id } },
+          })
+        : api.GET("/api/v1/factures/{id}/chat", {
+            params: { path: { id: scope.id } },
+          }),
   });
 
   const ask = useMutation({
     mutationFn: (q: string) =>
-      api.POST("/api/v1/chains/{threadId}/chat", {
-        params: { path: { threadId } },
-        body: { question: q },
-      }),
+      scope.type === "chain"
+        ? api.POST("/api/v1/chains/{threadId}/chat", {
+            params: { path: { threadId: scope.id } },
+            body: { question: q },
+          })
+        : api.POST("/api/v1/factures/{id}/chat", {
+            params: { path: { id: scope.id } },
+            body: { question: q },
+          }),
     onSuccess: () => {
+      setAskedCount((n) => n + 1);
       queryClient.invalidateQueries({
-        queryKey: [...queryKeys.chains({ limit: 1, offset: 0 }), "chat", threadId],
+        queryKey: [...chatKey, "chat", scope.type, scope.id],
       });
     },
   });
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const q = question.trim();
-    if (!q || ask.isPending) return;
+  function send(q: string) {
+    if (!q.trim() || ask.isPending) return;
     setQuestion("");
-    ask.mutate(q);
+    ask.mutate(q.trim());
   }
 
   const items = messages.data?.data?.items ?? [];
+  const showSuggestions = suggestions && items.length === 0;
 
   return (
     <Card className="sticky top-20">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Assistant de la conversation</CardTitle>
-        <p className="text-muted-foreground text-xs">
-          Répond à partir de cet échange uniquement — sources citées.
-        </p>
+        <CardTitle className="text-base">{title}</CardTitle>
+        <p className="text-muted-foreground text-xs">{intro}</p>
       </CardHeader>
       <CardContent className="flex max-h-[70vh] flex-col gap-3">
         <div className="flex min-h-40 flex-1 flex-col gap-3 overflow-y-auto">
@@ -73,9 +97,8 @@ export function ChatPanel({ threadId }: { threadId: string }) {
               <Skeleton className="ml-auto h-10 w-3/5" />
             </>
           ) : items.length === 0 ? (
-            <p className="text-muted-foreground py-4 text-center text-sm">
-              Posez une question sur cet échange (ex : « Qui était le
-              destinataire ? », « Quel est le montant demandé ? »).
+            <p className="text-muted-foreground py-2 text-center text-sm">
+              {intro}
             </p>
           ) : (
             items.map((m) => (
@@ -90,13 +113,9 @@ export function ChatPanel({ threadId }: { threadId: string }) {
                 <p className="whitespace-pre-line">{m.content}</p>
                 {m.role === "assistant" && (m.sources ?? []).length > 0 ? (
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {(m.sources ?? []).map((s) => (
-                      <Badge
-                        key={s.id}
-                        variant="secondary"
-                        className="text-[10px]"
-                      >
-                        {s.kind === "attachment" ? "PJ" : "Mail"}:{" "}
+                    {(m.sources ?? []).map((s, i) => (
+                      <Badge key={`${s.id}-${i}`} variant="secondary" className="text-[10px]">
+                        {(s as { kind: string }).kind === "attachment" ? "PJ" : (s as { kind: string }).kind === "fiche" ? "Fiche" : "Mail"}:{" "}
                         {s.title ?? "—"} · {Math.round(s.similarity * 100)}%
                       </Badge>
                     ))}
@@ -115,7 +134,23 @@ export function ChatPanel({ threadId }: { threadId: string }) {
           ) : null}
         </div>
 
-        <form onSubmit={onSubmit} className="flex gap-2 border-t pt-3">
+        {showSuggestions ? (
+          <div className="flex flex-wrap gap-1.5">
+            {suggestions.map((s) => (
+              <Button
+                key={s}
+                size="sm"
+                variant="outline"
+                onClick={() => send(s)}
+                disabled={ask.isPending}
+              >
+                {s}
+              </Button>
+            ))}
+          </div>
+        ) : null}
+
+        <form onSubmit={(e) => { e.preventDefault(); send(question); }} className="flex gap-2 border-t pt-3">
           <Input
             value={question}
             onChange={(e) => setQuestion(e.target.value)}

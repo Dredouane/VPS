@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Inbox } from "lucide-react";
 
@@ -17,8 +17,10 @@ import {
 } from "@alinea/ui/components/table";
 import { StatutFactureBadge } from "@alinea/ui/components/statut-facture-badge";
 import { PageHeader } from "@alinea/ui/components/page-header";
-import { EmptyState } from "@alinea/ui/components/empty-state";
-import { cn } from "@alinea/ui/lib/utils";
+import {
+  FACTURE_STATUT_LABELS,
+  formatMontant,
+} from "@alinea/ui/lib/statut-labels";
 
 import { api, queryKeys, type Facture } from "@/lib/api-client";
 import { FACTURE_STATUTS, type FactureStatut } from "@/lib/enums";
@@ -38,6 +40,13 @@ export default function FacturesPage() {
         params: { query: { statut, limit: PAGE_SIZE, offset } },
       }),
   });
+  const aTraiter = useQuery({
+    queryKey: [...queryKeys.factures({ statut: "extracted", limit: 1, offset: 0 }), "total"],
+    queryFn: () =>
+      api.GET("/api/v1/factures", {
+        params: { query: { statut: "extracted", limit: 1, offset: 0 } },
+      }),
+  });
 
   const items = factures.data?.data?.items ?? [];
   const total = factures.data?.data?.total ?? 0;
@@ -46,7 +55,7 @@ export default function FacturesPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Factures"
-        description="Extractions du pipeline — validation humaine par transition de statut (D6)"
+        description="Extraites automatiquement depuis vos emails — à vérifier puis valider"
         actions={
           <div className="flex flex-wrap gap-1">
             <Button
@@ -59,7 +68,7 @@ export default function FacturesPage() {
             >
               Toutes
             </Button>
-            {FACTURE_STATUTS.filter((s) => s !== "extracted").map((s) => (
+            {FACTURE_STATUTS.map((s) => (
               <Button
                 key={s}
                 size="sm"
@@ -69,19 +78,29 @@ export default function FacturesPage() {
                   setOffset(0);
                 }}
               >
-                {s}
+                {FACTURE_STATUT_LABELS[s]}
               </Button>
             ))}
           </div>
         }
       />
 
+      {!factures.isLoading && aTraiter.data?.data?.total ? (
+        <p className="text-sm font-medium">
+          <span className="bg-warning text-warning-foreground mr-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs">
+            {aTraiter.data.data.total}
+          </span>
+          facture{(aTraiter.data.data.total ?? 0) > 1 ? "s" : ""} à vérifier et
+          valider
+        </p>
+      ) : null}
+
       <Card className="py-0">
         <CardContent className="px-0">
           {factures.isLoading ? (
             <div className="flex flex-col gap-3 p-6">
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="h-10 rounded-md bg-accent animate-pulse" />
+                <div key={i} className="h-10 animate-pulse rounded-md bg-accent" />
               ))}
             </div>
           ) : factures.error ? (
@@ -89,15 +108,14 @@ export default function FacturesPage() {
               {(factures.error as { error?: { message?: string } }).error?.message}
             </p>
           ) : items.length === 0 ? (
-            <EmptyState
-              icon={Inbox}
-              title="Aucune facture"
-              description={
-                statut
-                  ? `Aucune facture avec le statut « ${statut} ».`
-                  : "Les factures apparaissent quand le pipeline traite les emails."
-              }
-            />
+            <div className="p-6">
+              <p className="text-muted-foreground flex items-center gap-2 text-sm">
+                <Inbox className="size-4" />
+                {statut
+                  ? `Aucune facture « ${FACTURE_STATUT_LABELS[statut]} ».`
+                  : "Aucune facture pour le moment — elles apparaissent dès que le suivi des emails en détecte une."}
+              </p>
+            </div>
           ) : (
             <>
               <Table>
@@ -107,7 +125,7 @@ export default function FacturesPage() {
                     <TableHead>Fournisseur</TableHead>
                     <TableHead className="max-w-64">Objet</TableHead>
                     <TableHead>Échéance</TableHead>
-                    <TableHead className="text-right">TTC</TableHead>
+                    <TableHead className="text-right">Montant</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead aria-label="actions" />
                   </TableRow>
@@ -119,18 +137,18 @@ export default function FacturesPage() {
                       className="cursor-pointer"
                       onClick={() => router.push(`/factures/${f.id}`)}
                     >
-                      <TableCell className="pl-6 font-medium">
-                        {f.numero}
-                      </TableCell>
+                      <TableCell className="pl-6 font-medium">{f.numero}</TableCell>
                       <TableCell>{f.fournisseur || "—"}</TableCell>
                       <TableCell className="max-w-64 truncate text-muted-foreground">
                         {f.objet ?? "—"}
                       </TableCell>
-                      <TableCell>{f.date_echeance ?? "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {f.date_echeance ?? (
+                          <span className="text-warning">à compléter</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {f.montant_ttc != null
-                          ? `${f.montant_ttc.toFixed(2)} ${f.devise}`
-                          : "—"}
+                        {formatMontant(f.montant_ttc, f.devise)}
                       </TableCell>
                       <TableCell>
                         <StatutFactureBadge statut={f.statut} />
@@ -145,7 +163,7 @@ export default function FacturesPage() {
               <div className="text-muted-foreground flex items-center justify-between border-t px-6 py-3 text-sm">
                 <span>
                   {total} résultat{total > 1 ? "s" : ""}
-                  {statut ? ` · ${statut}` : ""}
+                  {statut ? ` · ${FACTURE_STATUT_LABELS[statut]}` : ""}
                 </span>
                 <div className="flex gap-2">
                   <Button

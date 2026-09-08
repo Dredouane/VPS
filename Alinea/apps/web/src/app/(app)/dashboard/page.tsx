@@ -2,48 +2,49 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { CheckCircle2, FileText, Inbox, TriangleAlert } from "lucide-react";
 
 import { Badge } from "@alinea/ui/components/badge";
+import { Button } from "@alinea/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@alinea/ui/components/card";
 import { PageHeader } from "@alinea/ui/components/page-header";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@alinea/ui/components/table";
+import { StatutFactureBadge } from "@alinea/ui/components/statut-facture-badge";
+import { EmptyState } from "@alinea/ui/components/empty-state";
+import { formatMontant } from "@alinea/ui/lib/statut-labels";
 
 import { api, queryKeys } from "@/lib/api-client";
 
 function KpiCard({
   label,
   value,
+  icon: Icon,
   tone,
   href,
 }: {
   label: string;
   value: number | "—";
-  tone?: "warning" | "destructive";
+  icon: typeof FileText;
+  tone?: "warning" | "destructive" | "success";
   href?: string;
 }) {
   const body = (
     <Card className="h-full">
-      <CardHeader className="pb-0">
-        <CardTitle className="text-muted-foreground text-xs font-medium">
-          {label}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-3xl font-semibold">
-          {value}
-          {tone ? (
-            <Badge variant={tone} className="ml-2 align-middle text-[10px]">
-              {tone === "warning" ? "action" : "à surveiller"}
-            </Badge>
-          ) : null}
-        </p>
+      <CardContent className="flex items-center justify-between">
+        <div>
+          <p className="text-muted-foreground text-xs font-medium">{label}</p>
+          <p className="mt-1 text-3xl font-semibold">{value}</p>
+        </div>
+        <div
+          className={
+            tone === "warning"
+              ? "bg-warning/15 text-warning flex size-10 items-center justify-center rounded-full"
+              : tone === "destructive"
+                ? "bg-destructive/10 text-destructive flex size-10 items-center justify-center rounded-full"
+                : "bg-success/10 text-success flex size-10 items-center justify-center rounded-full"
+          }
+        >
+          <Icon className="size-5" />
+        </div>
       </CardContent>
     </Card>
   );
@@ -51,23 +52,18 @@ function KpiCard({
 }
 
 export default function DashboardPage() {
-  const runs = useQuery({
-    queryKey: queryKeys.runs({ limit: 8, offset: 0 }),
-    queryFn: () =>
-      api.GET("/api/v1/runs", { params: { query: { limit: 8, offset: 0 } } }),
-  });
-  const facturesTotal = useQuery({
-    queryKey: [...queryKeys.factures({ limit: 1, offset: 0 }), "total"],
+  const factures = useQuery({
+    queryKey: queryKeys.factures({ statut: "extracted", limit: 5, offset: 0 }),
     queryFn: () =>
       api.GET("/api/v1/factures", {
-        params: { query: { limit: 1, offset: 0 } },
+        params: { query: { statut: "extracted", limit: 5, offset: 0 } },
       }),
   });
-  const facturesAValider = useQuery({
-    queryKey: [...queryKeys.factures({ statut: "extracted", limit: 1, offset: 0 }), "total"],
+  const validees = useQuery({
+    queryKey: [...queryKeys.factures({ statut: "valide", limit: 1, offset: 0 }), "total"],
     queryFn: () =>
       api.GET("/api/v1/factures", {
-        params: { query: { statut: "extracted", limit: 1, offset: 0 } },
+        params: { query: { statut: "valide", limit: 1, offset: 0 } },
       }),
   });
   const emailsError = useQuery({
@@ -78,98 +74,89 @@ export default function DashboardPage() {
       }),
   });
 
-  const loading =
-    runs.isLoading || facturesTotal.isLoading || facturesAValider.isLoading || emailsError.isLoading;
+  const aTraiterItems = factures.data?.data?.items ?? [];
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Dashboard"
-        description="Pipeline email → facturation (silencieux, consultation D11)"
+        title="Bonjour 👋"
+        description="Voici ce qui attend une décision aujourd'hui."
       />
 
-      {loading ? (
-        <p className="text-muted-foreground text-sm">Chargement…</p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <KpiCard
-            label="Factures (total)"
-            value={facturesTotal.data?.data?.total ?? "—"}
-            href="/factures"
-          />
-          <KpiCard
-            label="Factures à valider"
-            value={facturesAValider.data?.data?.total ?? "—"}
-            tone="warning"
-            href="/factures?statut=extracted"
-          />
-          <KpiCard
-            label="Emails en erreur"
-            value={emailsError.data?.data?.total ?? "—"}
-            tone="destructive"
-            href="/emails"
-          />
-        </div>
-      )}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <KpiCard
+          label="Factures à vérifier"
+          value={factures.data?.data?.total ?? "—"}
+          icon={FileText}
+          tone="warning"
+          href="/factures"
+        />
+        <KpiCard
+          label="Factures validées"
+          value={validees.data?.data?.total ?? "—"}
+          icon={CheckCircle2}
+          tone="success"
+          href="/factures"
+        />
+        <KpiCard
+          label="Échanges en erreur"
+          value={emailsError.data?.data?.total ?? "—"}
+          icon={TriangleAlert}
+          tone="destructive"
+          href="/emails"
+        />
+      </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Derniers runs</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">À traiter en priorité</CardTitle>
+          <Button size="sm" variant="outline" asChild>
+            <Link href="/factures">Toutes les factures</Link>
+          </Button>
         </CardHeader>
-        <CardContent>
-          {runs.isLoading ? (
-            <p className="text-muted-foreground text-sm">Chargement…</p>
-          ) : runs.error ? (
-            <p className="text-destructive text-sm">
-              {(runs.error as { error?: { message?: string } }).error?.message}
-            </p>
+        <CardContent className="flex flex-col gap-2">
+          {factures.isLoading ? (
+            <div className="h-24 animate-pulse rounded-md bg-accent" />
+          ) : aTraiterItems.length === 0 ? (
+            <EmptyState
+              icon={CheckCircle2}
+              title="Tout est à jour"
+              description="Aucune facture n'attend de validation. Les nouvelles arrivées apparaîtront ici."
+            />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Run at</TableHead>
-                  <TableHead>Trigger</TableHead>
-                  <TableHead>Mails new</TableHead>
-                  <TableHead>Docs indexés</TableHead>
-                  <TableHead>Factures</TableHead>
-                  <TableHead>Erreurs</TableHead>
-                  <TableHead>Durée</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(runs.data?.data?.items ?? []).map((run) => (
-                  <TableRow key={run.id}>
-                    <TableCell>
-                      {run.run_at ? new Date(run.run_at).toLocaleString("fr-FR") : "—"}
-                    </TableCell>
-                    <TableCell>{run.run_trigger}</TableCell>
-                    <TableCell>{run.mails_new}</TableCell>
-                    <TableCell>{run.docs_indexed}</TableCell>
-                    <TableCell>{run.factures_upserted}</TableCell>
-                    <TableCell>
-                      {run.errors > 0 ? (
-                        <Badge variant="destructive">{run.errors}</Badge>
-                      ) : (
-                        run.errors
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {run.duration_ms != null ? `${run.duration_ms} ms` : "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {(runs.data?.data?.items ?? []).length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-muted-foreground">
-                      Aucun run enregistré.
-                    </TableCell>
-                  </TableRow>
-                ) : null}
-              </TableBody>
-            </Table>
+            aTraiterItems.map((f) => (
+              <Link
+                key={f.id}
+                href={`/factures/${f.id}`}
+                className="flex items-center justify-between gap-3 rounded-md border px-4 py-3 transition-colors hover:bg-accent"
+              >
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-sm font-medium">
+                    {f.numero} — {f.fournisseur || "Fournisseur à compléter"}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    {formatMontant(f.montant_ttc, f.devise)}
+                    {f.objet ? ` · ${f.objet.slice(0, 60)}` : ""}
+                  </span>
+                </div>
+                <StatutFactureBadge statut={f.statut} />
+              </Link>
+            ))
           )}
         </CardContent>
       </Card>
+
+      <p className="text-muted-foreground text-xs">
+        Les échanges emails sont suivis dans{" "}
+        <Link href="/chains" className="underline-offset-4 hover:underline">
+          Emails
+        </Link>{" "}
+        ; le journal d'exécution se consulte dans{" "}
+        <Link href="/emails" className="underline-offset-4 hover:underline">
+          Traitement
+        </Link>
+        .
+      </p>
     </div>
   );
 }

@@ -20,6 +20,8 @@ import { PageHeader } from "@alinea/ui/components/page-header";
 
 import { api, queryKeys } from "@/lib/api-client";
 import { EMAIL_STATUSES, type EmailStatus } from "@/lib/enums";
+import { EMAIL_STATUS_LABELS } from "@alinea/ui/lib/statut-labels";
+import { RunJournal } from "@/components/run-journal";
 
 const PAGE_SIZE = 25;
 
@@ -41,18 +43,18 @@ export default function EmailsPage() {
 
   const statusBadge = (s: string) =>
     s === "error" ? (
-      <Badge variant="destructive">error</Badge>
+      <Badge variant="destructive">{EMAIL_STATUS_LABELS.error}</Badge>
     ) : s === "processed" ? (
-      <Badge variant="success">processed</Badge>
+      <Badge variant="success">{EMAIL_STATUS_LABELS.processed}</Badge>
     ) : (
-      <Badge variant="warning">received</Badge>
+      <Badge variant="warning">{EMAIL_STATUS_LABELS.received}</Badge>
     );
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Traitement"
-        description="Registre de traitement du pipeline (statuts, retries, erreurs). Les conversations vivent dans Chaînes."
+        description="Suivi de traitement des emails reçus — les conversations vivent dans Emails."
         actions={
           <div className="flex flex-wrap gap-1">
             <Button
@@ -75,7 +77,7 @@ export default function EmailsPage() {
                   setOffset(0);
                 }}
               >
-                {s}
+                {EMAIL_STATUS_LABELS[s]}
               </Button>
             ))}
           </div>
@@ -170,6 +172,7 @@ export default function EmailsPage() {
           )}
         </CardContent>
       </Card>
+      <RunJournal />
     </div>
   );
 }

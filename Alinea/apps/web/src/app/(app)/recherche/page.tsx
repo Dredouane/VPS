@@ -14,6 +14,7 @@ import {
 import { Input } from "@alinea/ui/components/input";
 import { PageHeader } from "@alinea/ui/components/page-header";
 
+import Link from "next/link";
 import { api, apiErrorMessage } from "@/lib/api-client";
 
 export default function RecherchePage() {
@@ -81,7 +82,22 @@ export default function RecherchePage() {
               <p className="text-muted-foreground line-clamp-4 whitespace-pre-line text-sm">
                 {doc.content}
               </p>
-              <p className="mt-2 text-xs">{doc.kind}</p>
+              <div className="mt-3 flex gap-2">
+                {doc.facture_id ? (
+                  <Button size="sm" asChild>
+                    <Link href={`/factures/${doc.facture_id}`}>
+                      Voir la facture {doc.facture_numero ?? ""}
+                    </Link>
+                  </Button>
+                ) : null}
+                {doc.thread_id ? (
+                  <Button size="sm" variant="outline" asChild>
+                    <Link href={`/chains/${encodeURIComponent(doc.thread_id)}`}>
+                      Voir la conversation
+                    </Link>
+                  </Button>
+                ) : null}
+              </div>
             </CardContent>
           </Card>
         ))}

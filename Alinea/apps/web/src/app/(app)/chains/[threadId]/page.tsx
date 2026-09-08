@@ -122,6 +122,16 @@ export default function ChainDetailPage() {
               <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
+                    <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
+                      {(from ?? "?")
+                        .replace(/<.*>/, "")
+                        .trim()
+                        .split(/\s+/)
+                        .map((w) => w[0])
+                        .slice(0, 2)
+                        .join("")
+                        .toUpperCase() || "?"}
+                    </span>
                     <CardTitle className="truncate text-sm font-medium">
                       {from ?? "—"}
                     </CardTitle>
@@ -190,8 +200,51 @@ export default function ChainDetailPage() {
 
       </div>
 
-        <aside className="lg:col-span-1">
-          <ChatPanel threadId={threadId} />
+        <aside className="flex flex-col gap-4 lg:col-span-1">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">En résumé</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1.5 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">Messages</span>
+                <span>{d.mails.length}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">Dernier échange</span>
+                <span>
+                  {d.chain.last_message_at
+                    ? new Date(d.chain.last_message_at).toLocaleDateString("fr-FR")
+                    : "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">Factures liées</span>
+                <span>
+                  {d.factures.length > 0 ? (
+                    <Link
+                      href={`/factures/${d.factures[0].id}`}
+                      className="font-medium underline-offset-4 hover:underline"
+                    >
+                      {d.factures[0].numero}
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground">aucune pour l'instant</span>
+                  )}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+          <ChatPanel
+            scope={{ type: "chain", id: threadId }}
+            title="Assistant de la conversation"
+            intro="Répond à partir de cet échange uniquement — sources citées."
+            suggestions={[
+              "Résume cette conversation",
+              "De quoi parle cet échange ?",
+              "Quelles pièces jointes ont été échangées ?",
+            ]}
+          />
         </aside>
       </div>
 
