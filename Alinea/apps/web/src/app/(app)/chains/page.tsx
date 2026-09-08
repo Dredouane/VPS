@@ -19,6 +19,7 @@ import { PageHeader } from "@alinea/ui/components/page-header";
 import { EmptyState } from "@alinea/ui/components/empty-state";
 
 import { api, queryKeys } from "@/lib/api-client";
+import { normalizeParticipants } from "@/lib/chains";
 
 const PAGE_SIZE = 25;
 
@@ -75,7 +76,7 @@ export default function ChainsPage() {
                 </TableHeader>
                 <TableBody>
                   {items.map((c) => {
-                    const participants = (c.participants ?? []) as string[];
+                    const participants = normalizeParticipants(c.participants);
                     return (
                       <TableRow
                         key={c.id}

@@ -51,7 +51,7 @@ export default function EmailsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Emails — traitement"
+        title="Traitement"
         description="Registre de traitement du pipeline (statuts, retries, erreurs). Les conversations vivent dans Chaînes."
         actions={
           <div className="flex flex-wrap gap-1">

@@ -25,6 +25,8 @@ import { EmptyState } from "@alinea/ui/components/empty-state";
 import { StatutFactureBadge } from "@alinea/ui/components/statut-facture-badge";
 
 import { api, apiErrorMessage, queryKeys } from "@/lib/api-client";
+import { ChatPanel } from "@/components/chat-panel";
+import { normalizeParticipants, docMetadata } from "@/lib/chains";
 
 function usePresign() {
   return useMutation({
@@ -73,7 +75,7 @@ export default function ChainDetailPage() {
   }
   if (!d) return null;
 
-  const participants = (d.chain.participants ?? []) as string[];
+  const participants = normalizeParticipants(d.chain.participants);
 
   return (
     <div className="flex flex-col gap-6">
@@ -88,6 +90,8 @@ export default function ChainDetailPage() {
         }
       />
 
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="flex flex-col gap-6 lg:col-span-2">
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <span className="inline-flex items-center gap-1.5">
           <Users className="size-3.5" />
@@ -144,7 +148,7 @@ export default function ChainDetailPage() {
                 {mail.attachments.length > 0 ? (
                   <div className="flex flex-col gap-2">
                     {mail.attachments.map((a) => {
-                      const ameta = (a.metadata ?? {}) as {
+                      const ameta = docMetadata(a.metadata) as {
                         r2_key?: string;
                         filename?: string;
                       };
@@ -182,6 +186,13 @@ export default function ChainDetailPage() {
             </Card>
           );
         })}
+      </div>
+
+      </div>
+
+        <aside className="lg:col-span-1">
+          <ChatPanel threadId={threadId} />
+        </aside>
       </div>
 
       {/* Factures liées */}
