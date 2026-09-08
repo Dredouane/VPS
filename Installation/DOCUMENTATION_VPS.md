@@ -327,4 +327,4 @@ sudo /usr/local/bin/telegram-alert.sh "Test" "message de test"
 - Token : bot dédié `8976902110:…` (compose en 600). `TELEGRAM_ALLOWED_USERS/HOME_CHANNEL = 5917823647`.
 - **Chromium 152 installé dans le conteneur** (apt Debian 13, headless OK en uid 10000) — ⚠️ vit dans la couche conteneur : **perdu si le conteneur est recréé** (survit au stop/start) → réinstallation : `docker exec Alinea_icp_reviewer apt-get install -y chromium` (ou l'agent lui-même).
 - SOUL.md stub en place → **Redouane écrit la persona finale** dans `hermes-fleet/Alinea_icp_reviewer/data/SOUL.md`.
-- Intégrations : nightly check (7/7 agents), backup fleet (inclus), AIDE (exclusion data récursive), vault NON monté (à ajouter plus tard si besoin — ACL déjà en place sur le vault).
+- Intégrations : nightly check (7/7 agents), backup fleet (inclus), AIDE (exclusion data récursive). **Vault monté le 07/09** (`/home/syncthing/obsidian-vault:/opt/vault`, lecture+écriture via les ACL u:10000 déjà en place).
