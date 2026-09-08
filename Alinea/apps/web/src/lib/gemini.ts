@@ -13,7 +13,7 @@ import { geminiKey } from "./env";
 const MODEL = "gemini-embedding-001";
 const DIMENSIONS = 768;
 const MAX_CHARS = 6000;
-const CHAT_MODEL = "gemini-2.5-flash";
+const CHAT_MODEL = "gemini-flash-latest"; // alias stable — IDs versionnés 404 avec cette clé
 const API =
   "https://generativelanguage.googleapis.com/v1beta/models/{model}:{action}?key={key}";
 

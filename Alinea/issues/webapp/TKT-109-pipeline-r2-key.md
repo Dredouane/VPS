@@ -13,10 +13,14 @@ La webapp propose « Ouvrir » sur les PJ (URL signée R2) dès que
 `cap_documents.metadata.r2_key` existe. **M2.8 a livré les r2_key pour les
 PJ (kind=attachment)** — à vérifier en prod et compléter pour les mails.
 
-## État actuel (M2.8)
-- ✅ PJ (kind=attachment) : `metadata.r2_key` écrit par le pipeline
+## État actuel (M2.8 — vérifié prod 2026-09-08)
+- ⚠️ PJ : les docs indexés **AVANT M2.8** n'ont pas de r2_key (vérifié :
+  presign → `r2_key_unavailable` sur la facture 2026-163). Les prochains
+  attachments traités par M2.8 devraient l'avoir — à confirmer au prochain
+  run réel.
 - ❓ Mails (kind=email) : clé du brut `thread.json` non tracée
-- ❓ Lignes historiques : docs indexés AVANT M2.8 n'ont pas de r2_key
+- ❓ Backfill des lignes historiques (ou re-run `force-attachments`) si on
+  veut le brut des PJ existantes
 
 ## État attendu
 1. Vérification prod : presign OK sur une PJ réelle (facture 2026-163).
