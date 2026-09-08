@@ -86,11 +86,12 @@ def parse_raw_message(raw):
     }
     body_plain = msg.get_body(preferencelist=("plain",))
     if body_plain is not None:
-        m["body_plain"] = body_plain.get_content()
+        # normalisation à la source (D19): \r\n Gmail → \n standard
+        m["body_plain"] = body_plain.get_content().replace("\r\n", "\n").replace("\r", "\n")
     else:
         body_html = msg.get_body(preferencelist=("html",))
         if body_html is not None:
-            m["body_plain"] = strip_html(body_html.get_content())
+            m["body_plain"] = strip_html(body_html.get_content().replace("\r\n", "\n").replace("\r", "\n"))
     for part in msg.iter_attachments():
         data = part.get_payload(decode=True) or b""
         fname = part.get_filename() or "attachment.bin"

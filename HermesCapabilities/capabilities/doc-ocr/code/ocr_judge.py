@@ -83,21 +83,32 @@ def score(ex: dict, sim: float) -> float:
 
 
 def judge(ex1: dict, ex2: dict) -> dict:
-    """2 extractions génériques → verdict (pur, déterministe)."""
+    """2 extractions génériques → verdict (pur, déterministe, D14 révisé)."""
     text1, text2 = ex1.get("text", ""), ex2.get("text", "")
-    sim = round(token_jaccard(text1, text2), 4)
-    s1, s2 = score(ex1, sim), score(ex2, sim)
+    absent = ex2.get("extractor") == "absent"
+    if absent:
+        # D14 révisé: 1 extracteur seul (l'autre indisponible) → ×0,85
+        sim, low = 0.0, False
+        s1, s2 = score(ex1, 1.0), 0.0
+    else:
+        sim = round(token_jaccard(text1, text2), 4)
+        s1, s2 = score(ex1, sim), score(ex2, sim)
+        low = sim < LOW_AGREEMENT_THRESHOLD
     winner = "gemini" if s1 >= s2 else "openrouter"   # tie → gemini (ordre figé)
     winner_ex = ex1 if winner == "gemini" else ex2
-    low = sim < LOW_AGREEMENT_THRESHOLD
     conf = min(max(float(winner_ex.get("confidence") or 0), 0.0), 1.0)
+    if absent:
+        conf *= 0.85   # D14 révisé: extracteur indisponible (pas divergent)
+    elif low:
+        conf *= 0.7
     return {
         "winner": winner,
         "scores": {"gemini": s1, "openrouter": s2},
         "agreement": sim,
         "low_agreement": low,
+        "extractor_absent": absent,
         "doc_type": decide_doc_type(ex1, ex2),
-        "confidence": round(conf * (0.7 if low else 1.0), 3),
+        "confidence": round(conf, 3),
     }
 
 

@@ -29,7 +29,8 @@
 | D15-bis | **Orchestrateur déterministe** `run_pipeline.py` = colonne vertébrale du pipeline ; skills LLM greffées via le prompt de routine | Chaîne orchestrée par LLM fragile |
 | D16 | Confiance dégradée : **extracteur indisponible → ×0,85** vs deux extracteurs divergents → ×0,7 (distinguer "absent" de "désaccord") | ×0,7 uniforme (trop pessimiste) |
 | D17 | **Forward = enveloppe ignorée** — traitement dès le mail d'après (skip cover + bloc header) ; `from` = expéditeur réel ; facture = PJ-sourced (D15) | Indexer le texte de l'enveloppe du forward |
-| D18 | **Vendoring** `mail-parser-reply` v1.36 (MIT, fr/en/de/it/nl/da/ja) dans le code — séparation replies/quotes robuste multi-providers sans pip runtime | Parser maison regex · SLM parse · pip runtime (I11) |
+| D18 | **Vendoring** `mail-parser-reply` v1.36 (MIT, fr/en/de/it/nl/da/ja) — séparation replies/quotes robuste multi-providers sans pip runtime | Parser maison regex · SLM parse · pip runtime (I11) |
+| D19 | **Normalisation CR/LF à la source** (imap_poll.py) — le raw Gmail body `\r\n` → `\n` avant body_plain, le vendor lib reçoit propre | Verrue au niveau parser/thraed |
 | D11-ter | Headless : routines sur le **profil default** (le scheduler ne consomme que lui) — profil ops = Desktop uniquement | Routines sur profils secondaires headless (ne tirent pas) |
 
 ---
@@ -286,6 +287,26 @@ exotique (idée conservée).
 (md5 du texte) — deux runs force-attachments peuvent créer des docs
 duplicates si l'OCR varie légèrement (fix file-md5 dedup prévu M3 ; le
 chemin normal mails_new ne crée pas de doublons).
+
+## D19 — CR/LF normalisation à la source ✅ (01/09, après recherche OpenRouter PDF)
+
+**Fix** : la normalisation `\r\n` → `\n` se fait dans `imap_poll.py` à la
+**source de `body_plain`** (le premier endroit où le contenu est extrait du
+rfc2822). Le thread_parser et la lib vendored reçoivent du texte propre.
+pas de verrue dans `split_quoted`.
+
+## OpenRouter PDF : `file` content type (recherche 01/09)
+
+**Architectural révision** : le `image_url` data-Type n'est PAS le bon format
+pour envoyer des PDFs via OpenRouter. Le bon = **`file`** content type
+(`plugins: [{"id": "file-parser", "pdf": {"engine": "cloudflare-ai"}}]` —
+grati), avec 3 moteurs (cloudflare-ai free, mistral-ocr $2/1k page),
+work any model. **Avec les PDF OpenRouter devient la voie fort** qui marche
+pour n'importe quel LLM de vision (pas de restriction au modèle natif).
+
+**Model choisi**: `openai/gpt-4o-mini` ($0.15/$0.60 par million) — cloudflare-ai
+moteur gratuit parse les PDFs et les passe à GPT-4o-mini en entrée. Vision
+image natif de GPT-4o-mini assure les PJ images.
 
 ## Historique
 

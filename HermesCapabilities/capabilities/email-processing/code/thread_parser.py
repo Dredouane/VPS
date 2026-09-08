@@ -79,7 +79,7 @@ def split_quoted(body: str) -> tuple:
     le contenu NOUVEAU (le mail d'origine transféré). Fallback sur la lib
     vendored mailparser_reply (multi-providers, cf. D18).
     """
-    body = (body or "").replace("\r\n", "\n").replace("\r", "\n")
+    body = body or ""
     if not body.strip():
         return "", []
     if body.lstrip().startswith(">"):  # mail 100% cité (réponse par défaut avant)
