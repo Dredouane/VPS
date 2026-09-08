@@ -314,3 +314,10 @@ sudo /usr/local/bin/telegram-alert.sh "Test" "message de test"
 1. 🟢 `OK` → rien à faire (maintenance/bénéfique, détail dans `/var/log/aide/` 7 j).
 2. 🚨 `NOK` → vérifier les chemins listés : session Doer en cours = attendu (vérifier avec l'agent), sinon investiguer.
 3. Après une fenêtre de déploiement : régénérer la base (`/tmp/regen-aide.sh` à recréer si `/tmp` purgé : `aideinit --force -y` → `mv aide.db.new aide.db`).
+
+### Vault Obsidian : accès agents via ACL (06-07/09)
+- Problème : les fichiers syncés par Syncthing appartiennent à `syncthing` (uid 112) — les `.md` en `600` étaient **illisibles pour les agents Docker (uid 10000)** (ex. Aquisition/Fateh).
+- **Fix retenu : ACL** (pas de chown !) : `setfacl -R -m u:10000:rwX` + `setfacl -R -d -m u:10000:rwX` sur `/home/syncthing/obsidian-vault` (stocké sur disque → persistant, héritage automatique pour les nouveaux fichiers syncés).
+- **Pourquoi PAS le chown 10000 proposé par l'agent** : priverait syncthing du droit d'écriture → sync cassée, et le problème reviendrait sur chaque nouveau fichier.
+- Vérifié : lecture + écriture OK en uid 10000 dans le conteneur (`docker exec -u 10000`), syncthing `idle` intact, héritage prouvé (fichier créé par syncthing → ACL présente).
+- ⚠️ Test hôte piégé : `/home/syncthing` est en 750 → tester **dans le conteneur** (`docker exec -u 10000`), pas depuis le chemin hôte.
