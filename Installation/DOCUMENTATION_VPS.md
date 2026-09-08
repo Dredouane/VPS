@@ -321,3 +321,10 @@ sudo /usr/local/bin/telegram-alert.sh "Test" "message de test"
 - **Pourquoi PAS le chown 10000 proposé par l'agent** : priverait syncthing du droit d'écriture → sync cassée, et le problème reviendrait sur chaque nouveau fichier.
 - Vérifié : lecture + écriture OK en uid 10000 dans le conteneur (`docker exec -u 10000`), syncthing `idle` intact, héritage prouvé (fichier créé par syncthing → ACL présente).
 - ⚠️ Test hôte piégé : `/home/syncthing` est en 750 → tester **dans le conteneur** (`docker exec -u 10000`), pas depuis le chemin hôte.
+
+### Agent 7 : Alinea_icp_reviewer (06-07/09)
+- Conteneur dédié `Alinea_icp_reviewer` (image `hermes-agent:latest`, **aucun port exposé**, `mem_limit 2g`, `no-new-privileges`), gateway uid 10000, Telegram **connected**.
+- Token : bot dédié `8976902110:…` (compose en 600). `TELEGRAM_ALLOWED_USERS/HOME_CHANNEL = 5917823647`.
+- **Chromium 152 installé dans le conteneur** (apt Debian 13, headless OK en uid 10000) — ⚠️ vit dans la couche conteneur : **perdu si le conteneur est recréé** (survit au stop/start) → réinstallation : `docker exec Alinea_icp_reviewer apt-get install -y chromium` (ou l'agent lui-même).
+- SOUL.md stub en place → **Redouane écrit la persona finale** dans `hermes-fleet/Alinea_icp_reviewer/data/SOUL.md`.
+- Intégrations : nightly check (7/7 agents), backup fleet (inclus), AIDE (exclusion data récursive), vault NON monté (à ajouter plus tard si besoin — ACL déjà en place sur le vault).
