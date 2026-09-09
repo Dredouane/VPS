@@ -325,7 +325,8 @@ sudo /usr/local/bin/telegram-alert.sh "Test" "message de test"
 ### Agent 7 : Alinea_icp_reviewer (06-07/09)
 - Conteneur dédié `Alinea_icp_reviewer` (image `hermes-agent:latest`, **aucun port exposé**, `mem_limit 2g`, `no-new-privileges`), gateway uid 10000, Telegram **connected**.
 - Token : bot dédié `8976902110:…` (compose en 600). `TELEGRAM_ALLOWED_USERS/HOME_CHANNEL = 5917823647`.
-- **Chromium 152 installé dans le conteneur** (apt Debian 13, headless OK en uid 10000) — ⚠️ vit dans la couche conteneur : **perdu si le conteneur est recréé** (survit au stop/start) → réinstallation : `docker exec Alinea_icp_reviewer apt-get install -y chromium` (ou l'agent lui-même).
+- **Modèle principal = `gemini-3.6-flash`** (provider natif gemini, clé dans `/opt/data/.env`) — multimodal : voit les images nativement. Vision auxiliaire + main sur `gemini-3.6-flash` (⚠️ `gemini-2.5-*` → 404 pour ce compte). `agent.max_turns: 90`. Backup config : `/opt/data/config.yaml.bak.*`.
+- **Helper `bshot`** (`/opt/data/bin/bshot <url> [png] [W] [H]`, volume persistant) : screenshot réel rendu (JS via virtual-time, desktop 1440×900 + mobile 390×844) dans `/opt/data/screenshots/` → l'agent les analyse avec sa vision Gemini (décisions design). Flags Docker requis : `--no-sandbox --disable-dev-shm-usage --user-data-dir=/tmp/…`.
 - SOUL.md stub en place → **Redouane écrit la persona finale** dans `hermes-fleet/Alinea_icp_reviewer/data/SOUL.md`.
 - Intégrations : nightly check (7/7 agents), backup fleet (inclus), AIDE (exclusion data récursive). **Vault monté le 07/09** (`/home/syncthing/obsidian-vault:/opt/vault`, lecture+écriture via les ACL u:10000 déjà en place).
 
