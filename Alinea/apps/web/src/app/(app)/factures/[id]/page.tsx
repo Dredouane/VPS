@@ -153,15 +153,41 @@ export default function FactureDetailPage() {
     },
   });
 
-  const presignPdf = useMutation({
-    mutationFn: (documentId: string) =>
-      api.GET("/api/v1/files/{documentId}", { params: { path: { documentId } } }),
+  const openDocument = useMutation({
+    mutationFn: async (documentId: string) => {
+      const res = await api.GET("/api/v1/files/{documentId}", {
+        params: { path: { documentId } },
+      });
+      return res.data ? res : { data: null, error: res.error };
+    },
     onSuccess: (res) => {
       if (res.data?.url) window.open(res.data.url, "_blank", "noopener");
     },
   });
 
-  const err = (facture.error ?? saveTransition.error ?? saveCorrection.error ?? presignPdf.error) as
+  /** Ouvre le document lié : PJ de la facture, sinon le brut du mail d'origine. */
+  async function handleOpenDocument() {
+    if (!f) return;
+    if (f.document_id) {
+      openDocument.mutate(f.document_id);
+      return;
+    }
+    if (f.email_message_id) {
+      const res = await api.GET("/api/v1/documents", {
+        params: { query: { message_id: f.email_message_id, kind: "email", limit: 1, offset: 0 } },
+      });
+      const doc = res.data?.items?.[0];
+      if (!doc) {
+        alert("Aucun document sauvegardé pour cette facture.");
+        return;
+      }
+      openDocument.mutate(doc.id);
+      return;
+    }
+    alert("Aucun document sauvegardé pour cette facture.");
+  }
+
+  const err = (facture.error ?? saveTransition.error ?? saveCorrection.error ?? openDocument.error) as
     | { error?: { message?: string } }
     | undefined;
 
@@ -237,15 +263,15 @@ export default function FactureDetailPage() {
         description={f.fournisseur || undefined}
         actions={
           <>
-            {f.document_id ? (
+            {f.document_id || f.email_message_id ? (
               <Button
                 size="sm"
                 variant="outline"
-                disabled={presignPdf.isPending}
-                onClick={() => presignPdf.mutate(f.document_id!)}
+                disabled={openDocument.isPending}
+                onClick={handleOpenDocument}
               >
                 <ExternalLink className="size-4" />
-                Document
+                {openDocument.isPending ? "…" : "Document"}
               </Button>
             ) : null}
             <StatutFactureBadge statut={f.statut} />
@@ -333,18 +359,9 @@ export default function FactureDetailPage() {
               <p className="text-sm">
                 {confianceExpliquee(f.confiance ?? null)}
               </p>
-              {f.document_id ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-3"
-                  disabled={presignPdf.isPending}
-                  onClick={() => presignPdf.mutate(f.document_id!)}
-                >
-                  <ExternalLink className="size-3.5" />
-                  Ouvrir la pièce jointe d'origine
-                </Button>
-              ) : null}
+              <p className="text-muted-foreground mt-3 text-xs">
+                Le bouton « Document » en haut de la page ouvre le PDF d'origine (ou l'email source).
+              </p>
             </CardContent>
           </Card>
 
@@ -433,6 +450,17 @@ export default function FactureDetailPage() {
           </CardContent>
         </Card>
       ) : null}
+
+      <ChatBubble
+        scope={{ type: "facture", id }}
+        title="Assistant expert de la facture"
+        intro="Connaît cette fiche et les documents liés (isolation par facture)."
+        suggestions={[
+          "Cette facture correspond à quel email ?",
+          "Quel est le montant total ?",
+          "Que contient la pièce jointe ?",
+        ]}
+      />
     </div>
   );
 }

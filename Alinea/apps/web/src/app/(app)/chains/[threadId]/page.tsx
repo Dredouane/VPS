@@ -25,8 +25,8 @@ import { EmptyState } from "@alinea/ui/components/empty-state";
 import { StatutFactureBadge } from "@alinea/ui/components/statut-facture-badge";
 
 import { api, apiErrorMessage, queryKeys } from "@/lib/api-client";
-import { ChatBubble } from "@/components/chat-bubble";
 import { normalizeParticipants, docMetadata } from "@/lib/chains";
+import { ChatBubble } from "@/components/chat-bubble";
 
 function usePresign() {
   return useMutation({
@@ -90,9 +90,10 @@ export default function ChainDetailPage() {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <aside className="order-1 lg:col-start-3">
-          <Card>
+      <div className="grid gap-6 lg:grid-cols-3 lg:items-start">
+        {/* Colonne droite (desktop) — En résumé */}
+        <aside className="order-1 lg:col-start-3 lg:row-start-1">
+          <Card className="lg:sticky lg:top-20">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">En résumé</CardTitle>
             </CardHeader>
@@ -120,163 +121,174 @@ export default function ChainDetailPage() {
                       {d.factures[0].numero}
                     </Link>
                   ) : (
-                    <span className="text-muted-foreground">aucune pour l'instant</span>
+                    <span className="text-muted-foreground">aucune pour l&apos;instant</span>
                   )}
                 </span>
               </div>
             </CardContent>
           </Card>
         </aside>
-        <div className="order-2 flex min-w-0 flex-col gap-6 lg:col-span-2">
-      <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-        <span className="inline-flex items-center gap-1.5">
-          <Users className="size-3.5" />
-          <span className="[overflow-wrap:anywhere]">
-            {participants.length > 0 ? participants.join(", ") : "—"}
-          </span>
-        </span>
-        {d.chain.first_message_at ? (
-          <span>
-            1ᵉʳ message :{" "}
-            {new Date(d.chain.first_message_at).toLocaleString("fr-FR")}
-          </span>
-        ) : null}
-        {d.chain.last_message_at ? (
-          <span>
-            Dernier :{" "}
-            {new Date(d.chain.last_message_at).toLocaleString("fr-FR")}
-          </span>
-        ) : null}
-      </div>
 
-      {/* Timeline des mails */}
-      <div className="flex flex-col gap-4">
-        {d.mails.map((mail) => {
-          const role = (mail.email as { thread_role?: string }).thread_role;
-          const from = (mail.email as { from_addr?: string }).from_addr;
-          const date = (mail.email as { mail_date?: string | null }).mail_date;
-          return (
-            <Card key={(mail.email as { id: string }).id}>
-              <CardHeader className="pb-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
-                      {(from ?? "?")
-                        .replace(/<.*>/, "")
-                        .trim()
-                        .split(/\s+/)
-                        .map((w) => w[0])
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase() || "?"}
-                    </span>
-                    <CardTitle className="truncate text-sm font-medium">
-                      {from ?? "—"}
-                    </CardTitle>
-                    {role ? (
-                      <Badge variant={ROLE_BADGE[role] ?? "outline"}>{role}</Badge>
-                    ) : null}
-                  </div>
-                  <span className="text-muted-foreground shrink-0 text-xs">
-                    {date ? new Date(date).toLocaleString("fr-FR") : "—"}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                {mail.content ? (
-                  <p className="max-h-80 overflow-y-auto text-sm leading-relaxed whitespace-pre-line [overflow-wrap:anywhere]">
-                    {mail.content.content}
-                  </p>
-                ) : (
-                  <p className="text-muted-foreground text-sm italic">
-                    Contenu non indexé pour ce message.
-                  </p>
-                )}
+        {/* Colonne large (desktop) — fil des mails */}
+        <div className="order-2 flex min-w-0 flex-col gap-4 lg:col-span-2 lg:col-start-1 lg:row-start-1">
+          <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            <span className="inline-flex items-center gap-1.5">
+              <Users className="size-3.5" />
+              <span className="[overflow-wrap:anywhere]">
+                {participants.length > 0 ? participants.join(", ") : "—"}
+              </span>
+            </span>
+            {d.chain.last_message_at ? (
+              <span>
+                Dernier :{" "}
+                {new Date(d.chain.last_message_at).toLocaleString("fr-FR")}
+              </span>
+            ) : null}
+          </div>
 
-                {mail.attachments.length > 0 ? (
-                  <div className="flex flex-col gap-2">
-                    {mail.attachments.map((a) => {
-                      const ameta = docMetadata(a.metadata) as {
-                        r2_key?: string;
-                        filename?: string;
-                      };
-                      return (
-                        <div
-                          key={a.id}
-                          className="flex items-center justify-between gap-3 rounded-md border px-3 py-2"
+          {d.mails.map((mail) => {
+            const role = (mail.email as { thread_role?: string }).thread_role;
+            const from = (mail.email as { from_addr?: string }).from_addr;
+            const date = (mail.email as { mail_date?: string | null }).mail_date;
+            const contentMeta = mail.content ? docMetadata(mail.content.metadata) : {};
+            return (
+              <Card key={(mail.email as { id: string }).id} className="min-w-0">
+                <CardHeader className="pb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
+                        {(from ?? "?")
+                          .replace(/<.*>/, "")
+                          .trim()
+                          .split(/\s+/)
+                          .map((w) => w[0])
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase() || "?"}
+                      </span>
+                      <CardTitle className="truncate text-sm font-medium">
+                        {from ?? "—"}
+                      </CardTitle>
+                      {role ? (
+                        <Badge variant={ROLE_BADGE[role] ?? "outline"}>{role}</Badge>
+                      ) : null}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-muted-foreground text-xs">
+                        {date ? new Date(date).toLocaleString("fr-FR") : "—"}
+                      </span>
+                      {mail.content && contentMeta.r2_key ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-xs"
+                          disabled={presign.isPending}
+                          onClick={() =>
+                            presign.mutate((mail.content as { id: string }).id)
+                          }
                         >
-                          <div className="flex min-w-0 items-center gap-2">
-                            <Paperclip className="text-muted-foreground size-4 shrink-0" />
-                            <span className="truncate text-sm">
-                              {ameta.filename ?? a.title ?? a.id.slice(0, 8)}
-                            </span>
-                            {ameta.r2_key ? null : (
-                              <span className="text-muted-foreground text-xs">
-                                (brut indisponible)
-                              </span>
-                            )}
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!ameta.r2_key || presign.isPending}
-                            onClick={() => presign.mutate(a.id)}
-                          >
-                            <ExternalLink className="size-3.5" />
-                            Ouvrir
-                          </Button>
-                        </div>
-                      );
-                    })}
+                          <ExternalLink className="size-3.5" />
+                          Voir l&apos;email brut
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
-                ) : null}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3">
+                  {mail.content ? (
+                    <p className="max-h-96 overflow-y-auto text-sm leading-relaxed whitespace-pre-line [overflow-wrap:anywhere]">
+                      {mail.content.content}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground text-sm italic">
+                      Contenu non indexé pour ce message.
+                    </p>
+                  )}
 
-      </div>
-      </div>
+                  {mail.attachments.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      {mail.attachments.map((a) => {
+                        const ameta = docMetadata(a.metadata) as {
+                          r2_key?: string;
+                          filename?: string;
+                        };
+                        return (
+                          <div
+                            key={a.id}
+                            className="flex items-center justify-between gap-3 rounded-md border px-3 py-2"
+                          >
+                            <div className="flex min-w-0 items-center gap-2">
+                              <Paperclip className="text-muted-foreground size-4 shrink-0" />
+                              <span className="truncate text-sm">
+                                {ameta.filename ?? a.title ?? a.id.slice(0, 8)}
+                              </span>
+                              {ameta.r2_key ? null : (
+                                <span className="text-muted-foreground text-xs">
+                                  (brut indisponible)
+                                </span>
+                              )}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={!ameta.r2_key || presign.isPending}
+                              onClick={() => presign.mutate(a.id)}
+                            >
+                              <ExternalLink className="size-3.5" />
+                              Ouvrir
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
 
-      {/* Factures liées */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">
-            Factures liées ({d.factures.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
-          {d.factures.length === 0 ? (
-            <EmptyState
-              icon={Inbox}
-              title="Aucune facture liée"
-              description="Aucun expert facturation n'a extrait de facture depuis ce thread."
-            />
-          ) : (
-            d.factures.map((f) => (
-              <Link
-                key={f.id}
-                href={`/factures/${f.id}`}
-                className="flex items-center justify-between gap-3 rounded-md border px-4 py-3 transition-colors hover:bg-accent"
-              >
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <span className="truncate text-sm font-medium">
-                    {f.numero} — {f.fournisseur || "—"}
-                  </span>
-                  <span className="text-muted-foreground text-xs">
-                    {f.montant_ttc != null
-                      ? `${f.montant_ttc.toFixed(2)} ${f.devise}`
-                      : "—"}
-                    {f.date_facture ? ` · ${f.date_facture}` : ""}
-                  </span>
-                </div>
-                <StatutFactureBadge statut={f.statut} />
-              </Link>
-            ))
-          )}
-        </CardContent>
-      </Card>
+        {/* Colonne droite (desktop) — Factures liées ; mobile : après les mails */}
+        <section className="order-3 lg:col-start-3 lg:row-start-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Factures liées ({d.factures.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              {d.factures.length === 0 ? (
+                <EmptyState
+                  icon={Inbox}
+                  title="Aucune facture liée"
+                  description="Aucun expert facturation n'a extrait de facture depuis ce thread."
+                />
+              ) : (
+                d.factures.map((f) => (
+                  <Link
+                    key={f.id}
+                    href={`/factures/${f.id}`}
+                    className="flex items-center justify-between gap-3 rounded-md border px-3 py-2.5 transition-colors hover:bg-accent"
+                  >
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="truncate text-sm font-medium">
+                        {f.numero} — {f.fournisseur || "—"}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {f.montant_ttc != null
+                          ? `${f.montant_ttc.toFixed(2)} ${f.devise}`
+                          : "—"}
+                        {f.date_facture ? ` · ${f.date_facture}` : ""}
+                      </span>
+                    </div>
+                    <StatutFactureBadge statut={f.statut} />
+                  </Link>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </section>
+      </div>
 
       <ChatBubble
         scope={{ type: "chain", id: threadId }}
@@ -288,13 +300,6 @@ export default function ChainDetailPage() {
           "Quelles pièces jointes ont été échangées ?",
         ]}
       />
-
-      <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
-        <FileText className="size-3.5" />
-        L'email brut complet (thread.json) est archivé dans la GED R2 —
-        l&apos;ouverture sera disponible dès que le pipeline écrira les clés
-        (W12).
-      </p>
     </div>
   );
 }

@@ -84,13 +84,13 @@ export function ChatPanel({
   const showSuggestions = suggestions && items.length === 0;
 
   return (
-    <Card>
+    <Card className="flex h-full max-h-full flex-col">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">{title}</CardTitle>
         <p className="text-muted-foreground text-xs">{intro}</p>
       </CardHeader>
       <CardContent className="flex max-h-[70vh] flex-col gap-3">
-        <div className="flex min-h-40 flex-1 flex-col gap-3 overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
           {messages.isLoading ? (
             <>
               <Skeleton className="h-14 w-4/5" />
