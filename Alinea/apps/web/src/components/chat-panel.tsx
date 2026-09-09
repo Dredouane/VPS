@@ -150,7 +150,7 @@ export function ChatPanel({
           </div>
         ) : null}
 
-        <form onSubmit={(e) => { e.preventDefault(); send(question); }} className="flex gap-2 border-t pt-3">
+        <form onSubmit={(e) => { e.preventDefault(); send(question); }} className="flex shrink-0 gap-2 border-t pt-3">
           <Input
             value={question}
             onChange={(e) => setQuestion(e.target.value)}

@@ -165,26 +165,40 @@ export default function FactureDetailPage() {
     },
   });
 
-  /** Ouvre le document lié : PJ de la facture, sinon le brut du mail d'origine. */
+  /**
+   * Ouvre le document lié, par priorité :
+   * 1. la PJ référencée par la facture (document_id) ;
+   * 2. la pièce jointe du thread d'origine (documents?thread_id&kind=attachment) ;
+   * 3. à défaut, le brut de l'email (thread.json).
+   */
   async function handleOpenDocument() {
     if (!f) return;
     if (f.document_id) {
       openDocument.mutate(f.document_id);
       return;
     }
-    if (f.email_message_id) {
+    const tid = threadId;
+    if (tid) {
       const res = await api.GET("/api/v1/documents", {
-        params: { query: { message_id: f.email_message_id, kind: "email", limit: 1, offset: 0 } },
+        params: { query: { thread_id: tid, kind: "attachment", limit: 1, offset: 0 } },
       });
-      const doc = res.data?.items?.[0];
-      if (!doc) {
-        alert("Aucun document sauvegardé pour cette facture.");
+      const pj = res.data?.items?.[0];
+      if (pj) {
+        openDocument.mutate(pj.id);
         return;
       }
-      openDocument.mutate(doc.id);
-      return;
+      if (f.email_message_id) {
+        const resMail = await api.GET("/api/v1/documents", {
+          params: { query: { message_id: f.email_message_id, kind: "email", limit: 1, offset: 0 } },
+        });
+        const mailDoc = resMail.data?.items?.[0];
+        if (mailDoc) {
+          openDocument.mutate(mailDoc.id);
+          return;
+        }
+      }
     }
-    alert("Aucun document sauvegardé pour cette facture.");
+    alert("Le document d'origine n'est pas encore archivé pour cette facture.");
   }
 
   const err = (facture.error ?? saveTransition.error ?? saveCorrection.error ?? openDocument.error) as
@@ -271,7 +285,11 @@ export default function FactureDetailPage() {
                 onClick={handleOpenDocument}
               >
                 <ExternalLink className="size-4" />
-                {openDocument.isPending ? "…" : "Document"}
+                {openDocument.isPending
+                  ? "…"
+                  : f.document_id
+                    ? "Voir le PDF"
+                    : "Voir le document d'origine"}
               </Button>
             ) : null}
             <StatutFactureBadge statut={f.statut} />
