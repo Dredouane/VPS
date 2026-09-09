@@ -66,7 +66,13 @@ def run(max_threads, dry, force_attachments=False):
             spool_path = t["spool_path"]
             thread = json.load(open(spool_path, encoding="utf-8"))
             all_ids = [m["message_id"] for m in thread["messages"]]
-            status = rpc("rpc_cap_doc_status", {"p_message_ids": all_ids}) or []
+            status_raw = rpc("rpc_cap_doc_status", {"p_message_ids": all_ids})
+            if isinstance(status_raw, list):
+                status = [r for r in status_raw if isinstance(r, dict)]
+            elif isinstance(status_raw, tuple):
+                status = [r for r in status_raw if isinstance(r, dict)]
+            else:
+                status = [status_raw] if isinstance(status_raw, dict) else []
             known = {s["message_id"] for s in (status if isinstance(status, list) else [status])
                      if isinstance(s, dict) and s.get("known")}
             parsed = thread_parser.parse_thread(thread, known)
@@ -89,7 +95,7 @@ def run(max_threads, dry, force_attachments=False):
                     return None
             rpc("rpc_cap_chain_upsert", {
                 "p_thread_id": tid, "p_subject": c["subject"],
-                "p_participants": json.dumps(c["participants"], ensure_ascii=False),
+                "p_participants": c["participants"],
                 "p_messages_count": c["messages_count"],
                 "p_first_message_at": iso(c["first_message_at"]),
                 "p_last_message_at": iso(c["last_message_at"])})
@@ -120,7 +126,7 @@ def run(max_threads, dry, force_attachments=False):
                         "p_kind": "email", "p_message_id": m["message_id"],
                         "p_content": m["new_content"], "p_embedding": emb["embedding"],
                         "p_thread_id": tid, "p_thread_role": m["role"],
-                        "p_title": m["subject_raw"], "p_metadata": json.dumps(doc_meta)})
+                        "p_title": m["subject_raw"], "p_metadata": doc_meta}),
                     entry["docs_indexed"] += 1
                 except (RuntimeError, ValueError) as e:
                     entry["errors"] += 1
@@ -129,7 +135,7 @@ def run(max_threads, dry, force_attachments=False):
                     "p_message_id": m["message_id"], "p_thread_id": tid,
                     "p_thread_role": m["role"], "p_from_addr": m["from"],
                     "p_subject": m["subject_raw"], "p_status": "received",
-                    "p_raw_metadata": json.dumps(doc_meta)})
+                    "p_raw_metadata": doc_meta}),
                 done_uids.append(m["uid"])
                 for att in m["attachments"]:
                     path = att.get("path")
@@ -186,9 +192,7 @@ def run(max_threads, dry, force_attachments=False):
                                 "p_devise": inv.get("devise") or "EUR",
                                 "p_confiance": conf,
                                 "p_email_message_id": m["message_id"],
-                                "p_extraction": json.dumps(
-                                    {**inv, "sums": sums, "judge": meta["ocr"]},
-                                    ensure_ascii=False)})
+                                "p_extraction": {**inv, "sums": sums, "judge": meta["ocr"]}})
                             entry["factures"] += 1
                             entry.setdefault("facture_detail", []).append(
                                 {"numero": inv.get("numero"), "action": fr.get("action"),
@@ -205,7 +209,7 @@ def run(max_threads, dry, force_attachments=False):
                             "p_content": text, "p_embedding": emb_att["embedding"],
                             "p_thread_id": tid, "p_parent_message_id": m["message_id"],
                             "p_title": att["filename"],
-                            "p_metadata": json.dumps(meta, ensure_ascii=False)})
+                            "p_metadata": meta}),
                         entry["docs_indexed"] += 1
                     except (RuntimeError, ValueError) as e:
                         entry["errors"] += 1
@@ -223,8 +227,10 @@ def run(max_threads, dry, force_attachments=False):
             result["processed"] += 1
             result["threads"].append(entry)
         except Exception as e:
+            import traceback as tb
             entry["errors"] += 1
-            entry["error"] = str(e)[:200]
+            tb_str = traceback.format_exc()
+            entry["error"] = (str(e) + " | TRACEBACK:" + tb_str[:600])[:800]
             result["threads"].append(entry)
             result["errors"].append(f"{tid}: {e}")
     try:
