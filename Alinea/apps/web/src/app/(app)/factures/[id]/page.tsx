@@ -31,7 +31,7 @@ import {
 } from "@alinea/ui/lib/statut-labels";
 
 import { api, apiErrorMessage, queryKeys } from "@/lib/api-client";
-import { ChatPanel } from "@/components/chat-panel";
+import { ChatBubble } from "@/components/chat-bubble";
 
 type Facture = Record<string, any>;
 
@@ -237,6 +237,17 @@ export default function FactureDetailPage() {
         description={f.fournisseur || undefined}
         actions={
           <>
+            {f.document_id ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={presignPdf.isPending}
+                onClick={() => presignPdf.mutate(f.document_id!)}
+              >
+                <ExternalLink className="size-4" />
+                Document
+              </Button>
+            ) : null}
             <StatutFactureBadge statut={f.statut} />
             <Button variant="outline" size="sm" onClick={() => router.back()}>
               <ArrowLeft className="size-4" />
@@ -398,29 +409,7 @@ export default function FactureDetailPage() {
         </div>
       </div>
 
-      {/* Zone C — assistant expert (TKT-203) */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <MessagesSquare className="size-4" />
-            Questions sur cette facture
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ChatPanel
-            scope={{ type: "facture", id }}
-            title=""
-            intro="L'assistant connaît cette fiche et les documents liés (isolation par facture)."
-            suggestions={[
-              "Cette facture correspond à quel email ?",
-              "Quel est le montant total ?",
-              "Que contient la pièce jointe ?",
-            ]}
-          />
-        </CardContent>
-      </Card>
 
-      {/* Audit des corrections */}
       {audit.length > 0 ? (
         <Card>
           <CardHeader className="pb-2">

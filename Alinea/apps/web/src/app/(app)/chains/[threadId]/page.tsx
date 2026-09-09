@@ -25,7 +25,7 @@ import { EmptyState } from "@alinea/ui/components/empty-state";
 import { StatutFactureBadge } from "@alinea/ui/components/statut-facture-badge";
 
 import { api, apiErrorMessage, queryKeys } from "@/lib/api-client";
-import { ChatPanel } from "@/components/chat-panel";
+import { ChatBubble } from "@/components/chat-bubble";
 import { normalizeParticipants, docMetadata } from "@/lib/chains";
 
 function usePresign() {
@@ -91,7 +91,7 @@ export default function ChainDetailPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <aside className="order-1 lg:col-start-3 lg:row-start-1">
+        <aside className="order-1 lg:col-start-3">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">En résumé</CardTitle>
@@ -127,7 +127,7 @@ export default function ChainDetailPage() {
             </CardContent>
           </Card>
         </aside>
-        <div className="order-2 flex min-w-0 flex-col gap-6 lg:col-span-2 lg:col-start-1 lg:row-start-1 lg:row-span-2">
+        <div className="order-2 flex min-w-0 flex-col gap-6 lg:col-span-2">
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <span className="inline-flex items-center gap-1.5">
           <Users className="size-3.5" />
@@ -237,19 +237,6 @@ export default function ChainDetailPage() {
       </div>
 
       </div>
-
-        <aside className="order-3 lg:col-start-3 lg:row-start-2">
-          <ChatPanel
-            scope={{ type: "chain", id: threadId }}
-            title="Assistant de la conversation"
-            intro="Répond à partir de cet échange uniquement — sources citées."
-            suggestions={[
-              "Résume cette conversation",
-              "De quoi parle cet échange ?",
-              "Quelles pièces jointes ont été échangées ?",
-            ]}
-          />
-        </aside>
       </div>
 
       {/* Factures liées */}
@@ -290,6 +277,17 @@ export default function ChainDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <ChatBubble
+        scope={{ type: "chain", id: threadId }}
+        title="Assistant de la conversation"
+        intro="Répond à partir de cet échange uniquement — sources citées."
+        suggestions={[
+          "Résume cette conversation",
+          "De quoi parle cet échange ?",
+          "Quelles pièces jointes ont été échangées ?",
+        ]}
+      />
 
       <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
         <FileText className="size-3.5" />
