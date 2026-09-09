@@ -332,6 +332,6 @@ sudo /usr/local/bin/telegram-alert.sh "Test" "message de test"
 ### Agent 8 : Bercy (07/09)
 - Conteneur dédié `Bercy` (image `hermes-agent:latest`, aucun port exposé, mem 2g, no-new-privileges), gateway uid 10000, Telegram connected.
 - Token : bot dédié `8732547964:…` (compose 600). ALLOWED_USERS/HOME_CHANNEL = 5917823647.
-- **Vault Obsidian monté en lecture/écriture** (`/opt/vault`, accès via ACL u:10000) — testé dans le conteneur.
+- **Vault Obsidian : accès RESTREINT au sous-dossier Bercy** (07/09) — montage `/home/syncthing/obsidian-vault/Bercy:/opt/vault` (RW via ACL u:10000) : Bercy ne voit **que** son sous-dossier, le reste du vault est invisible (isolation par mount). Le dossier `Bercy/` du vault est syncé par Syncthing comme les autres.
 - SOUL.md stub → Redouane écrit la persona finale dans `hermes-fleet/Bercy/data/SOUL.md`.
 - Intégrations : nightly check (8/8 agents), backup fleet inclus, AIDE couvert.
