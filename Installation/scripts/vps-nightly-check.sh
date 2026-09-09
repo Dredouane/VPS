@@ -22,7 +22,7 @@ EN=$(systemctl is-enabled hermes-gateway-hermesrunner hermes-gateway-arev 2>/dev
 N=$(docker ps --filter name=hermes- --format '{{.Names}}' 2>/dev/null | wc -l)
 [ "$N" -ge 5 ] && ok "Conteneurs hermes : $N up" || bad "Conteneurs hermes up : $N (attendu >= 5)"
 
-# 4) Agents Telegram connectés (8)
+# 4) Agents Telegram connectés (9)
 C=0
 for f in /home/admin/hermes-fleet/leanConstruction/data/gateway_state.json \
          /home/admin/hermes-fleet/copycat/data/gateway_state.json \
@@ -30,11 +30,13 @@ for f in /home/admin/hermes-fleet/leanConstruction/data/gateway_state.json \
          /home/admin/hermes-fleet/va_agent/data/gateway_state.json \
          /home/admin/hermes-fleet/Alinea_icp_reviewer/data/gateway_state.json \
          /home/admin/hermes-fleet/Bercy/data/gateway_state.json \
+         /home/admin/hermes-fleet/HermesConfig/instances/arev/data/gateway_state.json \
+         /home/admin/hermes-fleet/HermesConfig/instances/fateh/data/gateway_state.json \
          /home/hermesrunner/.hermes/gateway_state.json \
          /home/arev-chantier-runner/.hermes/gateway_state.json; do
   grep -q '"state":"connected"' "$f" 2>/dev/null && C=$((C+1))
 done
-[ "$C" -eq 8 ] && ok "Agents Telegram : 8/8 connectés" || bad "Agents Telegram connectés : $C/8"
+[ "$C" -eq 9 ] && ok "Agents Telegram : 9/9 connectés" || bad "Agents Telegram connectés : $C/9"
 
 # 5) UFW : actif, 2222 ouvert, 22000 absent
 ufw status 2>/dev/null | grep -q "Status: active" && ok "UFW : actif" || bad "UFW : inactif !"
