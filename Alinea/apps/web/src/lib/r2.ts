@@ -1,13 +1,18 @@
-import { AwsClient } from "aws4fetch";
+import { S3, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { ApiError } from "./api-error";
 import { r2Config } from "./env";
 
 /**
- * URL signée R2 (SigV4 presigned GET) — les credentials R2 ne quittent
- * jamais le serveur ; le navigateur reçoit une URL à TTL court.
- * Clé R2 attendue dans cap_documents.metadata.r2_key (à produire par le
- * pipeline — évolution notée en DECISIONS).
+ * URL signée R2 pour les documents archivés (bruts email + PJ).
+ * Fix TKT-109-b : SigV4 via le SDK officiel — `aws4fetch` signait
+ * X-Amz-Expires comme header signé (valeur vide dans le canonical request)
+ * → R2 répondait SignatureDoesNotMatch. En presigned SigV4, les signed
+ * headers sont `host` uniquement ; X-Amz-Expires est un query param géré
+ * par getSignedUrl. Jamais de x-amz-security-token (credentials R2 = paire
+ * access/secret, sans session token — le TOKEN Cloudflare REST n'est PAS un
+ * credential S3, leçon pipeline du 01/09).
  */
 export async function presignGet(
   key: string,
@@ -21,26 +26,23 @@ export async function presignGet(
       "Variables R2_* manquantes (endpoint, bucket, credentials)"
     );
   }
-  const safeKey = key
-    .split("/")
-    .map((p) => encodeURIComponent(p))
-    .join("/");
-  const client = new AwsClient({
-    accessKeyId: cfg.accessKeyId,
-    secretAccessKey: cfg.secretAccessKey,
+  // Pas d'encodage des segments : le SDK signe la clé telle quelle (les
+  // slashs de sous-dossiers restent des slashs).
+  const client = new S3({
     region: "auto",
-    service: "s3",
+    endpoint: cfg.endpoint,
+    credentials: {
+      accessKeyId: cfg.accessKeyId,
+      secretAccessKey: cfg.secretAccessKey,
+    },
   });
-  const objectUrl = `${cfg.endpoint.replace(/\/$/, "")}/${cfg.bucket}/${safeKey}`;
-  const signed = await client.sign(
-    new Request(objectUrl, {
-      method: "GET",
-      headers: { "X-Amz-Expires": String(ttlSeconds) },
-    }),
-    { aws: { signQuery: true } }
+  const url = await getSignedUrl(
+    client,
+    new GetObjectCommand({ Bucket: cfg.bucket, Key: key }),
+    { expiresIn: ttlSeconds }
   );
   return {
-    url: signed.url,
+    url,
     expiresAt: new Date(Date.now() + ttlSeconds * 1000).toISOString(),
   };
 }
