@@ -142,6 +142,16 @@ La service key du projet Hermes (`sb_secret_`) n'existe que dans le
 dashboard Supabase — seule action utilisateur restante pour activer l'API
 en TEST (le deploy.sh la propage ensuite).
 
+## W15bis — Chat : `now()` Postgres + pooler transaction-mode = ordre non fiable ✅ (fix)
+
+`now()`/`default now()` via le pooler transaction-mode (port 6543) a produit
+des `created_at` légèrement antérieurs pour l'assistant inséré après la
+question → le front affichait la réponse avant la question. Fix double :
+`created_at` **explicites** côté serveur (horloge Node, avant/après le LLM)
++ tiebreaker `role desc` au tri. Les paires historiques inversées ont été
+corrigées par swap SQL one-off (candidates : assistant immédiatement suivi
+d'un user, Δ<10 s, sans message intermédiaire).
+
 ## Historique
 
 - 2026-09-06 : création (session stack webapp) — P0/P1, puis P2 (007+008
