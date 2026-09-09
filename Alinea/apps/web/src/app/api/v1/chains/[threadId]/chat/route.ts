@@ -102,10 +102,9 @@ export async function POST(
 
     // Persistance : message user + assistant (avec sources)
     const slug = auth.clientSlug;
-    const now = new Date().toISOString();
     const { data: userMsg } = await admin
       .from("app_chat_messages")
-      .insert({ client_slug: slug, thread_id: tid, role: "user", content: question })
+      .insert({ client_slug: slug, thread_id: tid, role: "user", content: question, created_at: new Date().toISOString() })
       .select()
       .single();
     const { data: assistantMsg, error: insertErr } = await admin
@@ -116,7 +115,7 @@ export async function POST(
         role: "assistant",
         content: answer,
         sources,
-        created_at: now,
+        created_at: new Date().toISOString(),
       })
       .select()
       .single();

@@ -84,7 +84,7 @@ export function ChatPanel({
   const showSuggestions = suggestions && items.length === 0;
 
   return (
-    <Card className="sticky top-20">
+    <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base">{title}</CardTitle>
         <p className="text-muted-foreground text-xs">{intro}</p>

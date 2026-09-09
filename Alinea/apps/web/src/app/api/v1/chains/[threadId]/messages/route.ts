@@ -25,6 +25,8 @@ export async function GET(
       .eq("client_slug", auth.clientSlug)
       .eq("thread_id", tid)
       .order("created_at", { ascending: true })
+      // Tiebreaker : même timestamp → la question précède la réponse
+      .order("role", { ascending: false })
       .limit(200);
     if (error) throw new ApiError(502, "db_error", error.message);
 

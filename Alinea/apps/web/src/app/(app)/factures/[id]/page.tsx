@@ -178,10 +178,33 @@ export default function FactureDetailPage() {
   }
   if (!f) return null;
 
-  const extraction = (f.extraction ?? {}) as {
-    audit?: { at: string; by: string; changes: Record<string, { from: unknown; to: unknown }> }[];
-  };
-  const audit = extraction.audit ?? [];
+  // Audit défensif : tolère le format legacy wrappé ({audit:{push:…}}) et
+  // ignore les entrées sans changes valides — le front ne crash jamais sur
+  // une donnée historique.
+  function normalizeAuditEntries(raw: unknown) {
+    if (!Array.isArray(raw)) return [];
+    const entries: { at: string; by: string; changes: Record<string, { from: unknown; to: unknown }> }[] = [];
+    for (const candidate of raw) {
+      const e =
+        candidate && typeof candidate === "object" &&
+        "audit" in candidate &&
+        (candidate as { audit?: { push?: unknown } }).audit?.push
+          ? (candidate as { audit: { push: unknown } }).audit.push
+          : candidate;
+      if (
+        e && typeof e === "object" &&
+        typeof (e as { at?: unknown }).at === "string" &&
+        typeof (e as { by?: unknown }).by === "string" &&
+        (e as { changes?: unknown }).changes &&
+        typeof (e as { changes: unknown }).changes === "object"
+      ) {
+        entries.push(e as { at: string; by: string; changes: Record<string, { from: unknown; to: unknown }> });
+      }
+    }
+    return entries;
+  }
+  const extraction = (f.extraction ?? {}) as Record<string, unknown>;
+  const audit = normalizeAuditEntries(extraction.audit);
   const aTraiter = f.statut === "extracted";
   const editField = (name: string, value: string) =>
     setForm((prev) => ({ ...prev, [name]: value }));

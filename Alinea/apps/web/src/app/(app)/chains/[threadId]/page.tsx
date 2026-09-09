@@ -91,11 +91,49 @@ export default function ChainDetailPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="flex flex-col gap-6 lg:col-span-2">
+        <aside className="order-1 lg:col-start-3 lg:row-start-1">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">En résumé</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1.5 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">Messages</span>
+                <span>{d.mails.length}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">Dernier échange</span>
+                <span>
+                  {d.chain.last_message_at
+                    ? new Date(d.chain.last_message_at).toLocaleDateString("fr-FR")
+                    : "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">Factures liées</span>
+                <span>
+                  {d.factures.length > 0 ? (
+                    <Link
+                      href={`/factures/${d.factures[0].id}`}
+                      className="font-medium underline-offset-4 hover:underline"
+                    >
+                      {d.factures[0].numero}
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground">aucune pour l'instant</span>
+                  )}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </aside>
+        <div className="order-2 flex min-w-0 flex-col gap-6 lg:col-span-2 lg:col-start-1 lg:row-start-1 lg:row-span-2">
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <span className="inline-flex items-center gap-1.5">
           <Users className="size-3.5" />
-          {participants.length > 0 ? participants.join(", ") : "—"}
+          <span className="[overflow-wrap:anywhere]">
+            {participants.length > 0 ? participants.join(", ") : "—"}
+          </span>
         </span>
         {d.chain.first_message_at ? (
           <span>
@@ -146,7 +184,7 @@ export default function ChainDetailPage() {
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
                 {mail.content ? (
-                  <p className="max-h-80 overflow-y-auto text-sm leading-relaxed whitespace-pre-line">
+                  <p className="max-h-80 overflow-y-auto text-sm leading-relaxed whitespace-pre-line [overflow-wrap:anywhere]">
                     {mail.content.content}
                   </p>
                 ) : (
@@ -200,41 +238,7 @@ export default function ChainDetailPage() {
 
       </div>
 
-        <aside className="flex flex-col gap-4 lg:col-span-1">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">En résumé</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-1.5 text-sm">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">Messages</span>
-                <span>{d.mails.length}</span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">Dernier échange</span>
-                <span>
-                  {d.chain.last_message_at
-                    ? new Date(d.chain.last_message_at).toLocaleDateString("fr-FR")
-                    : "—"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">Factures liées</span>
-                <span>
-                  {d.factures.length > 0 ? (
-                    <Link
-                      href={`/factures/${d.factures[0].id}`}
-                      className="font-medium underline-offset-4 hover:underline"
-                    >
-                      {d.factures[0].numero}
-                    </Link>
-                  ) : (
-                    <span className="text-muted-foreground">aucune pour l'instant</span>
-                  )}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+        <aside className="order-3 lg:col-start-3 lg:row-start-2">
           <ChatPanel
             scope={{ type: "chain", id: threadId }}
             title="Assistant de la conversation"

@@ -41,6 +41,7 @@ export async function GET(
       .eq("client_slug", auth.clientSlug)
       .eq("thread_id", key)
       .order("created_at", { ascending: true })
+      .order("role", { ascending: false })
       .limit(200);
     if (error) throw new ApiError(502, "db_error", error.message);
 
@@ -191,6 +192,7 @@ email d'origine (message id): ${facture.email_message_id || "(absent)"}`,
         role: "assistant",
         content: answer,
         sources: rows_sources,
+        created_at: new Date().toISOString(),
       })
       .select()
       .single();
