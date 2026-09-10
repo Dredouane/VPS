@@ -185,6 +185,17 @@ ok "Compose généré: $COMPOSE (600, sans secrets) + secrets.env (600)"
 log "docker compose up -d (container: hermes-$SLUG-pro)…"
 docker compose -f "$COMPOSE" up -d
 
+# --- 7bis. Requirements Python (deps du pipeline) ----------------------------
+REQ_SRC="$BASE_DIR/hermes/requirements.txt"
+REQ_DST="$DATA_DIR/requirements.txt"
+if [ -f "$REQ_SRC" ]; then
+    install -o 10000 -g 10000 -m 640 "$REQ_SRC" "$REQ_DST"
+    docker exec "hermes-$SLUG-pro" /opt/hermes/.venv/bin/python -m pip install -q -r /opt/data/requirements.txt 2>&1 | tail -3
+    ok "Requirements Python installés (openpyxl/docx/pptx)"
+else
+    warn "requirements.txt absent ($REQ_SRC) — deps non installées"
+fi
+
 # --- 8. Vérification santé ----------------------------------------------------
 # L'API 8642 ne tourne pas en gateway headless → on vérifie le state file
 # (gateway running + Telegram connecté), la source de vérité.
