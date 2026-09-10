@@ -45,6 +45,7 @@ export default function ChainDetailPage() {
   const { threadId } = useParams<{ threadId: string }>();
   const router = useRouter();
   const presign = usePresign();
+  const [expandedAtt, setExpandedAtt] = useState<Set<string>>(new Set());
 
   const detail = useQuery({
     queryKey: [...queryKeys.chains({ limit: 1, offset: 0 }), "detail", threadId],
@@ -70,7 +71,6 @@ export default function ChainDetailPage() {
   }
   if (!d) return null;
 
-  const [expandedAtt, setExpandedAtt] = useState<Set<string>>(new Set());
   const toggleAtt = (mailId: string) =>
     setExpandedAtt((prev) => {
       const next = new Set(prev);
