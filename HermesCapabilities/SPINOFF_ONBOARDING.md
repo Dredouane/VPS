@@ -86,12 +86,17 @@ ssh nemo 'cd /home/admin/hermes-fleet/HermesCapabilities \
 ## 4. Routine email-poll (cron Hermes, exécutée par le scheduler default profile)
 
 ```bash
-sudo docker exec hermes-<slug>-pro /opt/hermes/.venv/bin/hermes cron create \
+sudo docker exec -u 10000 hermes-<slug>-pro /opt/hermes/.venv/bin/hermes cron create \
   "*/10 8-19 * * *" \
   "Exécuter le pipeline email: python3 /opt/data/code/email-processing/run_pipeline.py \
    --max-threads 5 (PIPELINE_EMAIL_AREV.md §2). Silencieux."
 sudo docker restart hermes-<slug>-pro
 # vérifier: cron list (default profile) montre le job
+# ⚠️ JAMAIS `-u root` pour les commandes `hermes …` en conteneur : le fichier
+# /opt/data/cron/jobs.json deviendrait root-owned et le scheduler casserait
+# (incident 10/09 : arev + fateh, 2300+ erreurs IOError). Après tout
+# create/remove : `docker exec -u 10000 <c> chown -R 10000:10000 /opt/data/cron`
+# (leçon complète : HANDOFF_FATEH.md — leçon cron).
 ```
 
 ## 5. Test bout-en-bout
