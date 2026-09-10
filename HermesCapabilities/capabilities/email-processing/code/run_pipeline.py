@@ -30,6 +30,7 @@ import invoice_check  # noqa: E402
 import embed_gemini  # noqa: E402
 import rpc_call  # noqa: E402
 import imap_mark_done  # noqa: E402
+import clean_body  # noqa: E402
 
 
 def rpc(fn, payload):
@@ -118,6 +119,12 @@ def run(max_threads, dry, force_attachments=False):
                 doc_meta = {"from": m["from"], "date": m["date_iso"],
                             "classification": m["role"], "pipeline_version": "m2.6",
                             "r2_key": r2_map.get("thread.json")}
+                # D20: nettoie le contenu pour affichage webapp + RAG
+                clean_content = clean_body.clean(m["new_content"])
+                if not clean_content.strip():
+                    clean_content = m["new_content"].strip()[
+                        :2000] if m["new_content"] else ""
+                m["new_content"] = clean_content
                 try:
                     emb = embed_gemini.embed(m["new_content"], key_gemini,
                                              env.get("EMBED_MODEL") or "gemini-embedding-001",
