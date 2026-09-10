@@ -31,6 +31,7 @@
 | D17 | **Forward = enveloppe ignorée** — traitement dès le mail d'après (skip cover + bloc header) ; `from` = expéditeur réel ; facture = PJ-sourced (D15) | Indexer le texte de l'enveloppe du forward |
 | D18 | **Vendoring** `mail-parser-reply` v1.36 (MIT, fr/en/de/it/nl/da/ja) — séparation replies/quotes robuste multi-providers sans pip runtime | Parser maison regex · SLM parse · pip runtime (I11) |
 | D19 | **Normalisation CR/LF à la source** (imap_poll.py) — le raw Gmail body `\r\n` → `\n` avant body_plain, le vendor lib reçoit propre | Verrue au niveau parser/thraed |
+| D20 | **clean_body.py** — nettoyage corps email pour affichage webApp + RAG (images, cid, quotes-fold, signatures dedup, markdown strip) | Verru inline · nettoyage côté webApp |
 | D11-ter | Headless : routines sur le **profil default** (le scheduler ne consomme que lui) — profil ops = Desktop uniquement | Routines sur profils secondaires headless (ne tirent pas) |
 
 ---
@@ -307,6 +308,25 @@ pour n'importe quel LLM de vision (pas de restriction au modèle natif).
 **Model choisi**: `openai/gpt-4o-mini` ($0.15/$0.60 par million) — cloudflare-ai
 moteur gratuit parse les PDFs et les passe à GPT-4o-mini en entrée. Vision
 image natif de GPT-4o-mini assure les PJ images.
+
+## D20 — clean_body.py : nettoyage corps email pour affichage webApp + RAG ✅ (après TKT-109-b)
+
+**Décision** : un module **pur déterministe** `clean_body.py` dans
+`email-processing/code/` nettoie le contenu nouveau de chaque mail
+**après** `split_quoted` (lib vendored D18) et **AVANT** embed + doc_upsert :
+
+1. **R1** : `[image:…]`, `[cid:…]`, `<img>` → retirés (artéfacts HTML→plaintext)
+2. **R2** : headers de réponse/transfert répliqués → `[citation masquée]` /
+   `[transfert masqué]` (une ligne compact)
+3. **R3** : signatures dupliquées (tél, adresse, "Cordialement") → dédoublonnées
+   (la pipeline forward contient N copies de la même signature)
+4. **R4** : contenu principal, listes, tableaux simples **conservés**
+5. **R5** : markdown residual (bold `**`, `##`) → retiré
+
+Sortie : texte brut (pas de HTML ni markdown), stocké dans
+`cap_documents.content` → la webApp affiche le texte propre **directement**.
+Le RAG est plus propre (le contenu est le texte utile, pas les
+re-capitalisations répétées).
 
 ## Historique
 
