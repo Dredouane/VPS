@@ -41,8 +41,8 @@ export default function ChainsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Chaînes"
-        description="Conversations email (threads Gmail) traitées par le pipeline — vue type inbox"
+        title="Conversations Emails"
+        description="Vos échanges emails et documents associés."
       />
 
       <Card className="py-0">
@@ -60,8 +60,8 @@ export default function ChainsPage() {
           ) : items.length === 0 ? (
             <EmptyState
               icon={MessagesSquare}
-              title="Aucune chaîne"
-              description="Les threads apparaissent après le premier traitement du pipeline."
+              title="Aucune conversation"
+              description="Les échanges apparaissent ici dès qu'un email est reçu."
             />
           ) : (
             <>
@@ -108,7 +108,7 @@ export default function ChainsPage() {
               </Table>
               <div className="text-muted-foreground flex items-center justify-between border-t px-6 py-3 text-sm">
                 <span>
-                  {total} chaîne{total > 1 ? "s" : ""}
+                  {total} conversation{total > 1 ? "s" : ""}
                 </span>
                 <div className="flex gap-2">
                   <Button

@@ -17,6 +17,7 @@ import {
 } from "@alinea/ui/components/table";
 import { StatutFactureBadge } from "@alinea/ui/components/statut-facture-badge";
 import { PageHeader } from "@alinea/ui/components/page-header";
+import { EmptyState } from "@alinea/ui/components/empty-state";
 import {
   FACTURE_STATUT_LABELS,
   formatMontant,
@@ -24,7 +25,6 @@ import {
 
 import { api, queryKeys, type Facture } from "@/lib/api-client";
 import { FACTURE_STATUTS, type FactureStatut } from "@/lib/enums";
-import { QueryState } from "@/components/query-state";
 
 const PAGE_SIZE = 25;
 
@@ -108,14 +108,15 @@ export default function FacturesPage() {
               {(factures.error as { error?: { message?: string } }).error?.message}
             </p>
           ) : items.length === 0 ? (
-            <div className="p-6">
-              <p className="text-muted-foreground flex items-center gap-2 text-sm">
-                <Inbox className="size-4" />
-                {statut
+            <EmptyState
+              icon={Inbox}
+              title="Aucune facture"
+              description={
+                statut
                   ? `Aucune facture « ${FACTURE_STATUT_LABELS[statut]} ».`
-                  : "Aucune facture pour le moment — elles apparaissent dès que le suivi des emails en détecte une."}
-              </p>
-            </div>
+                  : "Aucune facture pour le moment — elles apparaissent dès qu'un email en contient une."
+              }
+            />
           ) : (
             <>
               <Table>

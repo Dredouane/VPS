@@ -33,8 +33,8 @@ export default function RecherchePage() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Recherche RAG"
-        description="Recherche sémantique sur les documents indexés (emails + pièces jointes OCR)"
+        title="Recherche"
+        description="Recherchez dans vos emails et documents."
       />
 
       <form

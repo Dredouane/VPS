@@ -6,7 +6,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   ExternalLink,
-  FileText,
   Inbox,
   Paperclip,
   Users,
@@ -110,21 +109,6 @@ export default function ChainDetailPage() {
                     : "—"}
                 </span>
               </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">Factures liées</span>
-                <span>
-                  {d.factures.length > 0 ? (
-                    <Link
-                      href={`/factures/${d.factures[0].id}`}
-                      className="font-medium underline-offset-4 hover:underline"
-                    >
-                      {d.factures[0].numero}
-                    </Link>
-                  ) : (
-                    <span className="text-muted-foreground">aucune pour l&apos;instant</span>
-                  )}
-                </span>
-              </div>
             </CardContent>
           </Card>
           <Card>
@@ -138,7 +122,7 @@ export default function ChainDetailPage() {
                           <EmptyState
                             icon={Inbox}
                             title="Aucune facture liée"
-                            description="Aucun expert facturation n'a extrait de facture depuis ce thread."
+                            description="Aucune facture n'a encore été extraite de cet échange."
                           />
                         ) : (
                           d.factures.map((f) => (

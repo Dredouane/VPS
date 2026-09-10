@@ -10,10 +10,10 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const NAV: { href: string; label: string; adminOnly?: boolean }[] = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/chains", label: "Emails" },
+  { href: "/chains", label: "Conversations Emails" },
   { href: "/factures", label: "Factures" },
-  { href: "/emails", label: "Traitement" },
   { href: "/recherche", label: "Recherche" },
+  { href: "/emails", label: "Journal de traitement", adminOnly: true },
   { href: "/admin", label: "Admin", adminOnly: true },
 ];
 

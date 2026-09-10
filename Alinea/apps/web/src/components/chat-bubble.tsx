@@ -54,7 +54,7 @@ export function ChatBubble({
           >
             <X className="size-4" />
           </Button>
-          <div className="min-h-0 flex-1 overflow-hidden rounded-xl shadow-xl">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl shadow-sm">
             <ChatPanel scope={scope} title={title} intro={intro} suggestions={suggestions} />
           </div>
         </div>

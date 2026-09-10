@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 import { Button } from "@alinea/ui/components/button";
 import {
@@ -79,8 +78,7 @@ export default function LoginPage() {
               {loading ? "Connexion…" : "Connexion"}
             </Button>
             <p className="text-muted-foreground text-center text-xs">
-              Accès réservé — mapping dans app_users (admin / backoffice /
-              terrain)
+              Accès réservé aux utilisateurs autorisés.
             </p>
           </form>
         </CardContent>

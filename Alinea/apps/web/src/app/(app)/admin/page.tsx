@@ -65,8 +65,8 @@ export default function AdminPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Admin"
-        description="Registry clients (runner D9, lecture) + utilisateurs webapp"
+        title="Administration"
+        description="Gestion des clients et des accès."
       />
 
       {err ? <p className="text-destructive text-sm">{err.error?.message}</p> : null}
@@ -113,7 +113,7 @@ export default function AdminPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Utilisateurs webapp</CardTitle>
+          <CardTitle className="text-base">Utilisateurs</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -147,7 +147,7 @@ export default function AdminPage() {
                       variant="outline"
                       disabled={removeUser.isPending}
                       onClick={() => {
-                        if (confirm(`Supprimer cet accès webapp (${u.client_slug}) ?`)) {
+                        if (confirm(`Supprimer cet accès (${u.client_slug}) ?`)) {
                           removeUser.mutate(u.user_id);
                         }
                       }}
@@ -172,9 +172,7 @@ export default function AdminPage() {
             </p>
           ) : null}
           <p className="text-muted-foreground mt-3 text-xs">
-            Les comptes auth eux-mêmes se créent depuis le dashboard Supabase
-            (Authentication → Users) — le mapping client/rôle se fait via
-            l&apos;API admin.
+            Les comptes se créent depuis l&apos;espace d&apos;administration.
           </p>
         </CardContent>
       </Card>

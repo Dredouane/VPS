@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, FileText, Inbox, TriangleAlert } from "lucide-react";
+import { CheckCircle2, FileText, TriangleAlert } from "lucide-react";
 
-import { Badge } from "@alinea/ui/components/badge";
 import { Button } from "@alinea/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@alinea/ui/components/card";
 import { PageHeader } from "@alinea/ui/components/page-header";
@@ -149,11 +148,7 @@ export default function DashboardPage() {
       <p className="text-muted-foreground text-xs">
         Les échanges emails sont suivis dans{" "}
         <Link href="/chains" className="underline-offset-4 hover:underline">
-          Emails
-        </Link>{" "}
-        ; le journal d'exécution se consulte dans{" "}
-        <Link href="/emails" className="underline-offset-4 hover:underline">
-          Traitement
+          Conversations Emails
         </Link>
         .
       </p>

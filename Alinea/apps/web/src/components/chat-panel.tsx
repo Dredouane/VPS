@@ -36,7 +36,6 @@ export function ChatPanel({
 }) {
   const queryClient = useQueryClient();
   const [question, setQuestion] = useState("");
-  const [askedCount, setAskedCount] = useState(0);
 
   const chatKey =
     scope.type === "chain"
@@ -67,7 +66,6 @@ export function ChatPanel({
             body: { question: q },
           }),
     onSuccess: () => {
-      setAskedCount((n) => n + 1);
       queryClient.invalidateQueries({
         queryKey: [...chatKey, "chat", scope.type, scope.id],
       });
@@ -84,12 +82,12 @@ export function ChatPanel({
   const showSuggestions = suggestions && items.length === 0;
 
   return (
-    <Card className="flex h-full max-h-full flex-col">
-      <CardHeader className="pb-2">
+    <Card className="flex h-full min-h-0 flex-col gap-0 overflow-hidden py-0">
+      <CardHeader className="shrink-0 py-4">
         <CardTitle className="text-base">{title}</CardTitle>
         <p className="text-muted-foreground text-xs">{intro}</p>
       </CardHeader>
-      <CardContent className="flex max-h-[70vh] flex-col gap-3">
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-3 pb-4">
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
           {messages.isLoading ? (
             <>

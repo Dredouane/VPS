@@ -17,6 +17,7 @@ import {
   TableRow,
 } from "@alinea/ui/components/table";
 import { PageHeader } from "@alinea/ui/components/page-header";
+import { EmptyState } from "@alinea/ui/components/empty-state";
 
 import { api, queryKeys } from "@/lib/api-client";
 import { EMAIL_STATUSES, type EmailStatus } from "@/lib/enums";
@@ -53,8 +54,8 @@ export default function EmailsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Traitement"
-        description="Suivi de traitement des emails reçus — les conversations vivent dans Emails."
+        title="Journal de traitement"
+        description="Suivi des emails reçus — les conversations se consultent dans Conversations Emails."
         actions={
           <div className="flex flex-wrap gap-1">
             <Button
@@ -97,11 +98,15 @@ export default function EmailsPage() {
               {(emails.error as { error?: { message?: string } }).error?.message}
             </p>
           ) : items.length === 0 ? (
-            <div className="p-6">
-              <p className="text-muted-foreground text-sm">
-                Aucun email{status ? ` (${status})` : ""}.
-              </p>
-            </div>
+            <EmptyState
+              icon={Inbox}
+              title="Aucun email"
+              description={
+                status
+                  ? `Aucun email « ${EMAIL_STATUS_LABELS[status]} ».`
+                  : "Les emails apparaissent ici après réception."
+              }
+            />
           ) : (
             <>
               <Table>
@@ -147,7 +152,7 @@ export default function EmailsPage() {
               <div className="text-muted-foreground flex items-center justify-between border-t px-6 py-3 text-sm">
                 <span>
                   {total} résultat{total > 1 ? "s" : ""}
-                  {status ? ` · ${status}` : ""}
+                  {status ? ` · ${EMAIL_STATUS_LABELS[status]}` : ""}
                 </span>
                 <div className="flex gap-2">
                   <Button
