@@ -44,7 +44,7 @@ export function ChatBubble({
   return (
     <>
       {open ? (
-        <div className="fixed bottom-4 right-4 z-50 flex h-[min(70vh,560px)] w-[min(94vw,400px)] flex-col">
+        <div className="fixed bottom-6 right-4 z-50 flex h-[min(80vh,600px)] w-[min(96vw,400px)] flex-col sm:bottom-4 sm:h-[min(70vh,560px)]">
           <Button
             size="icon"
             variant="outline"
@@ -60,7 +60,7 @@ export function ChatBubble({
         </div>
       ) : (
         <button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 fixed right-4 bottom-4 z-40 flex size-13 cursor-pointer items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 fixed bottom-6 right-4 z-40 flex size-14 cursor-pointer items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 sm:bottom-4 sm:size-13"
           aria-label={`Ouvrir l'assistant${count > 0 ? ` (${count} échange${count > 1 ? "s" : ""})` : ""}`}
           onClick={() => setOpen(true)}
         >

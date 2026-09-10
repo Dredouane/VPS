@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  ChevronDown,
+  ChevronUp,
   ExternalLink,
   Inbox,
   Paperclip,
@@ -66,6 +69,14 @@ export default function ChainDetailPage() {
     );
   }
   if (!d) return null;
+
+  const [expandedAtt, setExpandedAtt] = useState<Set<string>>(new Set());
+  const toggleAtt = (mailId: string) =>
+    setExpandedAtt((prev) => {
+      const next = new Set(prev);
+      next.has(mailId) ? next.delete(mailId) : next.add(mailId);
+      return next;
+    });
 
   const participants = normalizeParticipants(d.chain.participants);
 
@@ -142,7 +153,10 @@ export default function ChainDetailPage() {
 
                   {mail.attachments.length > 0 ? (
                     <div className="flex flex-col gap-2">
-                      {mail.attachments.map((a) => {
+                      {(expandedAtt.has((mail.email as { id: string }).id)
+                        ? mail.attachments
+                        : mail.attachments.slice(0, 2)
+                      ).map((a) => {
                         const ameta = docMetadata(a.metadata) as {
                           r2_key?: string;
                           filename?: string;
@@ -175,6 +189,24 @@ export default function ChainDetailPage() {
                           </div>
                         );
                       })}
+                      {mail.attachments.length > 2 ? (
+                        <button
+                          className="text-muted-foreground flex items-center gap-1 self-start text-xs hover:underline"
+                          onClick={() => toggleAtt((mail.email as { id: string }).id)}
+                        >
+                          {expandedAtt.has((mail.email as { id: string }).id) ? (
+                            <>
+                              <ChevronUp className="size-3" />
+                              Réduire
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="size-3" />
+                              Voir les {mail.attachments.length} pièces jointes
+                            </>
+                          )}
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
                 </CardContent>
