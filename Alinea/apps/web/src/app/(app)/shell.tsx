@@ -8,13 +8,13 @@ import { cn } from "@alinea/ui/lib/utils";
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-const NAV: { href: string; label: string; adminOnly?: boolean }[] = [
+const NAV: { href: string; label: string; adminOnly?: boolean; hidden?: boolean }[] = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/chains", label: "Conversations Emails" },
   { href: "/factures", label: "Factures" },
   { href: "/recherche", label: "Recherche" },
-  { href: "/emails", label: "Journal de traitement", adminOnly: true },
-  { href: "/admin", label: "Admin", adminOnly: true },
+  { href: "/emails", label: "Journal de traitement", adminOnly: true, hidden: true },
+  { href: "/admin", label: "Admin", adminOnly: true, hidden: true },
 ];
 
 export function Shell({
@@ -31,7 +31,7 @@ export function Shell({
   const pathname = usePathname();
   const router = useRouter();
 
-  const links = NAV.filter((item) => !item.adminOnly || role === "admin");
+  const links = NAV.filter((item) => !item.hidden && (!item.adminOnly || role === "admin"));
 
   async function logout() {
     await getSupabaseBrowserClient().auth.signOut();

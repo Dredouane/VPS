@@ -85,8 +85,8 @@ export default function ChainsPage() {
                           router.push(`/chains/${encodeURIComponent(c.thread_id)}`)
                         }
                       >
-                        <TableCell className="pl-6 max-w-72 font-medium">
-                          <span className="truncate">{c.subject ?? "(sans sujet)"}</span>
+                        <TableCell className="pl-6 max-w-72 truncate font-medium">
+                          {c.subject ?? "(sans sujet)"}
                         </TableCell>
                         <TableCell className="max-w-56 truncate text-muted-foreground">
                           {participants.length > 0

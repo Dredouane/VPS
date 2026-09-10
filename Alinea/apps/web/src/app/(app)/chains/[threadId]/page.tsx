@@ -11,7 +11,6 @@ import {
   Users,
 } from "lucide-react";
 
-import { Badge } from "@alinea/ui/components/badge";
 import { Button } from "@alinea/ui/components/button";
 import {
   Card,
@@ -38,12 +37,6 @@ function usePresign() {
     },
   });
 }
-
-const ROLE_BADGE: Record<string, "default" | "secondary" | "outline"> = {
-  nouveau: "default",
-  reponse: "secondary",
-  transfert: "outline",
-};
 
 export default function ChainDetailPage() {
   const { threadId } = useParams<{ threadId: string }>();
@@ -77,7 +70,7 @@ export default function ChainDetailPage() {
   const participants = normalizeParticipants(d.chain.participants);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <PageHeader
         title={d.chain.subject ?? "(sans sujet)"}
         description={`${d.mails.length} message${d.mails.length > 1 ? "s" : ""}`}
@@ -89,7 +82,7 @@ export default function ChainDetailPage() {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-3 lg:items-start">
+      <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
         {/* Colonne droite (desktop) — En résumé */}
         <aside className="order-1 flex flex-col gap-4 lg:col-start-3 lg:sticky lg:top-20 lg:self-start">
           <Card className="lg:sticky lg:top-20">
@@ -170,10 +163,8 @@ export default function ChainDetailPage() {
           </div>
 
           {d.mails.map((mail) => {
-            const role = (mail.email as { thread_role?: string }).thread_role;
             const from = (mail.email as { from_addr?: string }).from_addr;
             const date = (mail.email as { mail_date?: string | null }).mail_date;
-            const contentMeta = mail.content ? docMetadata(mail.content.metadata) : {};
             return (
               <Card key={(mail.email as { id: string }).id} className="min-w-0">
                 <CardHeader className="pb-3">
@@ -192,28 +183,11 @@ export default function ChainDetailPage() {
                       <CardTitle className="truncate text-sm font-medium">
                         {from ?? "—"}
                       </CardTitle>
-                      {role ? (
-                        <Badge variant={ROLE_BADGE[role] ?? "outline"}>{role}</Badge>
-                      ) : null}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <span className="text-muted-foreground text-xs">
                         {date ? new Date(date).toLocaleString("fr-FR") : "—"}
                       </span>
-                      {mail.content && contentMeta.r2_key ? (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-xs"
-                          disabled={presign.isPending}
-                          onClick={() =>
-                            presign.mutate((mail.content as { id: string }).id)
-                          }
-                        >
-                          <ExternalLink className="size-3.5" />
-                          Voir l&apos;email brut
-                        </Button>
-                      ) : null}
                     </div>
                   </div>
                 </CardHeader>

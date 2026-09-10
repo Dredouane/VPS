@@ -472,7 +472,7 @@ export default function FactureDetailPage() {
       <ChatBubble
         scope={{ type: "facture", id }}
         title="Assistant expert de la facture"
-        intro="Connaît cette fiche et les documents liés (isolation par facture)."
+        intro="Connaît cette fiche et les documents liés."
         suggestions={[
           "Cette facture correspond à quel email ?",
           "Quel est le montant total ?",
