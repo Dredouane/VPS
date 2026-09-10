@@ -346,6 +346,99 @@ re-capitalisations répétées).
 6. **`requirements.txt`** : openpyxl, python-docx, python-pptx — installé au spinoff pour toutes les instances fleet.
 7. **Migration 008** : backfill `document_id` sur les factures existantes + fix `r2_key` des attachments qui pointent vers `thread.json`.
 
+## D22 — Split des forwards en messages individuels (10/09)
+
+**Problème** : un forward vers l'alias `+AREV` contient 1 seul message IMAP
+(dans le spool), mais le body du forward contient la chaîne complète (N
+messages historiques). Résultat : `messages_count = 1`, `quoted_segments = []`,
+la webapp affiche "1 message" alors que la chaîne en a 5. Le RAG indexe tout
+le forward comme un seul document monolithique.
+
+**Décision** : re-passer le contenu du forward à `mail-parser-reply` (vendored
+D18) pour extraire les messages individuels de la chaîne. La lib reconnaît déjà
+les séparateurs de 14 langues (Gmail, Outlook, Apple Mail).
+
+**Détails d'implémentation** :
+1. **`thread_parser.split_quoted()`** : quand un `RE_FORWARD_HEADER_BLOCK` est
+   détecté, extraire le body forwardé puis le re-passer à `EmailReplyParser.read()`.
+   Chaque fragment `EmailReply` = un message de la chaîne. `replies[0]` =
+   message le plus récent (nouveau contenu), `replies[1..N]` = messages
+   historiques (quoted segments).
+2. **`thread_parser.parse_mail()`** : pour chaque fragment, extraire `from`,
+   `date`, `subject` depuis le champ `headers` du fragment (contient les lignes
+   `De:`, `Envoyé:`, `Objet:` ou `On ... wrote:`).
+3. **`run_pipeline._process_thread()`** : créer N `cap_emails` + N
+   `cap_documents` par thread (un par message), au lieu de 1 seul.
+4. **`cap_email_chains.messages_count`** = nombre réel de messages dans la
+   chaîne (pas 1).
+5. **`cap_email_chains.participants`** = vrais expéditeurs de la chaîne
+   (extraits depuis les headers des messages historiques).
+6. **Fallback** : si le split échoue (body sans séparateur reconnu), logger un
+   warning et garder le contenu brut comme `new_content` (pas de perte de
+   données).
+
+**Non-scope** (D23) : fusion de plusieurs forwards sur le même sujet dans une
+seule chaîne.
+
+**Tests** :
+- CR RC 07/04 : 3 messages dans la chaîne → 3 `cap_emails`, 3 `cap_documents`
+- Forward sans séparateur → fallback, 1 `cap_email`, contenu brut
+- Forward Gmail classique (`On ... wrote:`) → split correct
+- Forward Outlook (`De: / Envoyé:`) → split correct
+- 48 tests existants → 0 régression
+
+## D23 — Fusion de chaînes multiples (forward sur même sujet) (10/09)
+
+**Problème** : quand un client reçoit une réponse dans sa boîte et la forward
+vers `+AREV`, Gmail crée un **nouveau `thread_id`** dans l'inbox +AREV (c'est
+un nouveau message IMAP). Résultat : 2 chaînes séparées dans la DB pour le
+même sujet, sans lien entre elles.
+
+**Exemple** :
+```
+Chain 1: thread_id=1863095346079811737 | CR RC 07/04 | 1 email
+Chain 2: thread_id=999888777666555444   | Re: CR RC 07/04 | 1 email
+```
+
+**Décision** : ajouter un mécanisme de détection et fusion de chaînes basé
+sur le sujet normalisé, avec préservation de l'ordre chronologique.
+
+**Risques identifiés et mitigations** :
+
+| Risque | Impact | Mitigation |
+|---|---|---|
+| **Faux positif** : 2 sujets différents mais normalisés identiques (ex: "CR RC" dans 2 projets) | Fusion erronée de 2 chaînes distinctes | Clé de fusion = `(subject_normalized, client_slug)` — 2 chaînes ne fusionnent que si elles ont le même sujet ET le même client. Ajouter un seuil de similarité (Levenshtein ≤ 2) pour les sujets quasi-identiques. |
+| **Ordre chronologique** : les dates des messages historiques peuvent être mélangées | Affichage désordonné dans la webapp | Trier les `cap_emails` par `date_iso` chronologique après fusion, pas par ordre d'arrivée. |
+| **Doublons** : un même message peut apparaître dans 2 forwards (le client forward le même mail 2 fois) | Documents et embeddings en double | Dédup par `content_md5` (existe déjà) + dédup par `message_id` si présent dans les headers. |
+| **Participants** : les participants des 2 forwards peuvent chevaucher | Liste de participants doublonnée | Dédupliquer `participants` après fusion (set union). |
+| **Factures** : une facture peut être dans le 1er ou 2ème forward | Double extraction de facture | `facture_upsert` est idempotent par `content_md5` — pas de doublon. Vérifier que `p_email_message_id` pointe vers le bon message. |
+| **R2** : les attachments du 2ème forward ont des clés R2 différentes | Pas de collision (clés basées sur basename) | Pas de risque — chaque forward a ses propres clés. |
+| **Migration** : les chaînes existantes dans la DB ne sont pas fusionnées | Pas de régression immédiate | La fusion ne s'applique qu'aux nouveaux forwards. Pas de migration nécessaire (ou backfill optionnel). |
+| **Idempotence** : re-forward du même mail ne doit pas créer de doublon | Chaîne fusionnée en double | Le pipeline est déjà idempotent (content_md5). La fusion vérifie si le `thread_id` cible existe déjà avant de merger. |
+
+**Algorithme de détection** :
+1. Quand un nouveau thread est traité, extraire `subject_normalized` (sans
+   Re:/Fwd:/Tr:).
+2. Chercher dans `cap_email_chains` un thread existant avec le même
+   `subject_normalized` ET le même `client_slug`.
+3. Si trouvé : fusionner les `cap_emails` du nouveau thread dans le thread
+   existant, trier par `date_iso`, mettre à jour `messages_count` et
+   `participants`.
+4. Si non trouvé : créer une nouvelle chaîne (comportement actuel).
+5. Si plusieurs correspondances : ne fusionner avec aucune (ambiguïté) + logger
+   un warning.
+
+**Algorithme de fusion** :
+1. `cap_emails` du thread source → `UPDATE thread_id = thread_cible` (si
+   `message_id` pas déjà présent dans le thread cible).
+2. `cap_documents` liés aux emails transférés → `UPDATE thread_id = thread_cible`.
+3. Recalculer `messages_count`, `participants`, `first_message_at`,
+   `last_message_at` sur le thread cible.
+4. Supprimer le thread source (vidange) s'il n'a plus aucun email lié.
+
+**Non-scope** : détection automatique de chaînes hors inbox +AREV (ex: chaînes
+dans la boîte perso du client).
+
 ## Historique
 
 - 2026-08-31 : création du registre (D1-D12, session grill-me pipeline email

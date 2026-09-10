@@ -45,7 +45,12 @@ def _process_thread(spool_path, tid, slug, env, key_gemini, key_or, or_model,
              "attachments_seen": 0, "attachments_indexed": 0,
              "attachments_skipped": 0, "factures": 0, "errors": 0}
     thread = json.load(open(spool_path, encoding="utf-8"))
-    all_ids = [m["message_id"] for m in thread["messages"]]
+
+    # D22 : parser d'abord pour expandre les forwards en messages individuels
+    parsed = thread_parser.parse_thread(thread)
+
+    # D22 : query status avec les message_ids étendus (y compris quoted-*)
+    all_ids = [m["message_id"] for m in parsed["mails"]]
     status_raw = rpc("rpc_cap_doc_status", {"p_message_ids": all_ids})
     if isinstance(status_raw, list):
         status = [r for r in status_raw if isinstance(r, dict)]
@@ -55,7 +60,10 @@ def _process_thread(spool_path, tid, slug, env, key_gemini, key_or, or_model,
         status = [status_raw] if isinstance(status_raw, dict) else []
     known = {s["message_id"] for s in (status if isinstance(status, list) else [status])
              if isinstance(s, dict) and s.get("known")}
-    parsed = thread_parser.parse_thread(thread, known)
+    # D22 : re-assigner rag_status après expansion
+    for m in parsed["mails"]:
+        m["rag_status"] = "known" if m["message_id"] in known else "new"
+
     mails_new = [m for m in parsed["mails"] if m["rag_status"] == "new"]
     mails = mails_new + ([m for m in parsed["mails"]
                           if m["rag_status"] == "known"] if force_attachments else [])

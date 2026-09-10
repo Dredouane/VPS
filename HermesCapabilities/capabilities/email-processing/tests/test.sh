@@ -23,16 +23,16 @@ fx = json.load(open(os.path.join(sys.argv[2], "spool_thread_fr.json")))
 # --- parse complet sans known (tout nouveau, lazy backfill) -------------------
 r = tp.parse_thread(fx)
 assert r["thread_id"] == "1875124411713563599"
-assert r["chain"]["messages_count"] == 3
+assert r["chain"]["messages_count"] == 4  # D22: forward msg#3 expandé en 2
 assert r["chain"]["subject"] == "Demande de devis renovation"   # Tr:/Re: retirés
-assert "dupont@example.com" in r["chain"]["participants"]
-assert "arev@example.com" in r["chain"]["participants"]
+assert "dupont@example.com" in str(r["chain"]["participants"])
+assert "arev@example.com" in str(r["chain"]["participants"])
 assert r["chain"]["first_message_at"] is not None
-assert r["stats"]["new"] == 3 and r["stats"]["known"] == 0
+assert r["stats"]["new"] == 4 and r["stats"]["known"] == 0
 
-m1, m2, m3 = r["mails"]   # ordre chronologique
-assert (m1["role"], m2["role"], m3["role"]) == ("nouveau", "reponse", "transfert")
-assert m1["position"] == 1 and m3["position"] == 3
+m1, m2, m3, m4 = r["mails"]   # ordre chronologique (D22: 4 mails)
+assert (m1["role"], m2["role"], m3["role"], m4["role"]) == ("nouveau", "reponse", "transfert", "transfert")
+assert m1["position"] == 1 and m4["position"] == 4
 
 # m1: contenu nouveau intact, aucune quote
 assert "demande de devis" in m1["new_content"].lower()
@@ -40,25 +40,25 @@ assert m1["quoted_segments"] == []
 assert m1["attachments"][0]["filename"] == "plan-chantier.pdf"
 
 # m2: quote FR "Le ... a écrit :" + ">" → séparées
-# m2: quote FR "Le ... a écrit :" + ">" → séparées (fragments de la lib vendored
-# — l'agrégat des segments doit contenir l'historique du mail d'origine)
 assert "devis arrive en fin de semaine" in m2["new_content"]
 assert m2["quoted_segments"] and "renovation pour un appartement" in " ".join(m2["quoted_segments"])
 assert "Le" in " ".join(m2["quoted_segments"])
 
-# m3: transfert Outlook "----- Message d'origine -----" + "De :/Envoyé :"
-# D17: dans un forward, le contenu d'après (mail transféré) est indexé
+# m3: forward envelope (contenu du transfert)
 assert m3["role"] == "transfert"
 assert "transfer de notre conversation" in m3["new_content"].lower() \
     or "conversation avec le syndic" in m3["new_content"].lower()
-assert "syndic valide" in m3["new_content"].lower() \
-    or (m3["quoted_segments"] and "syndic valide" in " ".join(m3["quoted_segments"]))
+
+# m4: message historique du forward (D22 expansion)
+assert m4["role"] == "transfert"
+assert "syndic valide" in m4["new_content"].lower() \
+    or (m4["quoted_segments"] and "syndic valide" in " ".join(m4["quoted_segments"]))
 
 # --- statut RAG (known list fournie par l'orchestrateur) ----------------------
 r2 = tp.parse_thread(fx, known_message_ids={"<msgA@example.com>"})
 assert r2["mails"][0]["rag_status"] == "known"
 assert r2["mails"][1]["rag_status"] == "new"
-assert r2["stats"]["new"] == 2 and r2["stats"]["known"] == 1
+assert r2["stats"]["new"] == 3 and r2["stats"]["known"] == 1
 
 # --- idempotence : re-parse d'un parse = même résultat (D3) -------------------
 r3 = tp.parse_thread(json.loads(json.dumps(fx)))
