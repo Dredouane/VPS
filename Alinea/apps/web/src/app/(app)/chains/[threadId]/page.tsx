@@ -82,71 +82,9 @@ export default function ChainDetailPage() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
-        {/* Colonne droite (desktop) — En résumé */}
-        <aside className="order-1 flex flex-col gap-4 lg:col-start-3 lg:sticky lg:top-20 lg:self-start">
-          <Card className="lg:sticky lg:top-20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">En résumé</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-1.5 text-sm">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">Messages</span>
-                <span>{d.mails.length}</span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">Dernier échange</span>
-                <span>
-                  {d.chain.last_message_at
-                    ? new Date(d.chain.last_message_at).toLocaleDateString("fr-FR")
-                    : "—"}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">
-                          Factures liées ({d.factures.length})
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="flex flex-col gap-2">
-                        {d.factures.length === 0 ? (
-                          <EmptyState
-                            icon={Inbox}
-                            title="Aucune facture liée"
-                            description="Aucune facture n'a encore été extraite de cet échange."
-                          />
-                        ) : (
-                          d.factures.map((f) => (
-                            <Link
-                              key={f.id}
-                              href={`/factures/${f.id}`}
-                              className="flex items-center justify-between gap-3 rounded-md border px-3 py-2.5 transition-colors hover:bg-accent"
-                            >
-                              <div className="flex min-w-0 flex-col gap-0.5">
-                                <span className="truncate text-sm font-medium">
-                                  {f.numero} — {f.fournisseur || "—"}
-                                </span>
-                                <span className="text-muted-foreground text-xs">
-                                  {f.montant_ttc != null
-                                    ? `${f.montant_ttc.toFixed(2)} ${f.devise}`
-                                    : "—"}
-                                  {f.date_facture ? ` · ${f.date_facture}` : ""}
-                                </span>
-                              </div>
-                              <StatutFactureBadge statut={f.statut} />
-                            </Link>
-                          ))
-                        )}
-                      </CardContent>
-                    </Card>
-        </aside>
-
-
-
-        {/* Colonne large (desktop) — fil des mails */}
-        <div className="order-2 flex min-w-0 flex-col gap-4 lg:col-span-2">
+      <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+        {/* Colonne large — fil des mails */}
+        <div className="order-2 min-w-0 flex-1 flex flex-col gap-4">
           <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
             <span className="inline-flex items-center gap-1.5">
               <Users className="size-3.5" />
@@ -245,7 +183,65 @@ export default function ChainDetailPage() {
           })}
         </div>
 
-
+        {/* Colonne droite — En résumé + Factures */}
+        <aside className="order-1 w-full shrink-0 flex flex-col gap-4 lg:w-72 lg:sticky lg:top-20 lg:self-start">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">En résumé</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1.5 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">Messages</span>
+                <span>{d.mails.length}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">Dernier échange</span>
+                <span>
+                  {d.chain.last_message_at
+                    ? new Date(d.chain.last_message_at).toLocaleDateString("fr-FR")
+                    : "—"}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Factures liées ({d.factures.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              {d.factures.length === 0 ? (
+                <EmptyState
+                  icon={Inbox}
+                  title="Aucune facture liée"
+                  description="Aucune facture n'a encore été extraite de cet échange."
+                />
+              ) : (
+                d.factures.map((f) => (
+                  <Link
+                    key={f.id}
+                    href={`/factures/${f.id}`}
+                    className="flex items-center justify-between gap-3 rounded-md border px-3 py-2.5 transition-colors hover:bg-accent"
+                  >
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="truncate text-sm font-medium">
+                        {f.numero} — {f.fournisseur || "—"}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {f.montant_ttc != null
+                          ? `${f.montant_ttc.toFixed(2)} ${f.devise}`
+                          : "—"}
+                        {f.date_facture ? ` · ${f.date_facture}` : ""}
+                      </span>
+                    </div>
+                    <StatutFactureBadge statut={f.statut} />
+                  </Link>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </aside>
       </div>
 
       <ChatBubble
