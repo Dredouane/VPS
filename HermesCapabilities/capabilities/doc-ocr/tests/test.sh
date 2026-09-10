@@ -83,6 +83,69 @@ then ok "unitaires doc-ocr (juge, nombres FR/EN, aliases, sommes, adaptateur)"
 else fail "unitaires doc-ocr"
 fi
 
+# ── D21: doc_extract (extraction multi-types) ──────────────────────────────────
+if python3 - "$CODE" <<'PY'
+import sys, os, json, tempfile
+sys.path.insert(0, sys.argv[1])
+import doc_extract as de
+
+# is_ocr_type / is_supported
+assert de.is_ocr_type("f.pdf") and de.is_ocr_type("f.PNG")
+assert not de.is_ocr_type("f.xlsx")
+assert de.is_supported("f.xlsx") and de.is_supported("f.docx")
+assert de.is_supported("f.pptx") and de.is_supported("f.csv")
+assert de.is_supported("f.txt") and not de.is_supported("f.pdf")
+
+# extract txt
+with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+    f.write("Bonjour test\nLigne 2"); tmp = f.name
+r = de.extract(tmp)
+assert "Bonjour test" in r["text"] and r["method"] == "text"
+os.unlink(tmp)
+
+# extract csv
+with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="") as f:
+    import csv; w = csv.writer(f)
+    w.writerow(["Col","Val"]); w.writerow(["A","1"]); tmp = f.name
+r = de.extract(tmp)
+assert "Col" in r["text"] and r["method"] == "csv"
+os.unlink(tmp)
+
+# extract xlsx
+import openpyxl
+wb = openpyxl.Workbook(); wb.active.append(["Facture","100"]); tmp = "/tmp/t.xlsx"
+wb.save(tmp); wb.close()
+r = de.extract(tmp)
+assert "Facture" in r["text"] and r["method"] == "openpyxl"
+os.unlink(tmp)
+
+# extract docx
+from docx import Document
+doc = Document(); doc.add_paragraph("Test docx"); tmp = "/tmp/t.docx"
+doc.save(tmp)
+r = de.extract(tmp)
+assert "Test docx" in r["text"] and r["method"] == "python-docx"
+os.unlink(tmp)
+
+# extract pptx
+from pptx import Presentation
+prs = Presentation(); slide = prs.slides.add_slide(prs.slide_layouts[0])
+slide.shapes.title.text = "Slide test"; tmp = "/tmp/t.pptx"
+prs.save(tmp)
+r = de.extract(tmp)
+assert "Slide test" in r["text"] and r["method"] == "python-pptx"
+os.unlink(tmp)
+
+# type inconnu → unsupported
+r = de.extract("/home/redouane/dev/VPS/HermesCapabilities/capabilities/doc-ocr/code/ocr_judge.py")
+assert "unsupported" in r["method"] or "error" in r["method"]
+
+print("DOC-EXTRACT-OK")
+PY
+then ok "D21 doc_extract (xlsx, docx, pptx, csv, txt, type inconnu)"
+else fail "D21 doc_extract"
+fi
+
 # Intégration réseau (vision réelle) : nécessite clés + une image — test réel
 # à M2.6 sur vraie PJ. Ici SKIP propre.
 if [ -n "${VPS_GEMINI_API_KEY:-}" ] && [ -n "${VPS_OPEN_ROUTER_API_KEY:-}" ]; then

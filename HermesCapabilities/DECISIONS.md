@@ -32,6 +32,7 @@
 | D18 | **Vendoring** `mail-parser-reply` v1.36 (MIT, fr/en/de/it/nl/da/ja) — séparation replies/quotes robuste multi-providers sans pip runtime | Parser maison regex · SLM parse · pip runtime (I11) |
 | D19 | **Normalisation CR/LF à la source** (imap_poll.py) — le raw Gmail body `\r\n` → `\n` avant body_plain, le vendor lib reçoit propre | Verrue au niveau parser/thraed |
 | D20 | **clean_body.py** — nettoyage corps email pour affichage webApp + RAG (images, cid, quotes-fold, signatures dedup, markdown strip) | Verru inline · nettoyage côté webApp |
+| D21 | **Extraction multi-types** (doc_extract.py) — xlsx/docx/pptx/csv/txt via libs natives + filtre images non pertinentes (OCR < 50 chars → skip) + r2_key par basename + facture liée au document via p_document_id | Uniquement PDF/images · r2_key par compteur global · pas de lien facture→document |
 | D11-ter | Headless : routines sur le **profil default** (le scheduler ne consomme que lui) — profil ops = Desktop uniquement | Routines sur profils secondaires headless (ne tirent pas) |
 
 ---
@@ -327,6 +328,23 @@ Sortie : texte brut (pas de HTML ni markdown), stocké dans
 `cap_documents.content` → la webApp affiche le texte propre **directement**.
 Le RAG est plus propre (le contenu est le texte utile, pas les
 re-capitalisations répétées).
+
+## D21 — Extraction documentaire multi-types + fix r2_key + lien facture→document ✅ (10/09)
+
+**Problèmes** :
+1. **r2_key bug** : le compteur `entry['attachments_ocr']` est global mais le spool nomme les fichiers par compteur par-message → fallback silencieux sur `thread.json` → la webapp télécharge un JSON au lieu du PDF.
+2. **Types bloqués** : le filtre dur `.pdf/.png/.jpg/.jpeg/.webp` ignore xlsx/docx/pptx/csv.
+3. **Pas de lien facture→document** : `rpc_cap_facture_upsert` accepte `p_document_id` mais le pipeline ne le passait pas.
+4. **Images non pertinentes** : signatures, logos, artefacts indexés inutilement dans le RAG.
+
+**Décisions** :
+1. **r2_key par basename** : lookup `r2_map.get(os.path.basename(path))` au lieu du compteur → chaque attachment a sa propre clé R2.
+2. **`doc_extract.py`** : module déterministe (openpyxl, python-docx, python-pptx) pour extraire le texte des fichiers Office. Les PDF/images restent gérés par les OCR vision.
+3. **Réordonnancement pipeline** : doc_upsert **AVANT** facture bifurcation → capture du `doc_id` retourné par le RPC → passage à `p_document_id`.
+4. **Filtre images non pertinentes** : si le texte OCR fait < 50 chars → skip embed + upsert (signature, logo, artefact). Compteur `attachments_skipped` dans les logs.
+5. **Types inconnus** : log erreur dans `cap_pipeline_runs.last_error` + incrément `errors`, pas de crash.
+6. **`requirements.txt`** : openpyxl, python-docx, python-pptx — installé au spinoff pour toutes les instances fleet.
+7. **Migration 008** : backfill `document_id` sur les factures existantes + fix `r2_key` des attachments qui pointent vers `thread.json`.
 
 ## Historique
 

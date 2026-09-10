@@ -31,6 +31,7 @@ import embed_gemini  # noqa: E402
 import rpc_call  # noqa: E402
 import imap_mark_done  # noqa: E402
 import clean_body  # noqa: E402
+import doc_extract  # noqa: E402
 
 
 def rpc(fn, payload):
@@ -62,7 +63,8 @@ def run(max_threads, dry, force_attachments=False):
     for t in poll["threads"]:
         tid = t["thread_id"]
         entry = {"thread_id": tid, "mails_new": 0, "docs_indexed": 0,
-                 "attachments_ocr": 0, "factures": 0, "errors": 0}
+                 "attachments_seen": 0, "attachments_indexed": 0,
+                 "attachments_skipped": 0, "factures": 0, "errors": 0}
         try:
             spool_path = t["spool_path"]
             thread = json.load(open(spool_path, encoding="utf-8"))
@@ -148,45 +150,91 @@ def run(max_threads, dry, force_attachments=False):
                     path = att.get("path")
                     if not path or not os.path.isfile(path):
                         continue
-                    entry["attachments_ocr"] += 1
-                    if not path.lower().endswith((".pdf", ".png", ".jpg", ".jpeg", ".webp")):
-                        continue
-                    exs = []
-                    for name, mod in (("gemini", ocr_gemini), ("openrouter", ocr_openrouter)):
-                        if name == "openrouter" and not key_or:
-                            continue
-                        try:
-                            ex = (ocr_gemini.extract(path, key_gemini) if name == "gemini"
-                                  else mod.extract(path, key_or, or_model))
-                            exs.append(dict(ex, extractor=name))
-                        except RuntimeError as e:
-                            entry.setdefault("warn", []).append(f"ocr {name}: {e}")
-                    if not exs:
-                        entry["errors"] += 1
-                        entry.setdefault("warn", []).append(f"ocr {att['filename']}: 0 extracteur")
-                        continue
-                    if len(exs) == 1:
-                        # 1 extracteur seul → juge en mode dégradé (D14)
-                        exs.append({"extractor": "absent", "text": "",
-                                    "doc_type_hint": "autre", "confidence": 0.0})
-                    ex1, ex2 = exs[0], exs[1]
-                    verdict = ocr_judge.judge(ex1, ex2)
-                    # convention ged_save: att-{i+1}-{safe_name} — l'ordre des
-                    # attachments (i) correspond exactement à l'ordre doc_upsert
-                    r2_key_att = r2_map.get(f"att-{entry['attachments_ocr']}-{att.get('safe_name', '')}") \
+                    entry["attachments_seen"] += 1
+                    att_basename = os.path.basename(path)
+                    r2_key_att = r2_map.get(att_basename) \
+                                 or next((v for k, v in r2_map.items()
+                                           if k.endswith("/" + att_basename)), None) \
                                  or r2_map.get("thread.json")
-                    meta = {**doc_meta, "filename": att["filename"], "mime": att["mime"],
-                            "ocr": {k: verdict[k] for k in
-                                    ("winner", "agreement", "low_agreement", "doc_type")},
-                            "r2_key": r2_key_att}
-                    text = ex1["text"] if verdict["winner"] == "gemini" else ex2["text"]
-                    if verdict["doc_type"] == "facture" and key_gemini:
+                    ext = os.path.splitext(path)[1].lower()
+                    text, meta, meta_ocr = "", {}, {}
+                    # ── Type OCR (PDF/images) → Gemini + OpenRouter + juge ──
+                    if doc_extract.is_ocr_type(path):
+                        exs = []
+                        for name, mod in (("gemini", ocr_gemini), ("openrouter", ocr_openrouter)):
+                            if name == "openrouter" and not key_or:
+                                continue
+                            try:
+                                ex = (ocr_gemini.extract(path, key_gemini) if name == "gemini"
+                                      else mod.extract(path, key_or, or_model))
+                                exs.append(dict(ex, extractor=name))
+                            except RuntimeError as e:
+                                entry.setdefault("warn", []).append(f"ocr {name}: {e}")
+                        if not exs:
+                            entry["errors"] += 1
+                            entry.setdefault("warn", []).append(f"ocr {att['filename']}: 0 extracteur")
+                            continue
+                        if len(exs) == 1:
+                            exs.append({"extractor": "absent", "text": "",
+                                        "doc_type_hint": "autre", "confidence": 0.0})
+                        ex1, ex2 = exs[0], exs[1]
+                        verdict = ocr_judge.judge(ex1, ex2)
+                        text = ex1["text"] if verdict["winner"] == "gemini" else ex2["text"]
+                        meta_ocr = {k: verdict[k] for k in
+                                    ("winner", "agreement", "low_agreement", "doc_type")}
+                        # D21: filtre images non pertinentes (texte trop court)
+                        if len(text.strip()) < 50:
+                            entry["attachments_skipped"] += 1
+                            entry.setdefault("warn", []).append(
+                                f"skip non-pertinent: {att['filename']} ({len(text.strip())} chars)")
+                            continue
+                        meta = {**doc_meta, "filename": att["filename"], "mime": att["mime"],
+                                "ocr": meta_ocr, "r2_key": r2_key_att}
+                    # ── Type Office (xlsx/docx/pptx/csv/txt) → doc_extract ──
+                    elif doc_extract.is_supported(path):
+                        ex = doc_extract.extract(path)
+                        text = ex["text"]
+                        if not text.strip():
+                            entry["attachments_skipped"] += 1
+                            entry.setdefault("warn", []).append(
+                                f"empty extract: {att['filename']} ({ex['method']})")
+                            continue
+                        meta = {**doc_meta, "filename": att["filename"], "mime": att["mime"],
+                                "ocr": {"method": ex["method"], "doc_type_hint": ex["doc_type_hint"],
+                                        "confidence": ex["confidence"]},
+                                "r2_key": r2_key_att}
+                    # ── Type inconnu → log erreur, skip ──
+                    else:
+                        entry["errors"] += 1
+                        entry.setdefault("warn", []).append(
+                            f"unsupported_type: {ext} — {att['filename']}")
+                        continue
+                    # ── Embed + doc_upsert (commun, AVANT facture bifurcation) ──
+                    doc_id = None
+                    try:
+                        emb_att = embed_gemini.embed(text, key_gemini,
+                                                     env.get("EMBED_MODEL") or "gemini-embedding-001",
+                                                     int(env.get("EMBED_MAX_CHARS") or 6000))
+                        doc_id = rpc("rpc_cap_doc_upsert", {
+                            "p_kind": "attachment", "p_message_id": m["message_id"],
+                            "p_content": text, "p_embedding": emb_att["embedding"],
+                            "p_thread_id": tid, "p_parent_message_id": m["message_id"],
+                            "p_title": att["filename"],
+                            "p_metadata": meta})
+                        entry["docs_indexed"] += 1
+                        entry["attachments_indexed"] += 1
+                    except (RuntimeError, ValueError) as e:
+                        entry["errors"] += 1
+                        entry.setdefault("warn", []).append(f"embed PJ: {e}")
+                    # ── Bifurcation facture (OCR uniquement, APRÈS doc_upsert) ──
+                    if meta_ocr.get("doc_type") == "facture" and key_gemini and doc_id:
                         try:
                             data = invoice_adapter.adapt(text, key_gemini)
                             check = invoice_check.run(data, tol)
                             sums, inv = check["sums"], check["invoice"]
-                            conf = verdict["confidence"] * (0.6 if not sums["sums_ok"] else 1.0)
-                            fr = rpc("rpc_cap_facture_upsert", {
+                            conf = (meta_ocr.get("confidence", 0.0)
+                                    * (0.6 if not sums["sums_ok"] else 1.0))
+                            rpc("rpc_cap_facture_upsert", {
                                 "p_numero": inv.get("numero"),
                                 "p_fournisseur": inv.get("fournisseur") or "",
                                 "p_fournisseur_identifiant": inv.get("fournisseur_identifiant"),
@@ -199,28 +247,15 @@ def run(max_threads, dry, force_attachments=False):
                                 "p_devise": inv.get("devise") or "EUR",
                                 "p_confiance": conf,
                                 "p_email_message_id": m["message_id"],
-                                "p_extraction": {**inv, "sums": sums, "judge": meta["ocr"]}})
+                                "p_document_id": doc_id,
+                                "p_extraction": {**inv, "sums": sums, "judge": meta_ocr}})
                             entry["factures"] += 1
                             entry.setdefault("facture_detail", []).append(
-                                {"numero": inv.get("numero"), "action": fr.get("action"),
+                                {"numero": inv.get("numero"), "doc_id": doc_id,
                                  "sums_ok": sums["sums_ok"]})
                         except (RuntimeError, ValueError) as e:
                             entry["errors"] += 1
                             entry.setdefault("warn", []).append(f"facture: {e}")
-                    try:
-                        emb_att = embed_gemini.embed(text, key_gemini,
-                                                     env.get("EMBED_MODEL") or "gemini-embedding-001",
-                                                     int(env.get("EMBED_MAX_CHARS") or 6000))
-                        rpc("rpc_cap_doc_upsert", {
-                            "p_kind": "attachment", "p_message_id": m["message_id"],
-                            "p_content": text, "p_embedding": emb_att["embedding"],
-                            "p_thread_id": tid, "p_parent_message_id": m["message_id"],
-                            "p_title": att["filename"],
-                            "p_metadata": meta}),
-                        entry["docs_indexed"] += 1
-                    except (RuntimeError, ValueError) as e:
-                        entry["errors"] += 1
-                        entry.setdefault("warn", []).append(f"embed PJ: {e}")
                 new_uids = [str(m["uid"]) for m in thread["messages"]
                             if m["message_id"] in {x["message_id"] for x in mails_new}
                             and m.get("uid")]
