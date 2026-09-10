@@ -33,6 +33,9 @@
 | D19 | **Normalisation CR/LF à la source** (imap_poll.py) — le raw Gmail body `\r\n` → `\n` avant body_plain, le vendor lib reçoit propre | Verrue au niveau parser/thraed |
 | D20 | **clean_body.py** — nettoyage corps email pour affichage webApp + RAG (images, cid, quotes-fold, signatures dedup, markdown strip) | Verru inline · nettoyage côté webApp |
 | D21 | **Extraction multi-types** (doc_extract.py) — xlsx/docx/pptx/csv/txt via libs natives + filtre images non pertinentes (OCR < 50 chars → skip) + r2_key par basename + facture liée au document via p_document_id | Uniquement PDF/images · r2_key par compteur global · pas de lien facture→document |
+| D22 | **Split des forwards** en messages individuels via mail-parser-reply — extraction from/date/subject des headers Outlook/FR | Forward = bloc monolithique |
+| D23 | **Fusion de chaînes** multiples (forward sur même sujet) | Chaînes séparées par forward |
+| D24 | **`GMAIL_ALIAS_TAG` requis** — pas de default `+AREV`, check `spawn-hermes-pro.sh` | Default hardcodé → cross-pollination |
 | D11-ter | Headless : routines sur le **profil default** (le scheduler ne consomme que lui) — profil ops = Desktop uniquement | Routines sur profils secondaires headless (ne tirent pas) |
 
 ---
@@ -386,6 +389,26 @@ seule chaîne.
 - Forward Gmail classique (`On ... wrote:`) → split correct
 - Forward Outlook (`De: / Envoyé:`) → split correct
 - 48 tests existants → 0 régression
+
+## D24 — GMAIL_ALIAS_TAG requis, pas de default (10/09)
+
+**Problème** : `imap_poll.py` et `run_pipeline.py` avaient un default
+hardcodé `+AREV` pour `GMAIL_ALIAS_TAG`. Résultat : tous les clients sans
+alias explicite pollent le même inbox `+AREV` → cross-pollination (données
+mélangées dans Supabase).
+
+**Décision** : `GMAIL_ALIAS_TAG` est **requis** — pas de default. Si absent,
+le pipeline plante explicitement (`RuntimeError`). Chaque client doit
+définir son alias dans `client.env` (ex: `+AREV`, `+FATEH`).
+
+**Fix** :
+1. `imap_poll.py:155` : `cfg["GMAIL_ALIAS_TAG"]` (KeyError si absent)
+2. `run_pipeline.py:246` : `env["GMAIL_ALIAS_TAG"]` + check explicite
+3. `manifest.yaml` : commentaire "requis par client", pas de valeur
+4. `spawn-hermes-pro.sh` : validation à la creation du secrets.env
+
+**Prévention** : `spawn-hermes-pro.sh` plante si `GMAIL_ALIAS_TAG` manque
+dans `client.env`.
 
 ## D23 — Fusion de chaînes multiples (forward sur même sujet) (10/09)
 

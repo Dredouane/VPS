@@ -164,6 +164,13 @@ umask 077
 } > "$SECRETS_FILE"
 chmod 600 "$SECRETS_FILE"
 
+# Garde-fou : GMAIL_ALIAS_TAG requis (évite la cross-pollination arev↔fateh)
+if grep -q "GMAIL_ALIAS_TAG" "$ENV_FILE"; then
+    ok "GMAIL_ALIAS_TAG présent dans client.env"
+else
+    die "GMAIL_ALIAS_TAG manquant dans $ENV_FILE — ajouter (ex: GMAIL_ALIAS_TAG=+AREV)"
+fi
+
 COMPOSE="$INSTANCE_DIR/docker-compose.yml"
 sed -e "s|__SLUG__|${SLUG}|g" \
     -e "s|__PORT__|${PORT}|g" \

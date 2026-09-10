@@ -152,7 +152,7 @@ def run(cfg):
     user, mdp = cfg["VPS_GMAIL_RECEPTION_IMAP_ADRESS"], cfg["VPS_GMAIL_RECEPTION_IMAP_MDP"]
     if not user or not mdp:
         raise RuntimeError("config manquante (IMAP_ADRESS/IMAP_MDP)")
-    alias_tag = cfg.get("GMAIL_ALIAS_TAG") or "+AREV"
+    alias_tag = cfg["GMAIL_ALIAS_TAG"]
     label_done = cfg.get("GMAIL_LABEL_DONE") or "ia-traite"
     max_threads = int(cfg.get("GMAIL_MAX_THREADS") or "5")
     newer = int(cfg.get("GMAIL_NEWER_THAN_DAYS") or "90")

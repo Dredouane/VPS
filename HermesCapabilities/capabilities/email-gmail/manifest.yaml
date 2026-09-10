@@ -16,7 +16,7 @@ description: >
 secrets: [VPS_GMAIL_RECEPTION_IMAP_ADRESS, VPS_GMAIL_RECEPTION_IMAP_MDP]
 
 env:
-  GMAIL_ALIAS_TAG: "+AREV"
+  # GMAIL_ALIAS_TAG: requis par client — ex: "+AREV", "+FATEH" (pas de default)
   GMAIL_LABEL_DONE: "ia-traite"
   GMAIL_MAX_THREADS: "5"
   GMAIL_SPOOL_DIR: "/opt/data/spool/gmail"

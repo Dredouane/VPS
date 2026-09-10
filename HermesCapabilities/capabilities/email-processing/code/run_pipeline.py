@@ -238,12 +238,14 @@ def run(max_threads, dry, force_attachments=False):
     slug = env.get("CLIENT_SLUG", "")
     if not slug:
         raise RuntimeError("CLIENT_SLUG absente")
+    if not env.get("GMAIL_ALIAS_TAG"):
+        raise RuntimeError("GMAIL_ALIAS_TAG absente — définir dans client.env (ex: +AREV)")
     tol = float(env.get("OCR_INVOICE_TOLERANCE") or 0.02)
     result = {"threads": [], "processed": 0, "errors": []}
     poll = imap_poll.run({
         "VPS_GMAIL_RECEPTION_IMAP_ADRESS": env.get("VPS_GMAIL_RECEPTION_IMAP_ADRESS"),
         "VPS_GMAIL_RECEPTION_IMAP_MDP": env.get("VPS_GMAIL_RECEPTION_IMAP_MDP"),
-        "GMAIL_ALIAS_TAG": env.get("GMAIL_ALIAS_TAG") or "+AREV",
+        "GMAIL_ALIAS_TAG": env["GMAIL_ALIAS_TAG"],
         "GMAIL_LABEL_DONE": env.get("GMAIL_LABEL_DONE") or "ia-traite",
         "GMAIL_MAX_THREADS": str(max_threads),
         "GMAIL_SPOOL_DIR": env.get("GMAIL_SPOOL_DIR") or "/opt/data/spool/gmail",
