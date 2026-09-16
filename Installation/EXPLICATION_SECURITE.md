@@ -123,4 +123,22 @@ chmod 600 ~/.bashrc ~/.config/secrets/env
 # 5. Tester un NOUVEAU terminal (variables chargées) avant de fermer l'ancien
 ```
 
+### 7.6 Hook PAM SSH — alerte Telegram si IP non autorisée
+
+Un hook PAM (`/usr/local/bin/telegram-alert-ssh.sh`) envoie une alerte Telegram ("Louky") à chaque connexion SSH depuis une IP **non whitelistée**.
+
+**Whitelist** : variable `SSH_ALERT_ALLOWED_IPS` dans `/etc/secrets/hermes.env` (600, root).
+```bash
+# Consulter
+sudo grep SSH_ALERT_ALLOWED_IPS /etc/secrets/hermes.env
+# Résultat : export SSH_ALERT_ALLOWED_IPS="REDACTED REDACTED"
+
+# Mettre à jour (IP dynamique SFR — à refaire si tu changes de IP)
+sudo sed -i 's/SSH_ALERT_ALLOWED_IPS=.*/SSH_ALERT_ALLOWED_IPS="ANCIENNE NOUVELLE"/' /etc/secrets/hermes.env
+```
+
+**Comment savoir si ton IP a changé** : tu reçois des notifications "Connexion SSH - IP non autorisee" alors que c'est toi qui te connectes. L'IP affichée dans la notification est la bonne — ajoute-la à la whitelist.
+
+**Note** : ce hook est **indépendant** du firewall Contabo (WebExposure) et du UFW. C'est un monitoring interne au VPS.
+
 Compléments : BitLocker activé sur le disque Windows (Panneau de configuration → Chiffrement de lecteur), 2FA sur Telegram + Google + GitHub, Kaspersky conservé + mises à jour Windows automatiques.
