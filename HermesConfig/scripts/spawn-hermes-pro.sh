@@ -192,6 +192,12 @@ ok "Compose généré: $COMPOSE (600, sans secrets) + secrets.env (600)"
 log "docker compose up -d (container: hermes-$SLUG-pro)…"
 docker compose -f "$COMPOSE" up -d
 
+# Garde-fou: le .env dans le data dir doit être lisible par uid 10000
+# (le --force-recreate peut le recréer en root)
+docker exec "hermes-$SLUG-pro" chown 10000:10000 /opt/data/.env 2>/dev/null \
+    && docker exec "hermes-$SLUG-pro" chmod 600 /opt/data/.env 2>/dev/null \
+    || warn "Impossible de fixer les permissions de /opt/data/.env"
+
 # --- 7bis. Requirements Python (deps du pipeline) ----------------------------
 REQ_SRC="$BASE_DIR/hermes/requirements.txt"
 REQ_DST="$DATA_DIR/requirements.txt"
