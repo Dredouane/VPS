@@ -1,35 +1,35 @@
-# Ticket AREV-103 — Page racine `/` : point d'entrée propre (pas de placeholder technique)
+# Ticket AREV-103 — Root page `/`: clean entry point (no technical placeholder)
 
-- **Date** : 2026-09-08
-- **Référence spec** : `SPEC_Produit_Emails_Factures.md` §3 (anti-exigences : pas de mention dev/pas de bouton mort)
-- **Scénarios NonReg** : A2
-- **Persona** : Fateh_Ug (principal) · Gerant_PME
-- **Priorité** : Moyenne
-- **Type** : Amélioration UX
+- **Date**: 2026-09-08
+- **Spec reference**: `SPEC_Produit_Emails_Factures.md` §3 (anti-requirements: no dev mention / no dead button)
+- **NonReg scenarios**: A2
+- **Persona**: Fateh_Ug (primary) · Gerant_PME
+- **Priority**: Medium
+- **Type**: UX improvement
 
-## Description (le contrat)
-Tout visiteur qui ou l'URL racine (avant connexion) doit voir une page sobre et orientée
-utilisateur → aboutir à une vraie connexion. Aucun contenu de développement.
+## Description (the contract)
+Every visitor who opens the root URL (before login) must see a sober, user-oriented page
+→ leading to a real login. No development content.
 
-## État actuel
-La racine `/` affiche un placeholder de dev : badges « P0 scaffolding », « P1 contrats », texte
-« Auth, factures, emails et recherche RAG arrivent en P3/P4. L'API est contractée par
-openapi/openapi.yaml, généré depuis le SQL », et un bouton **« Connexion (P4) » désactivé**.
+## Current state
+The root `/` displays a dev placeholder: badges "P0 scaffolding", "P1 contrats" [contracts], text
+"Auth, factures, emails et recherche RAG arrivent en P3/P4. L'API est contractée par
+openapi/openapi.yaml, généré depuis le SQL" [Auth, invoices, emails and RAG search arrive in P3/P4. The API is contracted by openapi/openapi.yaml, generated from the SQL], and a **"Connexion (P4)" [Login (P4)] button, disabled**.
 
-## État attendu
-- `/` ne présente AUCUN badge/milestone ni référence technique (openapi, SQL, P0-P4…).
-- L'accès aboutit à une connexion fonctionnelle : soit redirection vers `/login`, soit une
-  landing épurée avec un bouton **« Se connecter »** actif qui mène à `/login` (et, optionnel,
-  une phrase de valeur simple pour l'utilisateur cible).
+## Expected state
+- `/` displays NO badge/milestone nor technical reference (openapi, SQL, P0-P4, …).
+- Access leads to a functional login: either a redirect to `/login`, or a
+  clean landing page with an active **"Se connecter"** [Log in] button that leads to `/login` (and, optionally,
+  a simple value phrase for the target user).
 
-## La "douleur" du persona
-Un prospect / un accompagnateur qui découvre le produit par la racine voit « un produit pas
-fini », un bouton mort → il ferme. Cas de démo / découverte gâché dès la première page.
+## The persona's "pain"
+A prospect / an advisor discovering the product through the root sees "an unfinished
+product", a dead button → they close it. Demo / discovery case wasted from the very first page.
 
-## Critères d'acceptation
-- [ ] `/` sans aucun badge/texte technique (P0-P4, openapi, SQL…) ni bouton désactivé
-- [ ] La racine mène (par redirection ou bouton actif) à une vraie page de connexion
-- [ ] Rendu propre, nul écran d'erreur
+## Acceptance criteria
+- [ ] `/` with no technical badge/text (P0-P4, openapi, SQL, …) and no disabled button
+- [ ] The root leads (via redirect or active button) to a real login page
+- [ ] Clean rendering, no error screen
 
 ## Notes
-Écran d'entrée visible avant tout login (à soigner pour la « démo passable » devant Fateh).
+Entry screen visible before any login (to be polished for the "passable demo" in front of Fateh).

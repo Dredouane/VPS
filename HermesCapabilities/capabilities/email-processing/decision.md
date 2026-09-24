@@ -1,40 +1,40 @@
 # Decision — Capability email-processing (C2)
 
-> Règle d'ordre : **NATIF > MIX > SIDECAR** (ARCHITECTURE.md §2).
+> Order of rule: **NATIVE > MIX > SIDECAR** (ARCHITECTURE.md §2).
 
-## Besoin
+## Need
 
-Comprendre une mailChain : qui a écrit quoi, où se situe le mail reçu
-(nouveau sujet / réponse / transfert), séparer le **contenu nouveau** de
-l'**historique cité** (anti-doublon RAG), et connaître le statut RAG de
-chaque mail (déjà indexé / nouveau — lazy backfill des anciens mails).
-Puis **sauvegarder** chaîne + emails en DB (cap_email_chains + cap_emails).
+Understand a mailChain: who wrote what, where the received mail sits
+(new subject / reply / forward), separate the **new content** from the
+**quoted history** (anti RAG-duplicate), and know the RAG status of
+each mail (already indexed / new — lazy backfill of the old mails).
+Then **save** chain + emails to DB (cap_email_chains + cap_emails).
 
-## Options évaluées
+## Options evaluated
 
 | Option | Verdict |
 |---|---|
-| **Natif** : module code déterministe (`thread_parser.py`, stdlib, fixtures) | ✅ **retenu** |
-| Parsing par LLM (prompt) | ❌ non déterministe, non testable, hallucinations sur les quotes |
-| Sidecar service | ❌ inutile — code pur sans I/O réseau |
+| **Native**: deterministic code module (`thread_parser.py`, stdlib, fixtures) | ✅ **kept** |
+| LLM-based parsing (prompt) | ❌ non-deterministic, untestable, hallucinations on quotes |
+| Sidecar service | ❌ useless — pure code with no network I/O |
 
-## Décision
+## Decision
 
-**Natif** — le parsing de quotes (`Le … a écrit :`, `On … wrote:`,
-`----- Message d'origine -----`, lignes `>`), la détection de rôle et
-l'agrégation de chaîne sont des problèmes de **parsing** : ils doivent être
-idempotents et non-régressifs (D3). Le module est **pur** : entrée =
-thread.json du spool + liste optionnelle des message_ids déjà en RAG (fournie
-par l'orchestrateur via `rpc_cap_doc_status`) ; sortie = structure
-complète (contrat §2.2 de PIPELINE). Le **SAVE DB** (chains + emails) est
-fait par l'orchestrateur via les RPC (`chain_upsert`, `email_upsert`) — le
-module reste sans I/O.
+**Native** — quote parsing (`Le … a écrit :`, `On … wrote:`,
+`----- Message d'origine -----`, `>` lines), role detection and
+chain aggregation are **parsing** problems: they must be
+idempotent and non-regressive (D3). The module is **pure**: input =
+spool thread.json + optional list of message_ids already in RAG (provided
+by the orchestrator via `rpc_cap_doc_status`); output = complete
+structure (§2.2 contract of PIPELINE). The **DB SAVE** (chains + emails) is
+done by the orchestrator via the RPCs (`chain_upsert`, `email_upsert`) — the
+module stays I/O-free.
 
-La **classification métier** (`email-classify`, LLM) est une skill séparée :
-elle reçoit le contenu nouveau uniquement.
+The **business classification** (`email-classify`, LLM) is a separate skill:
+it receives only the new content.
 
-## Re-vérification
+## Re-check
 
-| Date | Hermes | Verdict inchangé ? | Notes |
+| Date | Hermes | Verdict unchanged? | Notes |
 |---|---|---|---|
-| 2026-09-01 | v0.20.6 | — (décision initiale) | |
+| 2026-09-01 | v0.20.6 | — (initial decision) | |

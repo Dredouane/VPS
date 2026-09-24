@@ -1,338 +1,338 @@
-# Documentation Globale — VPS Contabo (Ubuntu 22.04 LTS)
+# Global Documentation — Contabo VPS (Ubuntu 22.04 LTS)
 
-**Hostname** : `$VPS_HOSTNAME`
-**IP publique** : `$VPS_IP`
-**Contexte** : VPS ré-imaginé chez Contabo puis réinstallé + blindé (reprise depuis zéro), restauration des données depuis `backup.tar.gz`, puis réparation de la flotte d'agents Hermes.
+**Hostname**: `$VPS_HOSTNAME`
+**Public IP**: `$VPS_IP`
+**Context**: VPS re-imagined at Contabo then reinstalled + hardened (started from scratch), data restored from `backup.tar.gz`, then repair of the Hermes agent fleet.
 
 ---
 
-## 1. Accès SSH
+## 1. SSH Access
 
-### Alias configurés dans `~/.ssh/config` (machine locale WSL)
+### Aliases configured in `~/.ssh/config` (local WSL machine)
 
 ```
-Host nemo-root   # connexion root temporaire (PORT 22, mot de passe) — PLUS DISPONIBLE (root bloqué)
-Host nemo        # connexion admin (PORT $VPS_SSH_PORT, clé ed25519)   → UTILISER CELUI-CI
+Host nemo-root   # temporary root connection (PORT 22, password) — NO LONGER AVAILABLE (root blocked)
+Host nemo        # admin connection (PORT $VPS_SSH_PORT, ed25519 key)   → USE THIS ONE
 ```
 
-| Paramètre | Valeur |
+| Parameter | Value |
 |---|---|
-| Utilisateur admin | `admin` |
-| Port SSH | **$VPS_SSH_PORT** |
-| Authentification | Clé SSH uniquement (`id_ed25519` + `$VPS_SSH_KEY`) |
-| `PermitRootLogin` | `no` (root impossible en SSH) |
+| Admin user | `admin` |
+| SSH port | **$VPS_SSH_PORT** |
+| Authentication | SSH key only (`id_ed25519` + `$VPS_SSH_KEY`) |
+| `PermitRootLogin` | `no` (root impossible via SSH) |
 | `PasswordAuthentication` | `no` |
 
-Commandes :
+Commands:
 ```bash
-ssh nemo            # connexion admin (port $VPS_SSH_PORT)
-# En cas de verrouillage SSH : console web Contabo (VNC) en root, mot de passe root.
+ssh nemo            # admin connection (port $VPS_SSH_PORT)
+# In case of SSH lockout: Contabo web console (VNC) as root, root password.
 ```
 
 ---
 
-## 2. Utilisateurs
+## 2. Users
 
-| Utilisateur | Rôle | Sudo | Docker |
+| User | Role | Sudo | Docker |
 |---|---|---|---|
-| `admin` | Administrateur | ✅ NOPASSWD | ✅ |
-| `hermes` | Service (créé par le plan, inutilisé) | ❌ | ❌ |
-| `syncthing` | Système (service de sync) | ❌ | ❌ |
-| `hermesrunner` | Runner natif Hermes (bot @pipou200bot) | ❌ | ❌ |
-| `loukyrunner` | Runner natif (DOUBLON de hermesrunner — même token) | ❌ | ❌ |
-| `arev-chantier-runner` | Runner natif Hermes (bot @Arev_Chantiers_AssistBot) | ❌ | ❌ |
+| `admin` | Administrator | ✅ NOPASSWD | ✅ |
+| `hermes` | Service (created by the plan, unused) | ❌ | ❌ |
+| `syncthing` | System (sync service) | ❌ | ❌ |
+| `hermesrunner` | Native Hermes runner (bot @pipou200bot) | ❌ | ❌ |
+| `loukyrunner` | Native runner (DUPLICATE of hermesrunner — same token) | ❌ | ❌ |
+| `arev-chantier-runner` | Native Hermes runner (bot @Arev_Chantiers_AssistBot) | ❌ | ❌ |
 
-**Note** : `loukyrunner` et `hermesrunner` partagent le MÊME token Telegram (@pipou200bot) et la même clé DeepSeek. Un seul des deux peut tourner à la fois (conflit de polling). `hermesrunner` est actif.
+**Note**: `loukyrunner` and `hermesrunner` share the SAME Telegram token (@pipou200bot) and the same DeepSeek key. Only one of the two can run at a time (polling conflict). `hermesrunner` is active.
 
-**Audit 30/08/2026** : l'utilisateur cloud-init `ubuntu` (uid 1000, shell bash, `authorized_keys` présent + `NOPASSWD:ALL` dans `sudoers.d/90-cloud-init-users` — 2ᵉ porte root-équivalente **non documentée**) a été **supprimé** avec sa règle sudoers. Seul `admin` reste root-équivalent.
+**Audit 30/08/2026**: the cloud-init `ubuntu` user (uid 1000, bash shell, `authorized_keys` present + `NOPASSWD:ALL` in `sudoers.d/90-cloud-init-users` — an **undocumented** second root-equivalent door) was **deleted** along with its sudoers rule. Only `admin` remains root-equivalent.
 
 ---
 
-## 3. Sécurité / Hardening appliqué
+## 3. Security / Applied Hardening
 
-| Composant | État |
+| Component | Status |
 |---|---|
-| SSH durci | Port $VPS_SSH_PORT, clé seule, root bloqué, ciphers/MACs modernes |
-| Fail2ban | Jail `sshd` port $VPS_SSH_PORT, banaction ufw, bantime 24h |
-| UFW | `deny incoming`, `allow $VPS_SSH_PORT`, règles DOCKER-USER, `deny 8642` |
-| Docker | `no-new-privileges`, **pas** d'userns-remap, logs 10m×3 |
-| AIDE | Base d'intégrité (sha256), cron quotidien 3h |
-| Unattended-upgrades | Actif (patchs sécurité auto) |
+| Hardened SSH | Port $VPS_SSH_PORT, key only, root blocked, modern ciphers/MACs |
+| Fail2ban | `sshd` jail on port $VPS_SSH_PORT, banaction ufw, bantime 24h |
+| UFW | `deny incoming`, `allow $VPS_SSH_PORT`, DOCKER-USER rules, `deny 8642` |
+| Docker | `no-new-privileges`, **no** userns-remap, logs 10m×3 |
+| AIDE | Integrity database (sha256), daily cron at 3am |
+| Unattended-upgrades | Active (automatic security patches) |
 | Sysctl | kptr_restrict=2, dmesg_restrict=1, perf_paranoid=3, etc. |
-| Postfix | Restreint à localhost (loopback-only) |
-| Secrets | `/etc/secrets/hermes.env` (600, dir 700) sourcé par `/root/.bashrc` (600) — migré le 30/08 |
-| Utilisateur cloud-init `ubuntu` | Supprimé (R1 audit 30/08) — sudoers `90-cloud-init-users` retiré |
-| Cron AIDE | Log daté dynamique `aide-$(date +\%Y\%m\%d).log` (corrigé le 30/08) |
-| snapd | Désactivé |
-| Supervision Telegram | `/usr/local/bin/telegram-alert.sh` (credentials dans `/etc/secrets/hermes.env`) — hook PAM sshd : alerte **uniquement si connexion inhabituelle** (IP ≠ allowlist `SSH_ALERT_ALLOWED_IPS=$SOURCE_IP`, utilisateur ≠ admin, ou locale) + alerte AIDE conditionnelle (cron 3h) — 30/08 |
-| AIDE (exclusions churn) | `99_custom` : data-dirs agents, `.hermes` des 3 users, index Syncthing, fail2ban.sqlite3, landscape, vault Obsidian, `/run/containerd` — base régénérée le 30/08 21:34, check 0 diff |
+| Postfix | Restricted to localhost (loopback-only) |
+| Secrets | `/etc/secrets/hermes.env` (600, dir 700) sourced by `/root/.bashrc` (600) — migrated on 30/08 |
+| cloud-init user `ubuntu` | Deleted (R1 audit 30/08) — sudoers `90-cloud-init-users` removed |
+| AIDE cron | Dynamic dated log `aide-$(date +\%Y\%m\%d).log` (fixed on 30/08) |
+| snapd | Disabled |
+| Telegram monitoring | `/usr/local/bin/telegram-alert.sh` (credentials in `/etc/secrets/hermes.env`) — PAM hook for sshd: alert **only on unusual login** (IP ≠ allowlist `SSH_ALERT_ALLOWED_IPS=$SOURCE_IP`, user ≠ admin, or local login) + conditional AIDE alert (cron 3am) — 30/08 |
+| AIDE (churn exclusions) | `99_custom`: agent data-dirs, `.hermes` of the 3 users, Syncthing index, fail2ban.sqlite3, landscape, Obsidian vault, `/run/containerd` — database regenerated on 30/08 21:34, check 0 diff |
 
-### Ports en écoute publique
+### Publicly listening ports
 
 | Port | Service | Note |
 |---|---|---|
-| $VPS_SSH_PORT/tcp | SSH | Autorisé UFW |
-| 8642/tcp | API gateway natif hermesrunner | **DENY UFW** (protégé par API_SERVER_KEY) |
-| 8650-8653/tcp | Agents Docker (gateways API 8642 des conteneurs) | **DENY UFW** (ports publiés mais bloqués publiquement) |
-| 22000/tcp | Syncthing (sync de données) | **FERMÉ (01/09)** — le sync passera par Tailscale (serveur enrôlé : $TAILSCALE_IP) |
+| $VPS_SSH_PORT/tcp | SSH | Allowed by UFW |
+| 8642/tcp | hermesrunner native API gateway | **UFW DENY** (protected by API_SERVER_KEY) |
+| 8650-8653/tcp | Docker agents (container API gateways 8642) | **UFW DENY** (published ports but publicly blocked) |
+| 22000/tcp | Syncthing (data sync) | **CLOSED (01/09)** — sync will go through Tailscale (enrolled server: $TAILSCALE_IP) |
 
-### ✅ Secrets migrés vers `/etc/secrets/` (30/08/2026 — audit)
+### ✅ Secrets migrated to `/etc/secrets/` (30/08/2026 — audit)
 
-Les secrets autrefois en clair dans `/root/.bashrc` (clés API DeepSeek/Gemini/OpenRouter, tokens Telegram des bots, credentials Google Cloud, identifiants SUREN test) ont été **migrés** vers `/etc/secrets/hermes.env` (600, dir 700, root uniquement). `/root/.bashrc` (600) se termine par :
+The secrets formerly in plaintext in `/root/.bashrc` (DeepSeek/Gemini/OpenRouter API keys, Telegram bot tokens, Google Cloud credentials, SUREN test credentials) were **migrated** to `/etc/secrets/hermes.env` (600, dir 700, root only). `/root/.bashrc` (600) ends with:
 ```bash
 [ -f /etc/secrets/hermes.env ] && . /etc/secrets/hermes.env
 ```
-Les scripts exécutés **en shell root interactif** (ex. `spawn-hermes.sh`) chargent donc automatiquement les secrets. Backup pré-migration : `/root/.bashrc.preaudit-20260830`. Règles : ne jamais versionner ce fichier, toujours `chmod 600`.
+Scripts run **in an interactive root shell** (e.g. `spawn-hermes.sh`) therefore automatically load the secrets. Pre-migration backup: `/root/.bashrc.preaudit-20260830`. Rules: never commit this file, always `chmod 600`.
 
 ---
 
-## 4. Flotte d'agents Hermes
+## 4. Hermes Agent Fleet
 
 ### 4.1 Architecture
 
-Deux modes de déploiement :
-- **Agents Dockerisés** : un conteneur par agent, image `hermes-agent:latest`, orchestrés par `/home/admin/hermes-fleet/spawn-hermes.sh`
-- **Agents natifs** : installation Hermes système (`/usr/local/lib/hermes-agent`, binaire `/usr/local/bin/hermes`), un service systemd par runner
+Two deployment modes:
+- **Dockerized agents**: one container per agent, image `hermes-agent:latest`, orchestrated by `/home/admin/hermes-fleet/spawn-hermes.sh`
+- **Native agents**: system-wide Hermes installation (`/usr/local/lib/hermes-agent`, binary `/usr/local/bin/hermes`), one systemd service per runner
 
-### 4.2 Installation Hermes
+### 4.2 Hermes Installation
 
-| Élément | Emplacement |
+| Item | Location |
 |---|---|
-| Binaire système | `/usr/local/bin/hermes` (v0.20.6) |
-| Code/venv système | `/usr/local/lib/hermes-agent/` (venv Python 3.11) |
-| Repo de build Docker | `/home/admin/hermes-fleet/hermes-repo/` |
-| Image Docker | `hermes-agent:latest` (5,22 Go, v0.14.0) |
-| Script fleet | `/home/admin/hermes-fleet/spawn-hermes.sh` |
+| System binary | `/usr/local/bin/hermes` (v0.20.6) |
+| System code/venv | `/usr/local/lib/hermes-agent/` (Python 3.11 venv) |
+| Docker build repo | `/home/admin/hermes-fleet/hermes-repo/` |
+| Docker image | `hermes-agent:latest` (5.22 GB, v0.14.0) |
+| Fleet script | `/home/admin/hermes-fleet/spawn-hermes.sh` |
 
-### 4.3 Agents DÉPLOYÉS et FONCTIONNELS
+### 4.3 DEPLOYED and FUNCTIONAL Agents
 
-| Agent | Mode | Conteneur/Service | Port | Bot Telegram | État |
+| Agent | Mode | Container/Service | Port | Telegram Bot | Status |
 |---|---|---|---|---|---|
-| **leanConstruction** | Docker | `hermes-leanConstruction` | 8650 | @lean_construction_bot | ✅ connecté |
-| **copycat** | Docker | `hermes-copycat` | 8651 | @copy_cat_agent_bot | ✅ connecté |
-| **aquisition** | Docker | `hermes-aquisition` | 8652 | @aquisition_red_bot | ✅ connecté |
-| **va_agent** | Docker | `hermes-va_agent` | 8653 | @red_va_agent_bot | ✅ connecté |
-| **hermesrunner** | Natif | `hermes-gateway-hermesrunner.service` | — | @pipou200bot (Louky) | ✅ connecté |
-| **arev-chantier-runner** | Natif | `hermes-gateway-arev.service` | — | @Arev_Chantiers_AssistBot | ✅ connecté |
+| **leanConstruction** | Docker | `hermes-leanConstruction` | 8650 | @lean_construction_bot | ✅ connected |
+| **copycat** | Docker | `hermes-copycat` | 8651 | @copy_cat_agent_bot | ✅ connected |
+| **aquisition** | Docker | `hermes-aquisition` | 8652 | @aquisition_red_bot | ✅ connected |
+| **va_agent** | Docker | `hermes-va_agent` | 8653 | @red_va_agent_bot | ✅ connected |
+| **hermesrunner** | Native | `hermes-gateway-hermesrunner.service` | — | @pipou200bot (Louky) | ✅ connected |
+| **arev-chantier-runner** | Native | `hermes-gateway-arev.service` | — | @Arev_Chantiers_AssistBot | ✅ connected |
 
-> **Correction importante** : `hermes-leanConstruction` tournait initialement avec le mauvais bot (@suren_construction_bot). Il a été recréé avec son vrai bot **@lean_construction_bot**.
+> **Important correction**: `hermes-leanConstruction` initially ran with the wrong bot (@suren_construction_bot). It was recreated with its real bot **@lean_construction_bot**.
 
-Les tokens des agents Docker sont stockés dans `/root/.fleet_tokens.env` (mode 600).
+The Docker agents' tokens are stored in `/root/.fleet_tokens.env` (mode 600).
 
-### 4.4 Services systemd natifs
+### 4.4 Native systemd Services
 
 ```bash
-systemctl status hermes-gateway-hermesrunner   # bot Louky (@pipou200bot)
-systemctl status hermes-gateway-arev           # bot Arev (@Arev_Chantiers_AssistBot)
+systemctl status hermes-gateway-hermesrunner   # Louky bot (@pipou200bot)
+systemctl status hermes-gateway-arev           # Arev bot (@Arev_Chantiers_AssistBot)
 journalctl -u hermes-gateway-hermesrunner -f
 journalctl -u hermes-gateway-arev -f
 ```
 
-Les deux sont `enabled` (démarrage au boot) et `Restart=always`.
+Both are `enabled` (start at boot) and `Restart=always`.
 
-### 4.5 Agents Docker (flotte v1)
+### 4.5 Docker Agents (fleet v1)
 
-> **⚠️ Héritage (v1)** : la flotte historique ci-dessous reste gérée par
-> `spawn-hermes.sh`. Les **clients pro PME** sont désormais déployés via le
-> sous-projet **`HermesConfig` v2** (sécurisé : secrets hors YAML, ports
-> loopback, image pinnée, vault scopé, healthcheck) — voir
-> `../HermesConfig/README.md`. Ne pas ajouter de nouveaux clients en v1.
+> **⚠️ Legacy (v1)**: the historical fleet below remains managed by
+> `spawn-hermes.sh`. The **SME pro clients** are now deployed via the
+> **`HermesConfig` v2** sub-project (hardened: secrets outside YAML, loopback
+> ports, pinned image, scoped vault, healthcheck) — see
+> `../HermesConfig/README.md`. Do not add new clients on v1.
 
-Déployer un nouvel agent dockerisé (v1, héritage) :
+Deploy a new dockerized agent (v1, legacy):
 ```bash
-# En tant que root (les secrets DEEPSEEK_API_KEY / TELEGRAM_USER_ID sont dans
-# /etc/secrets/hermes.env, sourcé automatiquement par /root/.bashrc — audit 30/08)
+# As root (the DEEPSEEK_API_KEY / TELEGRAM_USER_ID secrets are in
+# /etc/secrets/hermes.env, sourced automatically by /root/.bashrc — audit 30/08)
 cd /home/admin/hermes-fleet
-./spawn-hermes.sh <nom_agent> "<telegram_bot_token>"
+./spawn-hermes.sh <agent_name> "<telegram_bot_token>"
 
-# Exemple :
-./spawn-hermes.sh monAgent "123456789:AA..."
+# Example:
+./spawn-hermes.sh myAgent "123456789:AA..."
 ```
 
-Le script : construit l'image si nécessaire (via `hermes-repo`), trouve un port libre (8650+), monte le vault Obsidian (`/home/syncthing/obsidian-vault`), injecte `DEEPSEEK_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS` et lance `hermes gateway run --replace`.
+The script: builds the image if needed (via `hermes-repo`), finds a free port (8650+), mounts the Obsidian vault (`/home/syncthing/obsidian-vault`), injects `DEEPSEEK_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS` and runs `hermes gateway run --replace`.
 
-### 4.5bis Flotte PRO HermesConfig (v2) — clients PME
+### 4.5bis HermesConfig PRO Fleet (v2) — SME clients
 
-| Agent | Conteneur | Port | Bot Telegram | Image | État |
+| Agent | Container | Port | Telegram Bot | Image | Status |
 |---|---|---|---|---|---|
-| **arev** (AREV Travaux) | `hermes-arev-pro` | 127.0.0.1:8655 | @ArevLeanyBot (nouveau, option A) | `hermes-agent:v2026.5.16-522` | ✅ connecté (30/08/2026) |
+| **arev** (AREV Travaux) | `hermes-arev-pro` | 127.0.0.1:8655 | @ArevLeanyBot (new, option A) | `hermes-agent:v2026.5.16-522` | ✅ connected (30/08/2026) |
 
-- Déploiement/audit : `/home/admin/hermes-fleet/HermesConfig/scripts/{spawn,audit}-hermes-pro.sh`
-- Secrets : `clients/arev/client.env` (600) → résolus dans `instances/arev/secrets.env` (600, référencé par `env_file`) — **jamais dans le YAML ni git**
-- Vault **scopé client** : `/home/syncthing/obsidian-vault/VPS/HermesConfig/arev/` → `/opt/vault` (10000:10000 + ACL syncthing)
-- Durcissement : `no-new-privileges`, `cap_drop ALL` + caps min, `mem_limit 2g`, `cpus 1.5`, logs 10m×3, healthcheck sur `gateway_state.json`
-- Audit 30/08 : **12 OK / 0 FAIL** (`audit-hermes-pro.sh`)
-- ⚠️ **Leçon** : ne pas définir `TELEGRAM_FALLBACK_IPS` (TLS direct IP → échec certificat sur builds récents → timeout). Le runner natif `arev-chantier-runner` (@Arev_Chantiers_AssistBot) reste en parallèle pendant la transition.
+- Deployment/audit: `/home/admin/hermes-fleet/HermesConfig/scripts/{spawn,audit}-hermes-pro.sh`
+- Secrets: `clients/arev/client.env` (600) → resolved in `instances/arev/secrets.env` (600, referenced by `env_file`) — **never in the YAML nor git**
+- **Client-scoped** vault: `/home/syncthing/obsidian-vault/VPS/HermesConfig/arev/` → `/opt/vault` (10000:10000 + syncthing ACL)
+- Hardening: `no-new-privileges`, `cap_drop ALL` + minimal caps, `mem_limit 2g`, `cpus 1.5`, logs 10m×3, healthcheck on `gateway_state.json`
+- Audit 30/08: **12 OK / 0 FAIL** (`audit-hermes-pro.sh`)
+- ⚠️ **Lesson**: do not define `TELEGRAM_FALLBACK_IPS` (direct IP TLS → certificate failure on recent builds → timeout). The native runner `arev-chantier-runner` (@Arev_Chantiers_AssistBot) remains in parallel during the transition.
 
-### 4.5ter HermesCapabilities — volet compétences modulaires (M1, 31/08/2026)
+### 4.5ter HermesCapabilities — modular skills track (M1, 31/08/2026)
 
-Sous-projet `HermesCapabilities/` : capabilities granulaires (email, OCR, RAG,
-analyses…) décrites par contrat `manifest.yaml`, testées unitairement, et
-attachables aux instances (`capability-attach.sh`). Ordre de décision
-technique : natif > mix > sidecar (matrice dans `ARCHITECTURE.md`). Pilote :
-`rag-supabase` (C5, natif — MCP `supabase` du catalogue Hermes). Implémentation
-réelle (M2) : schéma/RPC Supabase TEST → wiring MCP sur `hermes-arev-pro`.
-Interface future avec le spawn v3 : `integration-hermesconfig.md`.
+`HermesCapabilities/` sub-project: granular capabilities (email, OCR, RAG,
+analytics…) described by a `manifest.yaml` contract, unit-tested, and
+attachable to instances (`capability-attach.sh`). Technical decision order:
+native > mix > sidecar (matrix in `ARCHITECTURE.md`). Pilot:
+`rag-supabase` (C5, native — Hermes catalogue `supabase` MCP). Real
+implementation (M2): Supabase TEST schema/RPC → MCP wiring on `hermes-arev-pro`.
+Future interface with v3 spawn: `integration-hermesconfig.md`.
 
-**Bugs corrigés dans `spawn-hermes.sh`** (vs version d'origine) :
-- `entrypoint: []` **supprimé** → l'image utilise son entrypoint natif qui droppe les privilèges vers l'utilisateur `hermes` (sans ça, l'image refuse de lancer le gateway en root)
-- Commande : `gateway run --replace` (les options `--no-supervise --force` n'existaient pas)
-- L'entrypoint exécute `hermes gateway run --replace` automatiquement
-- **Audit 30/08** : `chmod -R 777 "$BASE_DIR/data"` remplacé par `chown -R 10000:10000 … && chmod -R 700 …` (les data-dirs ne sont plus world-writable)
+**Bugs fixed in `spawn-hermes.sh`** (vs the original version):
+- `entrypoint: []` **removed** → the image uses its native entrypoint which drops privileges to the `hermes` user (without this, the image refuses to start the gateway as root)
+- Command: `gateway run --replace` (the `--no-supervise --force` options did not exist)
+- The entrypoint runs `hermes gateway run --replace` automatically
+- **Audit 30/08**: `chmod -R 777 "$BASE_DIR/data"` replaced by `chown -R 10000:10000 … && chmod -R 700 …` (the data-dirs are no longer world-writable)
 
-**Correctifs modèle/Provider (plan A — 30/08/2026)** :
-- Le `config.yaml` généré au 1er boot forçait `model.default: "anthropic/claude-opus-4.6"` + `provider: auto` → HTTP 400 sur l'endpoint DeepSeek (modèle anthropic invalide).
-- **Corrigé** : `cli-config.yaml.example` (dans `hermes-repo`) mis à jour avec `default: "deepseek-chat"` + `provider: "deepseek"`.
-- Les config.yaml de aquisition/copycat/va_agent ont été corrigés manuellement + conteneurs redémarrés.
-- Le script injecte `HERMES_MODEL=deepseek-chat` + `HERMES_MODEL_PROVIDER=deepseek`.
+**Model/Provider fixes (plan A — 30/08/2026)**:
+- The `config.yaml` generated at first boot forced `model.default: "anthropic/claude-opus-4.6"` + `provider: auto` → HTTP 400 on the DeepSeek endpoint (invalid anthropic model).
+- **Fixed**: `cli-config.yaml.example` (in `hermes-repo`) updated with `default: "deepseek-chat"` + `provider: "deepseek"`.
+- The config.yaml of aquisition/copycat/va_agent were fixed manually + containers restarted.
+- The script injects `HERMES_MODEL=deepseek-chat` + `HERMES_MODEL_PROVIDER=deepseek`.
 
-### 4.6 Vault Obsidian & Syncthing
+### 4.6 Obsidian Vault & Syncthing
 
-- Vault : `/home/syncthing/obsidian-vault/` (612 Mo)
-- GUI Syncthing : `http://127.0.0.1:8384`
-- ⚠️ **Config Syncthing incomplète** : seul le device `$VPS_HOSTNAME` (`$SYNCTHING_DEVICE_ID est déclaré, le vault n'a pas de `.stfolder`, aucun device distant → **pas de synchronisation active**. En attente des device IDs des autres appareils.
-- UFW : port 22000 restreint à l'IP locale `$SOURCE_IP`
-- Raccourcis : `sync-status`, `sync-restart`, `sync-reset` (alias dans `/root/.bashrc`)
-
----
-
-## 5. Rapport d'incident — Agents Hermes ne répondaient pas
-
-### Cause racine
-Après la réinstallation, **rien n'était lancé** :
-1. Image Docker `hermes-agent:latest` absente
-2. Binaire natif `hermes` manquant (`/usr/local/bin/hermes` = lien cassé)
-3. Aucun service de gateway actif
-
-### Corrections apportées
-1. Build de l'image Docker depuis `hermes-repo` (repo complet retrouvé chez `arev-chantier-runner/.hermes/hermes-agent`)
-2. Récupération de `docker/entrypoint.sh` depuis git (fichier absent du working tree)
-3. Installation système Hermes v0.20.6 via l'installeur officiel (+ `libatomic1`, + `python-telegram-bot==22.8`)
-4. Création de 2 services systemd dédiés + liens `.local/bin/hermes` pour les runners
-5. Correction de `spawn-hermes.sh` + déploiement de leanConstruction (Docker)
-6. Réinitialisation du `kanban.db` corrompu de arev-chantier-runner
+- Vault: `/home/syncthing/obsidian-vault/` (612 MB)
+- Syncthing GUI: `http://127.0.0.1:8384`
+- ⚠️ **Incomplete Syncthing config**: only the `$VPS_HOSTNAME` device (`$SYNCTHING_DEVICE_ID is declared, the vault has no `.stfolder`, no remote device → **no active sync**. Waiting for the device IDs of the other devices.
+- UFW: port 22000 restricted to the local IP `$SOURCE_IP`
+- Shortcuts: `sync-status`, `sync-restart`, `sync-reset` (aliases in `/root/.bashrc`)
 
 ---
 
-## 6. TO DO — Reste à faire
+## 5. Incident Report — Hermes Agents Unresponsive
 
-### Agents / Flotte
-- [x] **aquisition_bot** : déployé (token fourni) → `hermes-aquisition` port 8652, @aquisition_red_bot ✅
-- [x] **copycat** : déployé → `hermes-copycat` port 8651, @copy_cat_agent_bot ✅
-- [x] **va_agent** : déployé → `hermes-va_agent` port 8653, @red_va_agent_bot ✅
-- [x] **leanConstruction** : recréé avec le bon bot @lean_construction_bot (port 8650) ✅ ; **uniformisé le 01/09** : re-déployé sur image à jour, gateway en uid 10000 (comme les 3 autres), data préservée (tar de précaution dans `/var/backups/lean-precaution/`).
-- [ ] **loukyrunner** : doublon de hermesrunner (même bot @pipou200bot). Si un bot distinct est attendu, fournir son token.
-- [ ] Mapping complet **nom_agent → token → mode** documenté dans `/root/.fleet_tokens.env` (mode 600).
+### Root cause
+After the reinstallation, **nothing was running**:
+1. Docker image `hermes-agent:latest` missing
+2. Native binary `hermes` missing (`/usr/local/bin/hermes` = broken link)
+3. No active gateway service
+
+### Fixes applied
+1. Build of the Docker image from `hermes-repo` (full repo recovered from `arev-chantier-runner/.hermes/hermes-agent`)
+2. Recovery of `docker/entrypoint.sh` from git (file missing from the working tree)
+3. System installation of Hermes v0.20.6 via the official installer (+ `libatomic1`, + `python-telegram-bot==22.8`)
+4. Creation of 2 dedicated systemd services + `.local/bin/hermes` links for the runners
+5. Fix of `spawn-hermes.sh` + deployment of leanConstruction (Docker)
+6. Reset of the corrupted `kanban.db` of arev-chantier-runner
+
+---
+
+## 6. TO DO — Remaining Work
+
+### Agents / Fleet
+- [x] **aquisition_bot**: deployed (token provided) → `hermes-aquisition` port 8652, @aquisition_red_bot ✅
+- [x] **copycat**: deployed → `hermes-copycat` port 8651, @copy_cat_agent_bot ✅
+- [x] **va_agent**: deployed → `hermes-va_agent` port 8653, @red_va_agent_bot ✅
+- [x] **leanConstruction**: recreated with the right bot @lean_construction_bot (port 8650) ✅; **standardized on 01/09**: re-deployed on up-to-date image, gateway on uid 10000 (like the 3 others), data preserved (precautionary tar in `/var/backups/lean-precaution/`).
+- [ ] **loukyrunner**: duplicate of hermesrunner (same bot @pipou200bot). If a distinct bot is expected, provide its token.
+- [ ] Complete mapping **agent_name → token → mode** documented in `/root/.fleet_tokens.env` (mode 600).
 
 ### Infrastructure / Syncthing / nginx
-- [ ] **Syncthing** : fournir les **device IDs** des appareils (PC/mobile) pour activer la sync du vault Obsidian ; déclarer le folder `obsidian-vault` avec `.stfolder`.
-- [ ] **nginx** : à définir (usage en cours de réflexion) — non installé.
+- [ ] **Syncthing**: provide the **device IDs** of the devices (PC/mobile) to activate the Obsidian vault sync; declare the `obsidian-vault` folder with `.stfolder`.
+- [ ] **nginx**: to be defined (usage under consideration) — not installed.
 
-### Sécurité
-- [x] **Port 8650-8653** (APIs agents Docker) : **DENY UFW** — ports publiés mais bloqués publiquement.
-- [x] **Port 8642** (API gateway natif) : **DENY UFW**.
-- [x] **Port 22000** (Syncthing) : **FERMÉ le 01/09** — remplacé par Tailscale (serveur enrôlé $TAILSCALE_IP ; installer l'app Tailscale sur PC/téléphone pour le sync futur).
-- [x] **Déplacer les secrets de `/root/.bashrc`** vers `/etc/secrets/` — **fait le 30/08 (audit)** : 55 variables migrées vers `/etc/secrets/hermes.env` (600), `.bashrc` en 600 + sourcing, backup `/root/.bashrc.preaudit-20260830`.
-- [ ] Activer la **redaction des secrets** dans la config Hermes (`security.redact_secrets: true`) — désactivée par défaut.
-- [ ] Changer le **mot de passe root Contabo** (via console VNC) si pas déjà fait.
-- [x] **Uniformiser le conteneur leanConstruction** : ✅ **fait le 01/09** — compose régénéré sans `entrypoint: []`, image `hermes-agent:latest`, gateway en uid 10000, data `10000:10000 700`, Telegram `connected`.
-- [x] **Sauvegardes quotidiennes** : ✅ **fait le 01/09** — `/usr/local/bin/vps-backup.sh` (cron 4h30, archive ~1,3 Go dans `/var/backups/vps-fleet/`, rétention 7 j, log `/var/log/vps-backup.log`) + rapatriement local automatique `Installation/scripts/vps-backup-pull.sh` (tâche schtasks à créer, voir EXPLICATION_SECURITE.md) + NAS Synology en 2ᵉ temps (le NAS pull en SSH, procédure documentée).
-- [x] **Tailscale** : ✅ **installé le 01/09** — serveur enrôlé (`$TAILSCALE_IP`, tailnet REDACTED_EMAIL). À faire côté user : installer l'app Tailscale sur PC/téléphone pour accéder aux services via le tailnet.
-- [x] **Clés SSH durcies** : ✅ **01/09** — passphrase sur `$VPS_SSH_KEY` + fonction `vps` (agent SSH au socket fixe `~/.ssh/agent.sock`, 1× par session WSL) + archive GPG des clés (`Installation/scripts/backup-keys.sh`, à copier sur USB).
-- [ ] **Nettoyer `/etc/ssh/sshd_config` principal** (`PermitRootLogin yes` / `X11Forwarding yes` morts, neutralisés par `00-hardening.conf` mais piégeux).
-- [ ] **Binder le gateway natif sur 127.0.0.1** (défense en profondeur, UFW deny 8642 déjà en place).
-- [ ] **Purger les résidus snapd** (`apt purge snapd`, `/snap`) et mettre en place **logrotate AIDE** (logs > 40 Mo).
+### Security
+- [x] **Ports 8650-8653** (Docker agent APIs): **UFW DENY** — published ports but publicly blocked.
+- [x] **Port 8642** (native gateway API): **UFW DENY**.
+- [x] **Port 22000** (Syncthing): **CLOSED on 01/09** — replaced by Tailscale (enrolled server $TAILSCALE_IP; install the Tailscale app on PC/phone for future sync).
+- [x] **Move the secrets from `/root/.bashrc`** to `/etc/secrets/` — **done on 30/08 (audit)**: 55 variables migrated to `/etc/secrets/hermes.env` (600), `.bashrc` set to 600 + sourcing, backup `/root/.bashrc.preaudit-20260830`.
+- [ ] Enable **secret redaction** in the Hermes config (`security.redact_secrets: true`) — disabled by default.
+- [ ] Change the **Contabo root password** (via VNC console) if not already done.
+- [x] **Standardize the leanConstruction container**: ✅ **done on 01/09** — compose regenerated without `entrypoint: []`, image `hermes-agent:latest`, gateway on uid 10000, data `10000:10000 700`, Telegram `connected`.
+- [x] **Daily backups**: ✅ **done on 01/09** — `/usr/local/bin/vps-backup.sh` (cron 4:30am, ~1.3 GB archive in `/var/backups/vps-fleet/`, 7-day retention, log `/var/log/vps-backup.log`) + automatic local pull `Installation/scripts/vps-backup-pull.sh` (schtasks task to create, see EXPLICATION_SECURITE.md) + Synology NAS as a second step (the NAS pulls over SSH, procedure documented).
+- [x] **Tailscale**: ✅ **installed on 01/09** — server enrolled (`$TAILSCALE_IP`, tailnet REDACTED_EMAIL). User-side to do: install the Tailscale app on PC/phone to access services via the tailnet.
+- [x] **SSH keys hardened**: ✅ **01/09** — passphrase on `$VPS_SSH_KEY` + `vps` function (SSH agent on fixed socket `~/.ssh/agent.sock`, 1× per WSL session) + GPG archive of the keys (`Installation/scripts/backup-keys.sh`, to be copied to USB).
+- [ ] **Clean up the main `/etc/ssh/sshd_config`** (dead `PermitRootLogin yes` / `X11Forwarding yes`, neutralized by `00-hardening.conf` but misleading).
+- [ ] **Bind the native gateway to 127.0.0.1** (defense in depth, UFW deny 8642 already in place).
+- [ ] **Purge snapd residues** (`apt purge snapd`, `/snap`) and set up **AIDE logrotate** (logs > 40 MB).
 
-### Vérifications / Sauvegardes
-- [ ] Tester la **persistance après reboot** (services systemd + conteneurs `restart: unless-stopped`).
-- [ ] Vérifier la bonne synchronisation du vault Obsidian via Syncthing après premiers changements.
-- [ ] **HermesConfig** : tester un message Telegram réel vers @ArevLeanyBot + réponse de l'agent ; créer le bot Ops + routines après validation client.
-- [ ] **HermesCapabilities** : M2 — implémentation réelle C5 rag-supabase (Supabase TEST → MCP sur arev) puis C1 email-gmail ; réplication contrats C2/C3/C4/C6/C7.
-- [ ] **HermesConfig** : intégrer `/home/admin/hermes-fleet/HermesConfig/instances/` (data) + `clients/` à la procédure de backup.
-- [x] **AIDE** : base régénérée le 30/08 **21:34** après remédiation + exclusions churn (check de validation 0 diff) ; cron 3h → `aide-check-alert.sh` (alerte Telegram **si** différences uniquement). Refaire `aideinit --force` après tout changement système majeur.
-- [x] **Rotation du token du bot d'alerte** — **faite le 30/08 21:50** : nouveau token dans `/etc/secrets/hermes.env` (600), ancien révoqué (API 401), nouveau validé (API 200, @pipou200bot), test d'envoi OK. Backup : `/etc/secrets/hermes.env.pre-rotation-20260830`.
-- [ ] Nettoyer les backups pré-audit sur le serveur une fois la stabilité confirmée (`/root/.bashrc.preaudit-20260830`, `/etc/pam.d/sshd.preaudit-20260830`, `/etc/secrets/hermes.env.preaudit-quote-20260830`, `/etc/cron.d/aide.preaudit-20260830`).
-- [x] **PROCÉDURE DE BACKUP** : inclure **`/home/admin/hermes-fleet/`** (données + configs des agents Docker : sessions, memories, state.db) — **absent du backup `backup.tar.gz` d'origine**, ce qui a causé la perte des historiques des agents Docker. Les données à sauvegarder :
-  - `/home/admin/hermes-fleet/` (agents Docker : `hermes-fleet/<agent>/data/`)
-  - `/home/<runner>/.hermes/` (runners natifs : sessions, memories, state.db, .env)
-  - `/root/.fleet_tokens.env`, `/etc/secrets/hermes.env` et `/root/.bashrc` (tokens + clés — les deux premiers en 600, **indispensables** au redéploiement)
-  - `/home/syncthing/obsidian-vault/` (vault Obsidian)
+### Checks / Backups
+- [ ] Test **persistence after reboot** (systemd services + containers `restart: unless-stopped`).
+- [ ] Verify proper syncing of the Obsidian vault via Syncthing after the first changes.
+- [ ] **HermesConfig**: test a real Telegram message to @ArevLeanyBot + the agent's reply; create the Ops bot + routines after client validation.
+- [ ] **HermesCapabilities**: M2 — real implementation of C5 rag-supabase (Supabase TEST → MCP on arev) then C1 email-gmail; replication of contracts C2/C3/C4/C6/C7.
+- [ ] **HermesConfig**: include `/home/admin/hermes-fleet/HermesConfig/instances/` (data) + `clients/` in the backup procedure.
+- [x] **AIDE**: database regenerated on 30/08 **21:34** after remediation + churn exclusions (validation check 0 diff); cron 3am → `aide-check-alert.sh` (Telegram alert **only if** differences). Redo `aideinit --force` after any major system change.
+- [x] **Alert bot token rotation** — **done on 30/08 21:50**: new token in `/etc/secrets/hermes.env` (600), old one revoked (API 401), new one validated (API 200, @pipou200bot), send test OK. Backup: `/etc/secrets/hermes.env.pre-rotation-20260830`.
+- [ ] Clean up the pre-audit backups on the server once stability is confirmed (`/root/.bashrc.preaudit-20260830`, `/etc/pam.d/sshd.preaudit-20260830`, `/etc/secrets/hermes.env.preaudit-quote-20260830`, `/etc/cron.d/aide.preaudit-20260830`).
+- [x] **BACKUP PROCEDURE**: include **`/home/admin/hermes-fleet/`** (data + configs of the Docker agents: sessions, memories, state.db) — **missing from the original `backup.tar.gz` backup**, which caused the loss of the Docker agents' histories. Data to back up:
+  - `/home/admin/hermes-fleet/` (Docker agents: `hermes-fleet/<agent>/data/`)
+  - `/home/<runner>/.hermes/` (native runners: sessions, memories, state.db, .env)
+  - `/root/.fleet_tokens.env`, `/etc/secrets/hermes.env` and `/root/.bashrc` (tokens + keys — the first two in 600 mode, **essential** for redeployment)
+  - `/home/syncthing/obsidian-vault/` (Obsidian vault)
 
-> **Leçon apprise (plan A)** : les 4 agents Docker (leanConstruction, copycat, aquisition, va_agent) ont été **recréés à neuf** — leurs historiques de conversation antérieurs ne sont PAS dans l'archive. Seuls les runners natifs ont conservé leurs données (hermesrunner 62 sessions, loukyrunner 67, arev 4106).
+> **Lesson learned (plan A)**: the 4 Docker agents (leanConstruction, copycat, aquisition, va_agent) were **rebuilt from scratch** — their earlier conversation histories are NOT in the archive. Only the native runners kept their data (hermesrunner 62 sessions, loukyrunner 67, arev 4106).
 
 ---
 
-## 7. Commandes utiles (rappel)
+## 7. Useful Commands (reminder)
 
 ```bash
-# Connexion
+# Connection
 ssh nemo
 
-# Logs agents
+# Agent logs
 sudo journalctl -u hermes-gateway-hermesrunner -f
 sudo journalctl -u hermes-gateway-arev -f
 sudo docker logs hermes-leanConstruction --tail 50
 
-# État gateway (state file)
+# Gateway state (state file)
 cat /home/hermesrunner/.hermes/gateway_state.json | python3 -m json.tool
 cat /home/arev-chantier-runner/.hermes/gateway_state.json | python3 -m json.tool
 
-# Déployer un agent dockerisé
-cd /home/admin/hermes-fleet && ./spawn-hermes.sh <nom> "<token>"
+# Deploy a dockerized agent
+cd /home/admin/hermes-fleet && ./spawn-hermes.sh <name> "<token>"
 
 # Syncthing
 sync-status
 
-# Sécurité
+# Security
 sudo ufw status verbose
 sudo fail2ban-client status sshd
 
-# Test manuel de l'alerte Telegram
-sudo /usr/local/bin/telegram-alert.sh "Test" "message de test"
+# Manual Telegram alert test
+sudo /usr/local/bin/telegram-alert.sh "Test" "test message"
 ```
 
 ---
 
-## 8. Incident & durcissement — 01 au 06/09/2026
+## 8. Incident & Hardening — Sept 01 to 06, 2026
 
-### Incident : réseau public figé 3 jours (03/09 10:47 → 06/09 ~15:03)
-- Symptôme : SSH public, ICMP et tailnet tous injoignables, mais l'OS vivant (cron AIDE/backup ont tourné, alertes Telegram parties). UFW/fail2ban/authorized_keys vérifiés — **aucun lien avec nos changements**.
-- Cause exacte non déterminée dans les journaux (aucune entrée networkd/kernel sur la fenêtre) — incident réseau probable côté VM/hôte Contabo.
-- Résolution : reboot volontaire le 06/09 à 15:03 (shutdown propre dans les journaux).
-- **Test de persistance après reboot : RÉUSSI** — tout est revenu automatiquement (sshd, 6 agents Telegram connected, tailscaled, fail2ban, crons).
+### Incident: public network frozen for 3 days (03/09 10:47 → 06/09 ~15:03)
+- Symptom: public SSH, ICMP and tailnet all unreachable, but the OS alive (AIDE/backup crons ran, Telegram alerts went out). UFW/fail2ban/authorized_keys checked — **no link with our changes**.
+- Exact cause not determined in the logs (no networkd/kernel entry over the window) — probable network incident on the Contabo VM/host side.
+- Resolution: voluntary reboot on 06/09 at 15:03 (clean shutdown in the logs).
+- **Post-reboot persistence test: PASSED** — everything came back automatically (sshd, 6 Telegram agents connected, tailscaled, fail2ban, crons).
 
-### Durcissements appliqués (01-06/09)
-- **Tailscale** installé (serveur $TAILSCALE_IP), port 22000 fermé définitivement.
-- **Sauvegardes** : cron 4h30 → `/var/backups/vps-fleet/` (1,3 Go, rétention 7 j) + clé dédiée restreinte (`$VPS_KEY_BACKUP`, `restrict,command=`) + rapatriement auto PC (`vps-backup-pull.sh` + schtasks) + NAS Synology documenté.
-- **Clés SSH** : passphrase sur `$VPS_SSH_KEY`, fonction `vps` (agent au socket fixe), archive GPG (`backup-keys.sh`), `authorized_keys` pruné à 2 lignes.
-- **Token bot @pipou200bot roté** (01/09) — ⚠️ leçon : le même token sert le runner natif → mettre à jour AUSSI `/home/hermesrunner/.hermes/.env` à chaque rotation.
-- **leanConstruction uniformisé** (gateway uid 10000, compose régénéré).
-- **AIDE v4** : exclusions de churn exhaustives (maintenance apt/notifier, /run/*, swap, instances pro), heartbeat quotidien **🟢 OK / 🚨 NOK** sur Telegram avec **triage LLM (DeepSeek)** + fallback brut, logs conservés 7 jours (purge 5h).
-- **Clavier console VNC en AZERTY** (`/etc/vconsole.conf` KEYMAP=fr) + **swap 2G** (`/swapfile`, fstab) + **fail2ban `ignoreip` $SOURCE_IP** (jamais de ban accidentel de l'IP admin).
+### Hardening applied (Sept 01-06)
+- **Tailscale** installed (server $TAILSCALE_IP), port 22000 closed for good.
+- **Backups**: cron 4:30am → `/var/backups/vps-fleet/` (1.3 GB, 7-day retention) + dedicated restricted key (`$VPS_KEY_BACKUP`, `restrict,command=`) + automatic PC pull (`vps-backup-pull.sh` + schtasks) + Synology NAS documented.
+- **SSH keys**: passphrase on `$VPS_SSH_KEY`, `vps` function (agent on fixed socket), GPG archive (`backup-keys.sh`), `authorized_keys` pruned to 2 lines.
+- **@pipou200bot bot token rotated** (01/09) — ⚠️ lesson: the same token serves the native runner → also update `/home/hermesrunner/.hermes/.env` on every rotation.
+- **leanConstruction standardized** (gateway uid 10000, regenerated compose).
+- **AIDE v4**: exhaustive churn exclusions (apt/notifier maintenance, /run/*, swap, pro instances), daily heartbeat **🟢 OK / 🚨 NOK** on Telegram with **LLM triage (DeepSeek)** + raw fallback, logs kept 7 days (purge at 5am).
+- **VNC console keyboard in AZERTY** (`/etc/vconsole.conf` KEYMAP=fr) + **2G swap** (`/swapfile`, fstab) + **fail2ban `ignoreip` $SOURCE_IP** (never accidentally ban the admin IP).
 
-### Protocole alertes AIDE
-1. 🟢 `OK` → rien à faire (maintenance/bénéfique, détail dans `/var/log/aide/` 7 j).
-2. 🚨 `NOK` → vérifier les chemins listés : session Doer en cours = attendu (vérifier avec l'agent), sinon investiguer.
-3. Après une fenêtre de déploiement : régénérer la base (`/tmp/regen-aide.sh` à recréer si `/tmp` purgé : `aideinit --force -y` → `mv aide.db.new aide.db`).
+### AIDE Alert Protocol
+1. 🟢 `OK` → nothing to do (maintenance/beneficial, detail in `/var/log/aide/` 7 days).
+2. 🚨 `NOK` → check the listed paths: ongoing Doer session = expected (check with the agent), otherwise investigate.
+3. After a deployment window: regenerate the database (`/tmp/regen-aide.sh` to be recreated if `/tmp` is purged: `aideinit --force -y` → `mv aide.db.new aide.db`).
 
-### Vault Obsidian : accès agents via ACL (06-07/09)
-- Problème : les fichiers syncés par Syncthing appartiennent à `syncthing` (uid 112) — les `.md` en `600` étaient **illisibles pour les agents Docker (uid 10000)** (ex. Aquisition/Fateh).
-- **Fix retenu : ACL** (pas de chown !) : `setfacl -R -m u:10000:rwX` + `setfacl -R -d -m u:10000:rwX` sur `/home/syncthing/obsidian-vault` (stocké sur disque → persistant, héritage automatique pour les nouveaux fichiers syncés).
-- **Pourquoi PAS le chown 10000 proposé par l'agent** : priverait syncthing du droit d'écriture → sync cassée, et le problème reviendrait sur chaque nouveau fichier.
-- Vérifié : lecture + écriture OK en uid 10000 dans le conteneur (`docker exec -u 10000`), syncthing `idle` intact, héritage prouvé (fichier créé par syncthing → ACL présente).
-- ⚠️ Test hôte piégé : `/home/syncthing` est en 750 → tester **dans le conteneur** (`docker exec -u 10000`), pas depuis le chemin hôte.
+### Obsidian Vault: agent access via ACL (Sept 06-07)
+- Problem: files synced by Syncthing belong to `syncthing` (uid 112) — the `.md` files in `600` mode were **unreadable for the Docker agents (uid 10000)** (e.g. Aquisition/Fateh).
+- **Retained fix: ACL** (no chown!): `setfacl -R -m u:10000:rwX` + `setfacl -R -d -m u:10000:rwX` on `/home/syncthing/obsidian-vault` (stored on disk → persistent, automatic inheritance for newly synced files).
+- **Why NOT the chown 10000 proposed by the agent**: it would strip syncthing's write right → broken sync, and the problem would come back on every new file.
+- Verified: read + write OK as uid 10000 in the container (`docker exec -u 10000`), syncthing `idle` intact, inheritance proven (file created by syncthing → ACL present).
+- ⚠️ Misleading host test: `/home/syncthing` is in 750 → test **inside the container** (`docker exec -u 10000`), not from the host path.
 
-### Agent 7 : Alinea_icp_reviewer (06-07/09)
-- Conteneur dédié `Alinea_icp_reviewer` (image `hermes-agent:latest`, **aucun port exposé**, `mem_limit 2g`, `no-new-privileges`), gateway uid 10000, Telegram **connected**.
-- Token : bot dédié `8976902110:…` (compose en 600). `TELEGRAM_ALLOWED_USERS/HOME_CHANNEL = 5917823647`.
-- **Modèle principal = `gemini-3.6-flash`** (provider natif gemini, clé dans `/opt/data/.env`) — multimodal : voit les images nativement. Vision auxiliaire + main sur `gemini-3.6-flash` (⚠️ `gemini-2.5-*` → 404 pour ce compte). `agent.max_turns: 90`. Backup config : `/opt/data/config.yaml.bak.*`.
-- **Helper `bshot`** (`/opt/data/bin/bshot <url> [png] [W] [H]`, volume persistant) : screenshot réel rendu (JS via virtual-time, desktop 1440×900 + mobile 390×844) dans `/opt/data/screenshots/` → l'agent les analyse avec sa vision Gemini (décisions design). Flags Docker requis : `--no-sandbox --disable-dev-shm-usage --user-data-dir=/tmp/…`.
-- SOUL.md stub en place → **Redouane écrit la persona finale** dans `hermes-fleet/Alinea_icp_reviewer/data/SOUL.md`.
-- Intégrations : nightly check (7/7 agents), backup fleet (inclus), AIDE (exclusion data récursive). **Vault monté le 07/09** (`/home/syncthing/obsidian-vault:/opt/vault`, lecture+écriture via les ACL u:10000 déjà en place).
+### Agent 7: Alinea_icp_reviewer (Sept 06-07)
+- Dedicated container `Alinea_icp_reviewer` (image `hermes-agent:latest`, **no exposed port**, `mem_limit 2g`, `no-new-privileges`), gateway uid 10000, Telegram **connected**.
+- Token: dedicated bot `8976902110:…` (compose in 600). `TELEGRAM_ALLOWED_USERS/HOME_CHANNEL = 5917823647`.
+- **Main model = `gemini-3.6-flash`** (native gemini provider, key in `/opt/data/.env`) — multimodal: sees images natively. Auxiliary vision + main on `gemini-3.6-flash` (⚠️ `gemini-2.5-*` → 404 for this account). `agent.max_turns: 90`. Config backup: `/opt/data/config.yaml.bak.*`.
+- **`bshot` helper** (`/opt/data/bin/bshot <url> [png] [W] [H]`, persistent volume): real rendered screenshot (JS via virtual-time, desktop 1440×900 + mobile 390×844) into `/opt/data/screenshots/` → the agent analyzes them with its Gemini vision (design decisions). Required Docker flags: `--no-sandbox --disable-dev-shm-usage --user-data-dir=/tmp/…`.
+- SOUL.md stub in place → **Redouane writes the final persona** in `hermes-fleet/Alinea_icp_reviewer/data/SOUL.md`.
+- Integrations: nightly check (7/7 agents), fleet backup (included), AIDE (recursive data exclusion). **Vault mounted on 07/09** (`/home/syncthing/obsidian-vault:/opt/vault`, read+write via the u:10000 ACLs already in place).
 
-### Agent 8 : Bercy (07/09)
-- Conteneur dédié `Bercy` (image `hermes-agent:latest`, aucun port exposé, mem 2g, no-new-privileges), gateway uid 10000, Telegram connected.
-- Token : bot dédié `8732547964:…` (compose 600). ALLOWED_USERS/HOME_CHANNEL = 5917823647.
-- **Vault Obsidian : accès RESTREINT au sous-dossier Bercy** (07/09) — montage `/home/syncthing/obsidian-vault/Bercy:/opt/vault` (RW via ACL u:10000) : Bercy ne voit **que** son sous-dossier, le reste du vault est invisible (isolation par mount). Le dossier `Bercy/` du vault est syncé par Syncthing comme les autres.
-- SOUL.md stub → Redouane écrit la persona finale dans `hermes-fleet/Bercy/data/SOUL.md`.
-- Intégrations : nightly check (8/8 agents), backup fleet inclus, AIDE couvert.
+### Agent 8: Bercy (Sept 07)
+- Dedicated container `Bercy` (image `hermes-agent:latest`, no exposed port, mem 2g, no-new-privileges), gateway uid 10000, Telegram connected.
+- Token: dedicated bot `8732547964:…` (compose 600). ALLOWED_USERS/HOME_CHANNEL = 5917823647.
+- **Obsidian Vault: access RESTRICTED to the Bercy sub-folder** (07/09) — mount `/home/syncthing/obsidian-vault/Bercy:/opt/vault` (RW via u:10000 ACL): Bercy sees **only** its sub-folder, the rest of the vault is invisible (isolation by mount). The `Bercy/` folder of the vault is synced by Syncthing like the others.
+- SOUL.md stub → Redouane writes the final persona in `hermes-fleet/Bercy/data/SOUL.md`.
+- Integrations: nightly check (8/8 agents), fleet backup included, AIDE covered.

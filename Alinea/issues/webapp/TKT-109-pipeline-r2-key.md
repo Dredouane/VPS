@@ -1,38 +1,37 @@
-# TKT-109 — Pipeline : clés R2 dans les metadata (transfert à la session pipeline)
+# TKT-109 — Pipeline: R2 keys in the metadata (handover to the pipeline session)
 
-> Ticket à exécuter par la **session pipeline** (HermesCapabilities), pas par
-> la webapp. Transmis en mini-prompt le 2026-09-08.
+> Ticket to be executed by the **pipeline session** (HermesCapabilities), not by
+> the webapp. Handed over as a mini-prompt on 2026-09-08.
 
-- **Date** : 2026-09-08
-- **Persona** : Salarie_Backoffice (bénéficiaire — via Alinea)
-- **Priorité** : Moyenne
-- **Type** : Intégration pipeline ⇄ webapp
+- **Date**: 2026-09-08
+- **Persona**: Salarie_Backoffice (beneficiary — via Alinea)
+- **Priority**: Medium
+- **Type**: Pipeline ⇄ webapp integration
 
-## Description (le contrat)
-La webapp propose « Ouvrir » sur les PJ (URL signée R2) dès que
-`cap_documents.metadata.r2_key` existe. **M2.8 a livré les r2_key pour les
-PJ (kind=attachment)** — à vérifier en prod et compléter pour les mails.
+## Description (the contract)
+The webapp offers "Ouvrir" [Open] on attachments (signed R2 URL) as soon as
+`cap_documents.metadata.r2_key` exists. **M2.8 delivered the r2_key for the
+attachments (kind=attachment)** — to be verified in prod and completed for the mails.
 
-## État actuel (M2.8 — vérifié prod 2026-09-08)
-- ⚠️ PJ : les docs indexés **AVANT M2.8** n'ont pas de r2_key (vérifié :
-  presign → `r2_key_unavailable` sur la facture 2026-163). Les prochains
-  attachments traités par M2.8 devraient l'avoir — à confirmer au prochain
-  run réel.
-- ❓ Mails (kind=email) : clé du brut `thread.json` non tracée
-- ❓ Backfill des lignes historiques (ou re-run `force-attachments`) si on
-  veut le brut des PJ existantes
+## Current state (M2.8 — verified in prod 2026-09-08)
+- ⚠️ Attachments: docs indexed **BEFORE M2.8** have no r2_key (verified:
+  presign → `r2_key_unavailable` on invoice 2026-163). Upcoming
+  attachments processed by M2.8 should have it — to be confirmed on the next real run.
+- ❓ Mails (kind=email): key of the raw `thread.json` not traced
+- ❓ Backfill of the historical rows (or re-run `force-attachments`) if we
+  want the raw of existing attachments
 
-## État attendu
-1. Vérification prod : presign OK sur une PJ réelle (facture 2026-163).
-2. (Optionnel) `metadata.r2_key` sur les docs kind=email (thread.json du
-   mail) pour un « Voir l'email brut » complet.
-3. (Optionnel) Backfill des lignes historiques si nécessaire.
+## Expected state
+1. Prod verification: presign OK on a real attachment (invoice 2026-163).
+2. (Optional) `metadata.r2_key` on the kind=email docs (thread.json of the
+   mail) for a complete "Voir l'email brut" [See the raw email].
+3. (Optional) Backfill of the historical rows if necessary.
 
-## Critères d'acceptation
-- [ ] Presign webapp OK sur PJ réelle (verifié par la session webapp — V0)
-- [ ] (Option) r2_key sur les docs email
-- [ ] Convention de clé inchangée : `<GED_EMAIL_PREFIX>/<slug>/emails/<thread_id>/<fichier>`
+## Acceptance criteria
+- [ ] Webapp presign OK on a real attachment (verified by the webapp session — V0)
+- [ ] (Option) r2_key on the email docs
+- [ ] Key convention unchanged: `<GED_EMAIL_PREFIX>/<slug>/emails/<thread_id>/<file>`
 
 ## Notes
-Convention : WEBAPP_DATA_MAPPING.md §2.5. Non bloquant pour la webapp
-(bouton disabled + mention « brut indisponible » si clé absente).
+Convention: WEBAPP_DATA_MAPPING.md §2.5. Non-blocking for the webapp
+(disabled button + "raw unavailable" mention if the key is missing).

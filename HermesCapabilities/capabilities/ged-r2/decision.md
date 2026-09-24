@@ -1,41 +1,41 @@
 # Decision — Capability ged-r2
 
-> Règle d'ordre : **NATIF > MIX > SIDECAR** (ARCHITECTURE.md §2).
+> Order of rule: **NATIVE > MIX > SIDECAR** (ARCHITECTURE.md §2).
 
-## Besoin
+## Need
 
-Archiver les **fichiers bruts** de chaque email traité (thread.json +
-pièces jointes) vers la GED Cloudflare R2 — appel générique en fin
-d'extraction email, **slug en sous-dossier** pour distinguer les clients
-(exigence 01/09). Copie de référence des documents bruts avant RAG.
+Archive the **raw files** of every processed email (thread.json +
+attachments) to the Cloudflare R2 GED — generic call at the end
+of email extraction, **slug as subfolder** to distinguish clients
+(requirement 01/09). Reference copy of the raw documents before RAG.
 
-## Options évaluées
+## Options evaluated
 
 | Option | Verdict |
 |---|---|
-| **Mix** : client S3 SigV4 en code stdlib (hmac/hashlib) vers R2 | ✅ **retenu** |
-| Librairie boto3 | ❌ pip dans le conteneur (viole I11) |
-| Sidecar MinIO client / worker dédié | ❌ sur-ingénierie pour un PUT/GET |
-| Archivage local seulement (spool) | ❌ le spool n'est pas un stockage durable |
+| **Mix**: S3 client SigV4 in stdlib code (hmac/hashlib) to R2 | ✅ **kept** |
+| boto3 library | ❌ pip in the container (violates I11) |
+| Sidecar MinIO client / dedicated worker | ❌ over-engineering for a PUT/GET |
+| Local archiving only (spool) | ❌ the spool is not durable storage |
 
-## Décision
+## Decision
 
-**MIX** — `r2_client.py` implémente **AWS SigV4 en stdlib** (hmac/hashlib),
-validé contre le **vecteur officiel AWS SigV4 test suite** (signature
-attendue bit-à-bit) ET **en réel** sur le bucket (put 200 → head → get →
-delete 204 → head absent). Auth = ACCESS_KEY_ID + SECRET uniquement — le
-`VPS_GED_CLOUDFLARE_TOKEN` est un token API Cloudflare (REST), **pas** un
-session token S3 (R2 rejette x-amz-security-token — vérifié 01/09).
+**MIX** — `r2_client.py` implements **AWS SigV4 in stdlib** (hmac/hashlib),
+validated against the **official AWS SigV4 test suite vector** (expected
+signature bit-for-bit) AND **for real** on the bucket (put 200 → head → get →
+delete 204 → head absent). Auth = ACCESS_KEY_ID + SECRET only — the
+`VPS_GED_CLOUDFLARE_TOKEN` is a Cloudflare API token (REST), **not** a
+S3 session token (R2 rejects x-amz-security-token — verified 01/09).
 
-Clé R2 déterministe : `<GED_EMAIL_PREFIX>/<slug>/emails/<thread_id>/<fichier>`
-(le slug distingue les clients). Upload idempotent (overwrite), `head` pour
-l'audit, `delete` réservé au nettoyage de tests (`_hermes-test/`).
+Deterministic R2 key: `<GED_EMAIL_PREFIX>/<slug>/emails/<thread_id>/<file>`
+(the slug distinguishes clients). Idempotent upload (overwrite), `head` for
+the audit, `delete` reserved for test cleanup (`_hermes-test/`).
 
-Plan B : boto3 si complexité S3 future (list/versions) — reviendrait sur I11,
-à qualifier avant.
+Plan B: boto3 if future S3 complexity (list/versions) — would revisit I11,
+to be qualified first.
 
-## Re-vérification
+## Re-check
 
-| Date | Hermes | Verdict inchangé ? | Notes |
+| Date | Hermes | Verdict unchanged? | Notes |
 |---|---|---|---|
-| 2026-09-01 | v0.20.6 | — (décision initiale) | réel OK sur bucket suren-saas-ged |
+| 2026-09-01 | v0.20.6 | — (initial decision) | real OK on bucket suren-saas-ged |

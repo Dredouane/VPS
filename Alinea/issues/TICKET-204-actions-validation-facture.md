@@ -1,53 +1,53 @@
-# Ticket AREV-204 — Module Factures : actions de validation (Valider / Corriger / Rejeter) avec retour sûr
+# Ticket AREV-204 — Invoices module: validation actions (Validate / Correct / Reject) with safe feedback
 
-- **Date** : 2026-09-08
-- **Référence spec** : `SPEC_Produit_Emails_Factures.md` §1.2 (§2.2 zone A : actions de validation) — ref EU6 partie actions
-- **Scénarios NonReg** : E6 (+ E1/E2 pour la correction)
-- **Persona** : Salarie_Backoffice (principal)
-- **Priorité** : Haute
-- **Type** : Bug + Amélioration (fiabiliser le parcours actuel)
+- **Date**: 2026-09-08
+- **Spec reference**: `SPEC_Produit_Emails_Factures.md` §1.2 (§2.2 zone A: validation actions) — EU6 ref, actions part
+- **NonReg scenarios**: E6 (+ E1/E2 for correction)
+- **Persona**: Salarie_Backoffice (primary)
+- **Priority**: High
+- **Type**: Bug + Improvement (make the current path reliable)
 
-## Description (le contrat)
-Sur la fiche d'une facture « À traiter », l'opératrice peut **Valider** la donnéee extraite,
-**Corriger** une valeur erronée, ou **Rejeter** la facture — avec un retour d'état clair et
-persistant. Le statut passe correctement et reste le bon après refresh.
+## Description (the contract)
+On the detail page of an invoice "À traiter" [To process], the operator can **Validate** the extracted
+data, **Correct** a wrong value, or **Reject** the invoice — with clear and
+persistent status feedback. The status transitions correctly and stays right after a refresh.
 
-## État actuel (observé aujourd'hui)
-Le bouton Valider change bien le statut (de `extracted` à `valide`), mais :
-- après la validation, plus aucun pivot actionnable sur la page (« pas de transition disponible
-  ici ») → il faut repasser par la liste ;
-- le vocabulaire du statut reste anglais/participe (`valide`) ; pas d'action « corriger » ni
-  « rejeter » claire hors du strict minimum ;
-- notionalité à vérifier : la correction d'une valeur extraite n'est pas assurée.
+## Current state (observed today)
+The Validate button does change the status (from `extracted` to `valide`), but:
+- after validation, no actionable pivot remains on the page ("no transition available
+  here") → one must go back through the list;
+- the status vocabulary stays English/participle (`valide`); no "correct" nor
+  "reject" action clearly beyond the bare minimum;
+- functionality to be verified: correcting an extracted value is not guaranteed.
 
-## État attendu (conforme aux statuts FR, TKT-102)
-- La fiche d'un état `À traiter` propose **Valider / Corriger / Rejeter** de façon explicite et
-  non déroutante. 
-- **Corriger** : permet d'éditer une valeur (ex. l'échéance, un montant re-lu en erreur) sans
-  resaisie totale, puis enregistre ; l'état devient « Validée (avec correction) » ou reste à valider
-  selon sémantique (à définir proprement, transparence : la correction est donc tracée).
-- **Valider** → le champ passe à `Validée` ; l'utilisateur voit un retour immédiat + possibilité de
-  revenir (pas de « plus rien disponible » qui force à quitter la page). Au minimum un lien/rappel
-  pour revenir à la liste et le statut apparemment mis à jour.
-- **Rejeter** → `Rejetée` (+ libellé qui explique, à compléter).
-- Tout état choisi **persiste après refresh** (NonReg E6).
-- Le libellé du statut dans les filtres et la liste reste cohérent (TKT-102/201).
+## Expected state (compliant with the FR statuses, TKT-102)
+- The detail page of an `À traiter` state offers **Validate / Correct / Reject** in an explicit and
+  non-disorienting way.
+- **Correct**: allows editing a value (e.g. the due date, an amount misread) without
+  full re-entry, then saves; the state becomes "Validée (avec correction)" [Validated (with correction)] or stays to-be-validated
+  depending on semantics (to be cleanly defined, transparency: the correction is traced).
+- **Validate** → the field moves to `Validée`; the user sees immediate feedback + the possibility to
+  go back (no "nothing left available" forcing them to leave the page). At minimum a link/reminder
+  to return to the list and the status apparently updated.
+- **Reject** → `Rejetée` (+ a label that explains, to be completed).
+- Any chosen state **persists after refresh** (NonReg E6).
+- The status label in the filters and the list stays consistent (TKT-102/201).
 
-## La "douleur" du persona
-C'est l'action de tous les jours de l'opératrice de backoffice (file de validation). Si elle ne peut
-pas corriger simplement une valeur extraite (le contrôle d'un « assistant » qui se trompe), elle
-retombe dans la ressaisie manuelle ET perd confiance envers l'outil. Le produit doit rester « l'IA
-propose, l'humain garde la main ».
+## The persona's "pain"
+This is the backoffice operator's everyday action (validation queue). If she cannot
+easily correct an extracted value (the control of an "assistant" that makes mistakes), she
+falls back into manual re-entry AND loses trust in the tool. The product must remain "the AI
+proposes, the human stays in control".
 
-## Critères d'acceptation
-- [ ] Sur une fiche « À traiter », actions Valider / Corriger / Rejeter toutes présentes et visibles
-- [ ] Valider → statut « Validée » + retour immédiat ; Rejeter → « Rejetée »
-- [ ] Corriger permet d'éditer une valeur et enregistre sans re-saisie totale ; trace/état cohérent
-- [ ] Après l'action, l'utilisateur a un moyen simple de revenir à la liste (pas une page « morte »)
-- [ ] Le statut persiste après refresh ; cohérent avec la liste et les filtres (TKT-201)
-- [ ] Aucune erreur JS ; libellés FR normés
+## Acceptance criteria
+- [ ] On a "À traiter" detail page, Validate / Correct / Reject actions all present and visible
+- [ ] Validate → status "Validée" + immediate feedback; Reject → "Rejetée"
+- [ ] Correct allows editing a value and saves without full re-entry; consistent trace/state
+- [ ] After the action, the user has a simple way to return to the list (not a "dead" page)
+- [ ] The status persists after refresh; consistent with the list and the filters (TKT-201)
+- [ ] No JS errors; normative FR labels
 
 ## Notes
-Complète TKT-201 (liste) : il assure le geste métier au niveau fiche. Se coordonner pour que le
-back-end expose les transitions (à traiter → validée/rejetée, correction) proprement, côté UI
-libellés FR.
+Completes TKT-201 (list): it provides the business gesture at the detail-page level. Coordinate so that the
+back-end exposes the transitions (to process → validated/rejected, correction) cleanly, with FR
+labels on the UI side.

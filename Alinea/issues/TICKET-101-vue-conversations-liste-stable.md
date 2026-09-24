@@ -1,46 +1,46 @@
-# Ticket AREV-101 — Vue conversations (`/chains`) : réparer la stabilité ET afficher une liste de conversations
+# Ticket AREV-101 — Conversations view (`/chains`): fix stability AND display a list of conversations
 
-- **Date** : 2026-09-08
-- **Référence spec** : `SPEC_Produit_Emails_Factures.md` §1.1 (liste des conversations / mailchains)
-- **Scénarios NonReg** : B1, B2, B6 (et A5)
-- **Persona** : Salarie_Backoffice (principal) · Gerant_PME
-- **Priorité** : Haute
-- **Type** : Bug + Amélioration UX
+- **Date**: 2026-09-08
+- **Spec reference**: `SPEC_Produit_Emails_Factures.md` §1.1 (list of conversations / mailchains)
+- **NonReg scenarios**: B1, B2, B6 (and A5)
+- **Persona**: Salarie_Backoffice (primary) · Gerant_PME
+- **Priority**: High
+- **Type**: Bug + UX improvement
 
-## Description (le contrat)
-La vue « Conversations » (route `/chains`, menu "Chaînes") est LE point d'entrée du module
-Emails. Elle doit être **stable** (jamais un écran d'erreur) et afficher une **liste de
-mailchains**, une par console de conversation — pas une page vide ni des emails jetés.
+## Description (the contract)
+The "Conversations" view (route `/chains`, menu "Chaînes") is THE entry point of the Emails
+module. It must be **stable** (never an error screen) and display a **list of
+mailchains**, one per conversation thread — not an empty page nor dumped emails.
 
-## État actuel
-- La vue est **instable** : elle oscille, d'un chargement à l'autre, entre l'écran technique
-  « This page couldn't load » (exception JS) et une page vide (seul le titre, aucun contenu,
-  DOM sans `<main>` exploitable). Rejoué plusieurs fois : crash intermittent reproductible.
-- Même quand elle ne crashe pas, elle n'affiche rien de lisible pour un utilisateur.
+## Current state
+- The view is **unstable**: from one load to the next, it alternates between the technical
+  screen "This page couldn't load" (JS exception) and an empty page (only the title, no content,
+  DOM with no usable `<main>`). Replayed several times: reproducible intermittent crash.
+- Even when it does not crash, it shows nothing readable for a user.
 
-## État attendu
-- `/chains` charge **déterministiquement** (10 chargements sans crash ni page vide).
-- La vue présente une **liste de conversations (mailchains)**, chacune avec : expéditeur(s),
-  objet (tronqué proprement), aperçu utile, date/heure de réception, statut FR.
-- Si aucune donnée : un **état vide propre et aidant** en français (« Aucune conversation pour
-  le moment »), jamais un écran technique ni une page muette.
-- Aucune erreur JS en console sur cette route ; la navigation aller-retour (liste ↔ détail)
-  fonctionne sans perte ni crash.
+## Expected state
+- `/chains` loads **deterministically** (10 loads with no crash and no empty page).
+- The view presents a **list of conversations (mailchains)**, each with: sender(s),
+  subject (cleanly truncated), useful preview, date/time received, FR status.
+- If there is no data: a **clean and helpful empty state** in French ("Aucune conversation pour
+  le moment" [No conversations for now]), never a technical screen nor a silent page.
+- No JS errors in the console on this route; back-and-forth navigation (list ↔ detail)
+  works without loss or crash.
 
-## La "douleur" du persona
-L'employée de backoffice et le gérant butent sur un écran d'erreur en anglais ou une page vide
-aléatoirement. Impression de produit cassé → défiance immédiate, abandon. C'était le cœur
-« quotidien » du produit, inutilisable.
+## The persona's "pain"
+The backoffice employee and the manager hit an error screen in English or an empty page
+at random. Impression of a broken product → immediate distrust, abandonment. This was the
+"everyday" core of the product, unusable.
 
-## Critères d'acceptation
-- [ ] `/chains` charge de façon déterministe (10 essais sans crash ni page vide)
-- [ ] Une liste de conversations s'affiche avec les bons descriptifs (objet, expéditeur, date, aperçu)
-- [ ] Aucune ligne n'a un champ clé vide sans explication (si vide → libellé guide)
-- [ ] État vide éventuel : message FR + CTA/idée d'action
-- [ ] Aucune erreur JS console ; retour liste↔détail fonctionnel
-- [ ] Plus AUCUN écran d'erreur technique anglais rencontré sur ce parcours
+## Acceptance criteria
+- [ ] `/chains` loads deterministically (10 attempts with no crash and no empty page)
+- [ ] A list of conversations displays with the right descriptors (subject, sender, date, preview)
+- [ ] No row has an empty key field without explanation (if empty → guiding label)
+- [ ] Possible empty state: FR message + CTA/action idea
+- [ ] No console JS errors; working list↔detail back-and-forth
+- [ ] NO English technical error screen encountered anymore on this path
 
 ## Notes
-Fondation du module Emails : on construit la liste de conversations AVANT le détail fil
-(cf. TKT-108). S'appuie sur la donnée mailchain déjà présente côté serveur (le fil « Fwd:
-Facture situ MARS 26 » existe conceptuellement dans AREV).
+Foundation of the Emails module: we build the conversation list BEFORE the thread detail
+(see TKT-108). Builds on the mailchain data already present server-side (the "Fwd:
+Facture situ MARS 26" thread conceptually exists in AREV).

@@ -1,49 +1,49 @@
-# Syncthing & Obsidian — Guide d'exploitation (VPS Contabo)
+# Syncthing & Obsidian — Operations Guide (Contabo VPS)
 
-**Serveur** : `$VPS_HOSTNAME` — Ubuntu 22.04 LTS — IP `$VPS_IP`
-**Dernière mise à jour** : 30/08/2026
+**Server**: `$VPS_HOSTNAME` — Ubuntu 22.04 LTS — IP `$VPS_IP`
+**Last updated**: 30/08/2026
 
 ---
 
 ## 1. Architecture
 
-### 1.1 Devices Syncthing
+### 1.1 Syncthing Devices
 
-| Appareil | Nom | Device ID | Rôle | État |
+| Device | Name | Device ID | Role | Status |
 |---|---|---|---|---|
-| **VPS** | `$VPS_HOSTNAME` | `$SYNCTHING_DEVICE_ID | Serveur | ✅ |
-| **PC** (Windows/WSL) | `$DESKTOP_DEVICE` | `GPMPYZ2-7JRJHKB-KYUMBCW-HULB5EG-HRQXCCU-FP5VEZT-UNUGXUM-54LFAQE` | Client | ✅ connecté (relay) |
-| **Mobile** (Android) | `Android-Mobile` | `67QMEVF-UF4DO7C-3BWARCW-OYJKEDH-FYZ2BX7-P32OXQS-ZCNA2OM-MBZM2QX` | Client | ⚠️ déclaré, connexion à confirmer |
+| **VPS** | `$VPS_HOSTNAME` | `$SYNCTHING_DEVICE_ID | Server | ✅ |
+| **PC** (Windows/WSL) | `$DESKTOP_DEVICE` | `GPMPYZ2-7JRJHKB-KYUMBCW-HULB5EG-HRQXCCU-FP5VEZT-UNUGXUM-54LFAQE` | Client | ✅ connected (relay) |
+| **Mobile** (Android) | `Android-Mobile` | `67QMEVF-UF4DO7C-3BWARCW-OYJKEDH-FYZ2BX7-P32OXQS-ZCNA2OM-MBZM2QX` | Client | ⚠️ declared, connection to be confirmed |
 
-### 1.2 Folder partagé
+### 1.2 Shared folder
 
-| Paramètre | Valeur |
+| Parameter | Value |
 |---|---|
 | Folder ID | `obsidian-vault` |
 | Label | `Obsidian Vault` |
-| Chemin VPS | `/home/syncthing/obsidian-vault` |
+| VPS path | `/home/syncthing/obsidian-vault` |
 | Type | `sendreceive` |
-| Taille | ~612 Mo — 15 342 fichiers |
-| État | synchronisé à 100 % (`inSync 599 032 479 octets`, `needFiles: 0`) |
-| Devices partagés | $VPS_HOSTNAME + $DESKTOP_DEVICE + Android-Mobile |
+| Size | ~612 MB — 15,342 files |
+| State | 100% synchronized (`inSync 599 032 479 bytes`, `needFiles: 0`) |
+| Shared devices | $VPS_HOSTNAME + $DESKTOP_DEVICE + Android-Mobile |
 
-### 1.3 Consommateurs (agents Hermes Docker)
+### 1.3 Consumers (Hermes Docker agents)
 
-Les 4 agents Docker montent le vault en lecture dans le conteneur (`/opt/vault`) :
+The 4 Docker agents mount the vault read-only in the container (`/opt/vault`):
 `hermes-leanConstruction`, `hermes-copycat`, `hermes-aquisition`, `hermes-va_agent`
-→ montage `- /home/syncthing/obsidian-vault:/opt/vault`
+→ mount `- /home/syncthing/obsidian-vault:/opt/vault`
 
 ---
 
-## 2. Connexions & Accès
+## 2. Connections & Access
 
 ### 2.1 SSH (port $VPS_SSH_PORT)
 
 ```bash
-ssh nemo            # admin@$VPS_IP:$VPS_SSH_PORT — clé ~/.ssh/$VPS_SSH_KEY (sans passphrase)
+ssh nemo            # admin@$VPS_IP:$VPS_SSH_PORT — key ~/.ssh/$VPS_SSH_KEY (no passphrase)
 ```
 
-Config `~/.ssh/config` :
+Config `~/.ssh/config`:
 ```
 Host nemo
     HostName $VPS_IP
@@ -53,152 +53,152 @@ Host nemo
     IdentitiesOnly yes
 ```
 
-> **Historique** : l'ancien alias `nemo` du `.bashrc` pointait vers `root@22` (bloqué par le durcissement) et écrasait la config SSH — il a été commenté.
+> **History**: the old `nemo` alias in the `.bashrc` pointed to `root@22` (blocked by the hardening) and overrode the SSH config — it was commented out.
 
-### 2.2 GUI Syncthing du VPS (tunnel SSH)
+### 2.2 VPS Syncthing GUI (SSH tunnel)
 
-Le GUI écoute sur `127.0.0.1:8384` (localhost uniquement). **Jamais exposé publiquement** — accès via tunnel SSH :
+The GUI listens on `127.0.0.1:8384` (localhost only). **Never publicly exposed** — access via SSH tunnel:
 
 ```bash
 syncthing-gui      # alias = ssh -N -L 8384:127.0.0.1:8384 nemo
 ```
 
-Puis ouvrir : **http://localhost:8384** (GUI du VPS, device `$VPS_HOSTNAME`).
+Then open: **http://localhost:8384** (VPS GUI, device `$VPS_HOSTNAME`).
 
-Arrêt du tunnel : `Ctrl+C`.
+Stopping the tunnel: `Ctrl+C`.
 
-**Prérequis SSH** : `AllowTcpForwarding local` activé côté VPS (`/etc/ssh/sshd_config.d/10-tunnel.conf`). Autorise `ssh -L` mais bloque `-R`/`-D`.
+**SSH prerequisite**: `AllowTcpForwarding local` enabled on the VPS side (`/etc/ssh/sshd_config.d/10-tunnel.conf`). Allows `ssh -L` but blocks `-R`/`-D`.
 
 ---
 
-## 3. Configuration système
+## 3. System Configuration
 
 ### 3.1 Service
 
 ```bash
-systemctl status syncthing@syncthing.service    # actif + enabled (boot)
-systemctl restart syncthing@syncthing.service   # redémarrage
+systemctl status syncthing@syncthing.service    # active + enabled (boot)
+systemctl restart syncthing@syncthing.service   # restart
 ```
 
-### 3.2 Pare-feu UFW
+### 3.2 UFW Firewall
 
 ```
-22000/tcp   ALLOW   $SOURCE_IP    # Syncthing — restreint à l'IP du PC (WSL)
-$VPS_SSH_PORT/tcp    ALLOW   Anywhere        # SSH durci
+22000/tcp   ALLOW   $SOURCE_IP    # Syncthing — restricted to the PC IP (WSL)
+$VPS_SSH_PORT/tcp    ALLOW   Anywhere        # hardened SSH
 ```
 
-> **Attention** : si l'IP publique du PC (WSL) change, mettre à jour la règle :
+> **Warning**: if the PC (WSL) public IP changes, update the rule:
 > ```bash
 > sudo ufw delete allow from $SOURCE_IP to any port 22000 proto tcp
-> sudo ufw allow from <NOUVELLE_IP> to any port 22000 proto tcp
+> sudo ufw allow from <NEW_IP> to any port 22000 proto tcp
 > ```
 
-### 3.3 Relais global (nomades)
+### 3.3 Global relaying (nomads)
 
-`relaysEnabled: true` + `listenAddress: default` + annonces globales actives.
-→ Les appareils mobiles (4G/5G) se synchronisent **via relais** sans ouverture d'IP fixe dans UFW.
-Le PC se connecte actuellement via `relay-server 80.231.63.246:443`.
+`relaysEnabled: true` + `listenAddress: default` + global announcements active.
+→ Mobile devices (4G/5G) sync **via relay** without opening a fixed IP in UFW.
+The PC currently connects via `relay-server 80.231.63.246:443`.
 
-### 3.4 Ports d'écoute Syncthing
+### 3.4 Syncthing Listening Ports
 
 | Port | Interface | Usage |
 |---|---|---|
-| 8384/tcp | 127.0.0.1 | GUI web |
-| 22000/tcp | * (toutes) | Transfert de données (filtré par UFW) |
-| 21027/udp | * | Découverte locale |
+| 8384/tcp | 127.0.0.1 | Web GUI |
+| 22000/tcp | * (all) | Data transfer (filtered by UFW) |
+| 21027/udp | * | Local discovery |
 
 ---
 
-## 4. Procédures
+## 4. Procedures
 
-### 4.1 Accéder au GUI du VPS
+### 4.1 Access the VPS GUI
 
 ```bash
-syncthing-gui     # puis navigateur → http://localhost:8384
+syncthing-gui     # then browser → http://localhost:8384
 ```
 
-### 4.2 Redémarrer Syncthing
+### 4.2 Restart Syncthing
 
 ```bash
 ssh nemo
 sudo systemctl restart syncthing@syncthing.service
 ```
 
-### 4.3 Ajouter un nouvel appareil
+### 4.3 Add a new device
 
-1. Depuis l'appareil : copier son Device ID (Actions → Show ID / Réglages → Appareil).
-2. Sur le VPS (GUI via tunnel, ou API REST) : ajouter le device.
-3. Depuis l'appareil : ajouter le Device ID du VPS `$SYNCTHING_DEVICE_ID (appairage bidirectionnel obligatoire).
-4. Partager le folder `obsidian-vault` (même Folder ID des deux côtés).
-5. Si connexion directe souhaitée : ouvrir `22000/tcp` pour l'IP de l'appareil dans UFW (sinon le relais gère).
+1. From the device: copy its Device ID (Actions → Show ID / Settings → Device).
+2. On the VPS (GUI via tunnel, or REST API): add the device.
+3. From the device: add the VPS Device ID `$SYNCTHING_DEVICE_ID (two-way pairing mandatory).
+4. Share the `obsidian-vault` folder (same Folder ID on both sides).
+5. If a direct connection is desired: open `22000/tcp` for the device's IP in UFW (otherwise the relay handles it).
 
-### 4.4 Diagnostics rapides (via GUI tunnel ou API)
+### 4.4 Quick diagnostics (via GUI tunnel or API)
 
 ```bash
-# État du folder
+# Folder state
 curl -s -H "X-API-Key: <apikey>" "http://127.0.0.1:8384/rest/db/status?folder=obsidian-vault"
 
-# Connexions devices
+# Device connections
 curl -s -H "X-API-Key: <apikey>" "http://127.0.0.1:8384/rest/system/connections"
 ```
 
-L'API key se trouve dans `/home/syncthing/.config/syncthing/config.xml` (bloc `<gui>`).
+The API key is in `/home/syncthing/.config/syncthing/config.xml` (`<gui>` block).
 
 ---
 
-## 5. Dépannage
+## 5. Troubleshooting
 
-### 5.1 Android non connecté
+### 5.1 Android not connected
 
-- Vérifier l'**appairage bidirectionnel** : le device VPS doit être ajouté dans l'app Android.
-- Vérifier que le **folder** `obsidian-vault` est partagé avec le mobile.
-- **Relay côté Android** : activer "Utiliser des relais" dans les réglages du device.
-- Vérifier la **batterie/optimisation** Android (ne pas tuer Syncthing en arrière-plan).
-- Si besoin : ouvrir `22000/tcp` pour l'IP du mobile dans UFW.
+- Check the **two-way pairing**: the VPS device must be added in the Android app.
+- Check that the `obsidian-vault` **folder** is shared with the mobile.
+- **Relay on the Android side**: enable "Use relays" in the device settings.
+- Check Android **battery/optimization** (do not kill Syncthing in the background).
+- If needed: open `22000/tcp` for the mobile's IP in UFW.
 
-### 5.2 IP du PC (WSL) change
+### 5.2 PC (WSL) IP changes
 
-Mettre à jour la règle UFW (voir §3.2). Alternative durable : passer le PC en relay (comme le mobile).
+Update the UFW rule (see §3.2). Durable alternative: switch the PC to relay (like the mobile).
 
-### 5.3 Conflits de synchronisation
+### 5.3 Sync conflicts
 
-- Les conflits sont conservés par Syncthing (`*.sync-conflict-*`) dans le vault.
-- Pour ignorer certains dossiers (caches, temp) : créer un fichier `.stignore` à la racine du vault (à faire sur TOUS les devices, car il se synchronise).
+- Conflicts are kept by Syncthing (`*.sync-conflict-*`) in the vault.
+- To ignore certain folders (caches, temp): create a `.stignore` file at the vault root (to do on ALL devices, since it syncs).
 
-### 5.4 Le GUI répond mais page blanche
+### 5.4 GUI responds but blank page
 
-- Vérifier que le tunnel est actif (port 8384 en écoute local).
-- Tester `curl -o /dev/null -w "%{http_code}" http://localhost:8384/` → doit renvoyer 200.
+- Check that the tunnel is active (port 8384 listening locally).
+- Test `curl -o /dev/null -w "%{http_code}" http://localhost:8384/` → must return 200.
 
 ---
 
-## 6. Sauvegarde (recommandations)
+## 6. Backup (recommendations)
 
-**Leçon apprise** : le backup `backup.tar.gz` d'origine n'incluait PAS `/home/admin/hermes-fleet/` → perte des historiques des agents Docker. Inclure désormais :
+**Lesson learned**: the original `backup.tar.gz` backup did NOT include `/home/admin/hermes-fleet/` → loss of the Docker agents' histories. From now on, include:
 
-| Chemin | Contenu |
+| Path | Content |
 |---|---|
-| `/home/syncthing/obsidian-vault/` | Vault Obsidian (612 Mo) |
-| `/home/admin/hermes-fleet/` | Agents Docker : sessions, memories, state.db, configs |
-| `/home/<runner>/.hermes/` | Runners natifs : sessions, memories, state.db, .env |
-| `/root/.fleet_tokens.env` | Tokens Telegram des agents Docker |
-| `/root/.bashrc` | Clés API + fonctions/alias fleet |
-| `/etc/docker/` | `daemon.json` durci |
+| `/home/syncthing/obsidian-vault/` | Obsidian vault (612 MB) |
+| `/home/admin/hermes-fleet/` | Docker agents: sessions, memories, state.db, configs |
+| `/home/<runner>/.hermes/` | Native runners: sessions, memories, state.db, .env |
+| `/root/.fleet_tokens.env` | Telegram tokens of the Docker agents |
+| `/root/.bashrc` | API keys + fleet functions/aliases |
+| `/etc/docker/` | hardened `daemon.json` |
 
 ---
 
-## 7. Rappels sécurité
+## 7. Security Reminders
 
-- ✅ GUI Syncthing **jamais exposé publiquement** (tunnel SSH uniquement).
-- ✅ Port 22000 **restreint** à l'IP du PC (WSL).
-- ✅ Relais actif → pas d'ouverture globale nécessaire pour les nomades.
-- ✅ Tunnel SSH limité à `AllowTcpForwarding local` (`-R`/`-D` bloqués).
-- ⚠️ Les **secrets** restent en clair dans `/root/.bashrc` → à déplacer vers `/etc/secrets/` (recommandé).
-- ⚠️ Si l'IP WSL change, mettre à jour la règle UFW 22000.
+- ✅ Syncthing GUI **never publicly exposed** (SSH tunnel only).
+- ✅ Port 22000 **restricted** to the PC IP (WSL).
+- ✅ Relay active → no global opening needed for nomads.
+- ✅ SSH tunnel limited to `AllowTcpForwarding local` (`-R`/`-D` blocked).
+- ⚠️ The **secrets** remain in plaintext in `/root/.bashrc` → to be moved to `/etc/secrets/` (recommended).
+- ⚠️ If the WSL IP changes, update the UFW 22000 rule.
 
 ---
 
-## 8. Référence rapide — Identifiants
+## 8. Quick Reference — Identifiers
 
 ```
 VPS  ($VPS_HOSTNAME)  : $SYNCTHING_DEVICE_ID

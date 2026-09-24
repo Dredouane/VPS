@@ -1,111 +1,111 @@
-# 🏗️ Architecture HermesCapabilities
+# 🏗️ HermesCapabilities Architecture
 
-Statut : v1 (30/08/2026) — capability pilote `rag-supabase` (C5). Ce document
-définit le **contrat de capability**, le **processus de décision technique**
-et les **règles de sécurité transversales**.
+Status: v1 (30/08/2026) — pilot capability `rag-supabase` (C5). This document
+defines the **capability contract**, the **technical decision process**
+and the **cross-cutting security rules**.
 
 ---
 
-## 1. Le contrat de capability — `manifest.yaml`
+## 1. The capability contract — `manifest.yaml`
 
-Chaque capability est décrite par un manifest déclaratif. C'est **l'unique
-source de vérité** consommée par `capability-attach.sh` (et à terme par le
-spawn HermesConfig v3) :
+Each capability is described by a declarative manifest. It is the **single
+source of truth** consumed by `capability-attach.sh` (and eventually by the
+HermesConfig v3 spawn):
 
-| Champ | Type | Obligatoire | Rôle |
+| Field | Type | Required | Role |
 |---|---|---|---|
-| `id` | str | ✅ | Identifiant kebab-case, **doit = nom du dossier** (sauf TEMPLATE) |
-| `version` | str | ✅ | Semver — bump à chaque changement de contrat |
-| `title` | str | ✅ | Titre humain |
+| `id` | str | ✅ | kebab-case identifier, **must = folder name** (except TEMPLATE) |
+| `version` | str | ✅ | Semver — bump on every contract change |
+| `title` | str | ✅ | Human title |
 | `type` | enum | ✅ | `natif` \| `mix` \| `sidecar` (cf. §2) |
-| `description` | str | ✅ | Compétence métier apportée |
-| `secrets` | list[str] | ✅ (vide ok) | **Noms** de variables attendues dans `clients/<slug>/client.env` (jamais de valeurs ici) |
-| `env` | map | ✅ (vide ok) | Vars non secrètes injectées dans l'instance — interpolation `{{CLIENT_SLUG}}` supportée |
-| `mcp` | list[str] | ✅ (vide ok) | MCP servers Hermes à activer → `mcp.json` requis si non vide |
-| `skills` | list[str] | ✅ (vide ok) | Skills Hermes installées → `skill.md` requis si non vide |
-| `routines` | list[str] | ✅ (vide ok) | Routines cron → `routine.yaml` requis si non vide |
-| `code` | list[str] | ✅ (vide ok, v1.1) | Modules **déterministes** (stdlib Python, fixtures) → `code/` requis si non vide ; copiés vers `data/code/<id>/` par l'attach |
-| `mounts` | map | ✅ (vide ok) | Volumes additionnels (host → container) |
-| `soul_addendum` | str | ✅ | Fichier de clauses mergé dans le SOUL.md client (défaut `soul-addendum.md`) |
-| `tests` | str | ✅ | Dossier de tests (défaut `tests/`) |
+| `description` | str | ✅ | Business competence provided |
+| `secrets` | list[str] | ✅ (empty ok) | **Names** of variables expected in `clients/<slug>/client.env` (never values here) |
+| `env` | map | ✅ (empty ok) | Non-secret vars injected into the instance — `{{CLIENT_SLUG}}` interpolation supported |
+| `mcp` | list[str] | ✅ (empty ok) | Hermes MCP servers to activate → `mcp.json` required if non-empty |
+| `skills` | list[str] | ✅ (empty ok) | Hermes skills installed → `skill.md` required if non-empty |
+| `routines` | list[str] | ✅ (empty ok) | Cron routines → `routine.yaml` required if non-empty |
+| `code` | list[str] | ✅ (empty ok, v1.1) | **Deterministic** modules (stdlib Python, fixtures) → `code/` required if non-empty; copied to `data/code/<id>/` by the attach |
+| `mounts` | map | ✅ (empty ok) | Additional volumes (host → container) |
+| `soul_addendum` | str | ✅ | Clauses file merged into the client SOUL.md (default `soul-addendum.md`) |
+| `tests` | str | ✅ | Tests folder (default `tests/`) |
 
-**Cohérence imposée** (vérifiée par `capability-test.sh`) :
-- `mcp` non vide → `mcp.json` présent
-- `skills` non vide → `skill.md` présent
-- `routines` non vide → `routine.yaml` présent
-- `soul-addendum.md` contient toujours des clauses **sait / peut / refuse**
-- `decision.md` contient un verdict `natif`, `mix` ou `sidecar`
+**Enforced consistency** (checked by `capability-test.sh`):
+- `mcp` non-empty → `mcp.json` present
+- `skills` non-empty → `skill.md` present
+- `routines` non-empty → `routine.yaml` present
+- `soul-addendum.md` always contains **knows / can / refuses** clauses
+- `decision.md` contains a `natif`, `mix` or `sidecar` verdict
 
-## 2. Processus de décision technique — NATIF > MIX > SIDECAR
+## 2. Technical decision process — NATIVE > MIX > SIDECAR
 
-Pour chaque capability, la solution est choisie dans cet ordre de préférence,
-**documentée dans `decision.md` et re-vérifiée à chaque montée de version
-Hermes** (le catalogue MCP et les skills bundlées évoluent vite) :
+For each capability, the solution is chosen in this order of preference,
+**documented in `decision.md` and re-checked at every Hermes version bump**
+(the MCP catalogue and bundled skills evolve fast):
 
-1. **Natif** — l'existant Hermes couvre le besoin : MCP du catalogue
-   (`hermes mcp catalog`), skill bundlée, routine cron, gateway. Zéro code
-   custom, tout vit dans le conteneur agent.
-2. **Mix** — Hermes orchestre (skill + routine + MCP), mais une brique
-   externe est nécessaire : API SaaS (Firecrawl, embeddings), MCP
-   communautaire non catalogué. Pas de conteneur supplémentaire.
-3. **Sidecar** — service containerisé séparé (worker Python, Tesseract…)
-   exposé à l'agent via MCP/REST. Dernier recours : code custom à maintenir,
-   surface d'attaque supplémentaire.
+1. **Native** — existing Hermes covers the need: MCP from the catalogue
+   (`hermes mcp catalog`), bundled skill, cron routine, gateway. Zero custom
+   code, everything lives in the agent container.
+2. **Mix** — Hermes orchestrates (skill + routine + MCP), but one external
+   brick is needed: SaaS API (Firecrawl, embeddings), uncatalogued community
+   MCP. No extra container.
+3. **Sidecar** — separate containerized service (Python worker, Tesseract…)
+   exposed to the agent via MCP/REST. Last resort: custom code to maintain,
+   extra attack surface.
 
-### Matrice de disponibilité (état des lieux 30/08/2026, Hermes v0.20.6)
+### Availability matrix (state of play 30/08/2026, Hermes v0.20.6)
 
-| Capability | Natif | Verdict initial |
+| Capability | Native | Initial verdict |
 |---|---|---|
-| **rag-supabase** (C5) | ✅ MCP `supabase` dans le catalogue ("Database, auth, storage") | **Natif** |
-| **db-crud-sync** (C7) | ✅ même MCP `supabase` | **Natif** |
-| **analysis-facturation** (C6) | ✅ Bot role + skill custom + routine | **Natif** |
-| **email-processing** (C2) | ✅ Skill custom LLM-driven | **Natif** |
-| **email-gmail** (C1) | ❌ Pas de Gmail dans le MCP catalog | **Mix** — MCP Gmail communautaire à évaluer, sinon skill OAuth (pattern `SUREN_GMAIL_OAUTH_*` déjà dans `/etc/secrets/`) + routine |
-| **doc-ocr** (C3) | ❌ Pas de Firecrawl (catalog ni code v0.20.6) | **Mix** — 2 extracteurs vision (Gemini + OpenRouter, familles différentes) + 2 juges séparés (D14) ; sidecar Tesseract écarté |
-| **rag-embeddings** (C4) | ❌ Pas de primitive embeddings (memory ≠ RAG docs) | **Mix** — API embeddings (Gemini/OpenRouter) + save via MCP supabase |
+| **rag-supabase** (C5) | ✅ MCP `supabase` in the catalogue ("Database, auth, storage") | **Native** |
+| **db-crud-sync** (C7) | ✅ same `supabase` MCP | **Native** |
+| **analysis-facturation** (C6) | ✅ Bot role + custom skill + routine | **Native** |
+| **email-processing** (C2) | ✅ Custom LLM-driven skill | **Native** |
+| **email-gmail** (C1) | ❌ No Gmail in the MCP catalog | **Mix** — community Gmail MCP to evaluate, otherwise OAuth skill (pattern `SUREN_GMAIL_OAUTH_*` already in `/etc/secrets/`) + routine |
+| **doc-ocr** (C3) | ❌ No Firecrawl (catalog nor code v0.20.6) | **Mix** — 2 vision extractors (Gemini + OpenRouter, different families) + 2 separate judges (D14); Tesseract sidecar discarded |
+| **rag-embeddings** (C4) | ❌ No embeddings primitive (memory ≠ RAG docs) | **Mix** — embeddings API (Gemini/OpenRouter) + save via supabase MCP |
 
-> ⚠️ La mémoire Hermes (`MEMORY.md`/providers mem0…) gère les **faits et
-> préférences de conversation**, pas un RAG de documents métier. Le pipeline
-> RAG reste une construction dédiée.
+> ⚠️ Hermes memory (`MEMORY.md`/mem0 providers…) handles **conversation facts
+> and preferences**, not a RAG of business documents. The RAG
+> pipeline remains a dedicated build.
 
-## 3. Variabilisation par client
+## 3. Per-client variabilization
 
-- Toute valeur spécifique client vit dans `HermesConfig/clients/<slug>/client.env` (600, hors git).
-- Les manifests référencent des **noms** de secrets, jamais de valeurs.
-- L'interpolation `{{CLIENT_SLUG}}` dans `env:` est remplacée par le slug au moment de l'attachement.
-- Une même capability s'attache à N clients sans fork : chaque client a ses propres credentials + RPC.
+- Any client-specific value lives in `HermesConfig/clients/<slug>/client.env` (600, outside git).
+- Manifests reference secret **names**, never values.
+- The `{{CLIENT_SLUG}}` interpolation in `env:` is replaced by the slug at attach time.
+- The same capability attaches to N clients without forking: each client has its own credentials + RPCs.
 
-## 4. Sécurité transversale (non négociable)
+## 4. Cross-cutting security (non-negotiable)
 
-1. **Supabase** : jamais la `service key` dans un agent. Accès via MCP +
-   **RLS + RPC génériques** (`rpc_cap_*` avec slug + `CLIENT_RPC_SECRET`), clé = publishable
-   limité. Projet Supabase **test** séparé pour les tests unitaires.
-2. **Gmail** : OAuth scope minimal (`gmail.readonly` + labels), un
-   compte/adresse aliasé par client, refresh token dans `client.env` (600).
-3. **OCR/embeddings** : clés API par capability dans `client.env` (600),
-   quotas et coûts documentés dans le README de la capability.
-4. **Soul-addendum obligatoire** : chaque capability ajoute ses clauses
-   sait/peut/refuse — mergées avec marqueurs idempotents
-   `<!-- capability:<id>:start|end -->` dans le SOUL.md du client.
-5. **Secrets jamais en CLI/YAML/git** : `capability-attach.sh` valide par
-   comptage de valeurs non vides, sans jamais les afficher.
-6. **Tests** : contrats exécutés localement sans secrets ; les tests
-   d'intégration (VPS, vraies API) SKIPent proprement hors VPS.
+1. **Supabase**: never the `service key` in an agent. Access via MCP +
+   **RLS + generic RPCs** (`rpc_cap_*` with slug + `CLIENT_RPC_SECRET`), key = limited
+   publishable. Separate **test** Supabase project for unit tests.
+2. **Gmail**: minimal OAuth scope (`gmail.readonly` + labels), one
+   aliased account/address per client, refresh token in `client.env` (600).
+3. **OCR/embeddings**: API keys per capability in `client.env` (600),
+   quotas and costs documented in the capability README.
+4. **Mandatory soul-addendum**: each capability adds its
+   knows/can/refuses clauses — merged with idempotent markers
+   `<!-- capability:<id>:start|end -->` in the client's SOUL.md.
+5. **Secrets never in CLI/YAML/git**: `capability-attach.sh` validates by
+   counting non-empty values, never displaying them.
+6. **Tests**: contracts executed locally without secrets; integration
+   tests (VPS, real APIs) SKIP cleanly outside the VPS.
 
-## 5. Interface avec HermesConfig
+## 5. Interface with HermesConfig
 
-- `HermesCapabilities/scripts/` opère sur le HermesConfig **voisin**
-  (`../HermesConfig/` — miroir VPS `/home/admin/hermes-fleet/`).
-- `capability-attach.sh <slug> <caps...>` lit `clients/<slug>/client.env`,
-  configure l'instance (`instances/<slug>/`), et tient à jour
-  `instances/<slug>/capabilities.yaml` (état).
-- Contrat complet : [`integration-hermesconfig.md`](integration-hermesconfig.md).
+- `HermesCapabilities/scripts/` operates on the **neighbouring** HermesConfig
+  (`../HermesConfig/` — VPS mirror `/home/admin/hermes-fleet/`).
+- `capability-attach.sh <slug> <caps...>` reads `clients/<slug>/client.env`,
+  configures the instance (`instances/<slug>/`), and keeps
+  `instances/<slug>/capabilities.yaml` (state) up to date.
+- Full contract: [`integration-hermesconfig.md`](integration-hermesconfig.md).
 
 ## 6. Roadmap
 
-| Milestone | Contenu | Statut |
+| Milestone | Content | Status |
 |---|---|---|
-| **M1** | Architecture + TEMPLATE + pilote `rag-supabase` (contrat) + scripts + tests de contrat | 🔄 en cours |
-| **M2** | Implémentation réelle C5 (MCP + RPC + tests VPS), puis C1 email-gmail | ⏳ |
-| **M3** | Réplication du pattern sur C2/C3/C4/C6/C7 + pipelines métier | ⏳ |
-| **M4** | HermesInstances (l'écurie) consomme HermesConfig + capabilities | ⏳ |
+| **M1** | Architecture + TEMPLATE + pilot `rag-supabase` (contract) + scripts + contract tests | 🔄 in progress |
+| **M2** | Real implementation of C5 (MCP + RPC + VPS tests), then C1 email-gmail | ⏳ |
+| **M3** | Replication of the pattern on C2/C3/C4/C6/C7 + business pipelines | ⏳ |
+| **M4** | HermesInstances (the stables) consume HermesConfig + capabilities | ⏳ |

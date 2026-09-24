@@ -1,43 +1,43 @@
 ---
 name: rag-search
 description: >-
-  Recherche par similarité dans le RAG Supabase du client (pgvector via MCP
-  supabase, RPC génériques). À utiliser quand l'agent a besoin de retrouver des
-  documents/extraits indexés (emails, pièces jointes, notes) pour répondre
-  à une demande métier.
+  Similarity search in the client's Supabase RAG (pgvector via the MCP
+  supabase, generic RPCs). To use when the agent needs to retrieve indexed
+  documents/excerpts (emails, attachments, notes) to answer a
+  business request.
 ---
 
 # Skill rag-search
 
-> ⚠️ Emplacement exact des skills custom dans l'instance dockerisée à valider
-> en M2 (`hermes skills --help` + essai sur `hermes-arev-pro`). L'attach
-> copie ce fichier vers `data/skills/rag-search/SKILL.md` (best-effort).
+> ⚠️ Exact location of custom skills in the dockerized instance to be validated
+> in M2 (`hermes skills --help` + trial on `hermes-arev-pro`). The attach
+> copies this file to `data/skills/rag-search/SKILL.md` (best-effort).
 
-## Rôle
+## Role
 
-Retrouver les documents pertinents dans la base RAG du client (Supabase
-pgvector) pour ancrer les réponses de l'agent sur ses documents métier.
+Retrieve relevant documents from the client's RAG base (Supabase
+pgvector) to ground the agent's answers on its business documents.
 
-## Quand l'utiliser
+## When to use it
 
-- Demande utilisateur portant sur des documents passés (« retrouve le devis… »)
-- Avant de répondre à une question factuelle du périmètre documents
-- Dans les routines d'analyse (ex: facturation — croiser avec les documents indexés)
+- User request about past documents (“find the quote…”)
+- Before answering a factual question in the documents scope
+- In analysis routines (e.g.: invoicing — cross-check with the indexed documents)
 
-## Procédure
+## Procedure
 
-1. Construire la requête de recherche : reformuler la demande en texte
-   compact (une requête = une intention).
-2. Obtenir l'embedding de la requête (capability `rag-embeddings`).
-3. Appeler la RPC dédiée via MCP `supabase` :
-   `rpc_cap_doc_search(slug, secret, query_embedding, match_count)` — **jamais de SQL
-   direct**, jamais d'autre schéma que `cap_<slug>`.
-4. Restituer : titre, source, date, extrait pertinent (citer, ne pas
-   inventer). Si aucun résultat pertinent (score faible) → le dire.
+1. Build the search query: rephrase the request into compact text
+   (one query = one intention).
+2. Get the query embedding (`rag-embeddings` capability).
+3. Call the dedicated RPC via the `supabase` MCP:
+   `rpc_cap_doc_search(slug, secret, query_embedding, match_count)` — **never any direct
+   SQL**, never any schema other than `cap_<slug>`.
+4. Render: title, source, date, relevant excerpt (quote, do not
+   invent). If no relevant result (low score) → say so.
 
-## Limites
+## Limits
 
-- Le RAG ne contient que ce qui a été indexé — ne pas présenter une absence
-  de résultat comme une vérité métier.
-- Toute écriture passe par `rpc_cap_doc_upsert` / (`doc_delete` à ajouter si besoin) (capability
-  rag-supabase), jamais de DDL.
+- The RAG contains only what has been indexed — never present an absence
+  of result as a business truth.
+- All writes go through `rpc_cap_doc_upsert` / (`doc_delete` to add if needed) (capability
+  rag-supabase), never any DDL.

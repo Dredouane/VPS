@@ -1,41 +1,41 @@
-# TEMPLATE D'ISSUE — Reviewer ICP SaaS (aligné spec)
+# ISSUE TEMPLATE — ICP SaaS Reviewer (spec-aligned)
 
-> Format standard pour un ticket exploitable par l'agent de code (opencode).
-> Copier ce fichier → nommer `TICKET-XXX-titre-court.md` → remplir.
-> Un seul problème / une seule demande par ticket (petits, précis, actionnables).
-> Chaque ticket référence la brique de la SPEC à laquelle il se rattache
-> (`spec/SPEC_Produit_Emails_Factures.md`) et les scénarios NonReg à vérifier
+> Standard format for a ticket usable by the code agent (opencode).
+> Copy this file → name it `TICKET-XXX-short-title.md` → fill it in.
+> One single problem / one single request per ticket (small, precise, actionable).
+> Each ticket references the SPEC brick it belongs to
+> (`spec/SPEC_Produit_Emails_Factures.md`) and the NonReg scenarios to check
 > (`NonReg/REFERENCE_Scenarios_Spec_Emails_Factures.md`).
 
 ---
 
-## Ticket AREV-XXX — <Titre court et actionnable>
+## Ticket AREV-XXX — <Short and actionable title>
 
-- **Date** :
-- **Référence spec** : section(s) de `SPEC_Produit_Emails_Factures.md` concernée(s)
-- **Scénarios NonReg** : codes (ex. C4, E5…) de `REFERENCE` à passer pour valider
-- **Persona** : Fateh_Ug / Gerant_PME / Salarie_Backoffice
-- **Priorité** : Haute / Moyenne / Basse
-- **Type** : Bug / Amélioration UX / Nouvelle feature / Non-régression
+- **Date**:
+- **Spec reference**: relevant section(s) of `SPEC_Produit_Emails_Factures.md`
+- **NonReg scenarios**: codes (e.g. C4, E5…) of `REFERENCE` to run for validation
+- **Persona**: Fateh_Ug / Gerant_PME / Salarie_Backoffice
+- **Priority**: High / Medium / Low
+- **Type**: Bug / UX improvement / New feature / Non-regression
 
-## Description (le contrat)
-Ce que doit produire cette itération, en 1-3 phrases orientées utilisateur final.
+## Description (the contract)
+What this iteration must produce, in 1-3 sentences oriented toward the end user.
 
-## État actuel (ce que fait le produit aujourd'hui)
-Ce qui se passe à l'écran aujourd'hui, factuellement, opposé à la cible.
+## Current state (what the product does today)
+What happens on screen today, factually, as opposed to the target.
 
-## État attendu (définition de fini)
-Le comportement souhaité, conforme à la spec — aussi concret que possible.
+## Expected state (definition of done)
+The desired behavior, compliant with the spec — as concrete as possible.
 
-## La "douleur" du persona (pourquoi c'est important)
-Ce que ça coûte à l'utilisateur si on ne fait pas ce ticket (temps, erreur, défiance).
+## The persona's "pain" (why it matters)
+What it costs the user if this ticket is not done (time, error, distrust).
 
-## Critères d'acceptation (checklist de validation — DOIT être vérifiable)
+## Acceptance criteria (validation checklist — MUST be verifiable)
 - [ ] ...
 - [ ] ...
 
-## Notes (si utiles)
-Éléments de design/cohérence, données à afficher, éventuelles implications pour d'autres vues.
-NE PAS mentionner d'implémentation technique imposée : on spécifie, l'agent de code décide du comment.
+## Notes (if useful)
+Design/consistency elements, data to display, possible implications for other views.
+DO NOT mention an imposed technical implementation: we specify, the code agent decides on the how.
 
 ---

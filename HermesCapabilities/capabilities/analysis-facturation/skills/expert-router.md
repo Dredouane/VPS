@@ -1,36 +1,36 @@
 ---
 name: expert-router
 description: >-
-  Chain of Experts — routeur : détermine si un email structuré concerne un
-  des experts enregistrés (facturation, ...) et retourne la liste JSON
-  stricte. Ne JAMAIS exécuter un expert directement — retourner la liste
-  pour orchestration.
+  Chain of Experts — router: determines whether a structured email
+  concerns one of the registered experts (facturation, ...) and returns the
+  strict JSON list. NEVER execute an expert directly — return the list
+  for orchestration.
 ---
 
 # Skill expert-router
 
-## Rôle
+## Role
 
-Décider, pour chaque email structuré (sortie C2/C3), quels experts sont
-concernés. Premier expert livré : facturation.
+Decide, for each structured email (C2/C3 output), which experts are
+concerned. First delivered expert: facturation.
 
-## Procédure
+## Procedure
 
-1. Entrées : mail structuré (C2 : role, new_content, classification,
-   attachments) + verdict OCR (C3 : doc_type, invoice verdict).
-2. Produire STRICTEMENT :
+1. Inputs: structured mail (C2: role, new_content, classification,
+   attachments) + OCR verdict (C3: doc_type, invoice verdict).
+2. Produce STRICTLY:
 
 ```json
 {"experts": ["facturation"], "confidence": 0.0, "reason": "1 phrase"}
 ```
 
-## Critères facturation (déterministes, M2)
+## Facturation criteria (deterministic, M2)
 
-- `doc_type == "facture"` (juge général C3) → expert facturation.
-- OU catégorie classification == facturation ET (PJ facture OU mots-clés
-  facture/numéro/TVA dans le contenu nouveau).
+- `doc_type == "facture"` (C3 general judge) → facturation expert.
+- OR classification category == facturation AND (invoice attachment OR
+  invoice/numero/VAT keywords in the new content).
 
-## Limites
+## Limits
 
-- Liste vide = aucun expert (mail indexé en RAG, rien de plus).
-- Le routeur ne décide PAS des montants — il route.
+- Empty list = no expert (mail indexed in RAG, nothing more).
+- The router does NOT decide on amounts — it routes.

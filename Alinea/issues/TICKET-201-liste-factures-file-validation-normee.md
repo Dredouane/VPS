@@ -1,46 +1,46 @@
-# Ticket AREV-201 — Module Factures : liste = file de validation normée (statuts FR, compteur, format FR)
+# Ticket AREV-201 — Invoices module: list = normative validation queue (FR statuses, counter, FR format)
 
-- **Date** : 2026-09-08
-- **Référence spec** : `SPEC_Produit_Emails_Factures.md` §2.1 (listes factures, statuts FR, compteurs)
-- **Scénarios NonReg** : D1, D2, D3, D4, D6
-- **Persona** : Salarie_Backoffice (principal) · Gerant_PME
-- **Priorité** : Haute
-- **Type** : Amélioration UX
+- **Date**: 2026-09-08
+- **Spec reference**: `SPEC_Produit_Emails_Factures.md` §2.1 (invoice lists, FR statuses, counters)
+- **NonReg scenarios**: D1, D2, D3, D4, D6
+- **Persona**: Salarie_Backoffice (primary) · Gerant_PME
+- **Priority**: High
+- **Type**: UX improvement
 
-## Description (le contrat)
-La vue « Factures » est une **file de validation lisible** pour l'opératrice et un **registre de
-pilotage** pour le gérant. Statuts en français accordés, montants bien formés, compteur utile —
-plus un tableau technique brut.
+## Description (the contract)
+The "Invoices" view is a **readable validation queue** for the operator and a **steering
+register** for the manager. Gender-agreed French statuses, well-formatted amounts, a useful counter —
+no longer a raw technical table.
 
-## État actuel
-Table à colonnes correctes (Numéro/Fournisseur/Objet/Échéance/TTC/Statut) MAIS : filtres
-« valide/rejete/paye/archive » (« participe douteux, minuscules »), statut d'entrée `extracted`
-(anglais) non couvert par un filtre, montants « 60226.08 EUR » (décimal point, espace d) et champ
-Échéance « — ». Sous-titre technique (« …pipeline — transition de statut (D6) »).
+## Current state
+Table with correct columns (Numéro/Fournisseur/Objet/Échéance/TTC/Statut [Number/Supplier/Subject/Due date/TTC/Status]) BUT: filters
+"valide/rejete/paye/archive" ("doubtful participles, lowercase"), entry status `extracted`
+(English) not covered by any filter, amounts "60226.08 EUR" (decimal point, weird spacing) and empty
+due-date field. Technical subtitle ("…pipeline — transition de statut (D6)" [status transition (D6)]).
 
-## État attendu
-- **Statuts FR normés** sur les lignes et les filtres (conformes TKT-102) : `À traiter` (c'est le
-  statut d'entrée des extractions, plus jamais `extracted` affiché) · `Validée` · `Rejetée` ·
+## Expected state
+- **Normative FR statuses** on rows and filters (compliant with TKT-102): `À traiter` (that is the
+  entry status of extractions, never again `extracted` displayed) · `Validée` · `Rejetée` ·
   `Payée` · `Archivée`.
-- **Compteur visible** des « X à traiter » en tête (oriente l'action).
-- **Chaque ligne** : N°, Fournisseur, Objet (tronqué proprement), Date, **Échéance**, **Montant
-  TTC format FR** (`60 226,08 €`, virgule décimale, espace millier), Statut (badge cohérent).
-- Échéance absente → libellé guide « à compléter » (et non « — » muet) qui renvoie à la fiche.
-- Sous-titre en phrase orientée valeur (pas de D6/pipeline).
+- **Visible counter** of "X à traiter" [X to process] at the top (orients the action).
+- **Each row**: N°, Fournisseur [Supplier], Objet [Subject] (cleanly truncated), Date, **Échéance** [Due date], **Montant
+  TTC format FR** [FR-formatted gross amount] (`60 226,08 €`, decimal comma, thousand space), Status (consistent badge).
+- Missing due date → guiding label "à compléter" [to be completed] (not a mute "—") leading back to the detail page.
+- Subtitle as a value-oriented sentence (no D6/pipeline).
 
-## La "douleur" du persona
-Sans file claire, l'opératrice ne sait pas quoi valider en priorité ni parfois comment ; le gérant
-ne voit pas le volume à traiter ni les montants lisiblement. Le format et le jargon tuent l'usage.
+## The persona's "pain"
+Without a clear queue, the operator does not know what to validate in priority nor sometimes how; the manager
+does not see the volume to process nor readable amounts. Format and jargon kill usage.
 
-## Critères d'acceptation
-- [ ] Filtres ET statuts affichés utilisent les libellés FR normés (À traiter/Validée/Rejetée/Payée/Archivée)
-- [ ] Le statut d'entrée s'affiche « À traiter » (aucun `extracted`/`valide`/`rejete` visible)
-- [ ] Compteur « X à traiter » visible
-- [ ] Colonne Échéance : valeur OU « à compléter » (jamais « — » muet) 
-- [ ] Montants au format FR; cohérence des montres sur toutes les lignes
-- [ ] Sous-titre sans jargon ; aucune mention D6/pipeline
-- [ ] Ouvrir une ligne → la fiche détail (TKT-202)
+## Acceptance criteria
+- [ ] Displayed filters AND statuses use the normative FR labels (À traiter/Validée/Rejetée/Payée/Archivée)
+- [ ] The entry status displays as "À traiter" (no `extracted`/`valide`/`rejete` visible)
+- [ ] "X à traiter" counter visible
+- [ ] Due date column: value OR "à compléter" (never a mute "—")
+- [ ] Amounts in FR format; consistent amounts across all rows
+- [ ] Subtitle without jargon; no D6/pipeline mention
+- [ ] Opening a row → the invoice detail page (TKT-202)
 
 ## Notes
-Dépend de la norme de vocabulaire (TKT-102) : réaliser TKT-102 d'abord puis appliquer ici. La
-cohérence « À traiter » entre dashboard (compteur) et liste est souhaitée.
+Depends on the vocabulary standard (TKT-102): do TKT-102 first then apply here. The
+"À traiter" consistency between dashboard (counter) and list is desired.

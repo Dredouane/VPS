@@ -1,48 +1,47 @@
-# Ticket AREV-102 — Vocabulaire utilisateur : supprimer tout jargon technique de l'interface
+# Ticket AREV-102 — User vocabulary: remove all technical jargon from the interface
 
-- **Date** : 2026-09-08
-- **Référence spec** : `SPEC_Produit_Emails_Factures.md` §0 (principe) + §3 (anti-exigences)
-- **Scénarios NonReg** : A3 (balayage terme au travers de toutes les vues)
-- **Persona** : Fateh_Ug · Gerant_PME · Salarie_Backoffice
-- **Priorité** : Haute
-- **Type** : Amélioration UX
+- **Date**: 2026-09-08
+- **Spec reference**: `SPEC_Produit_Emails_Factures.md` §0 (principle) + §3 (anti-requirements)
+- **NonReg scenarios**: A3 (term sweep across all views)
+- **Persona**: Fateh_Ug · Gerant_PME · Salarie_Backoffice
+- **Priority**: High
+- **Type**: UX improvement
 
-## Description (le contrat)
-L'ensemble du produit se lit en français métier. Le vocabulaire interne au développeur (statuts
-en anglais, mentions d'éxécution, milestones, noms techniques) disparaît de TOUTES les vues
-utilisateurs.
+## Description (the contract)
+The whole product reads in business French. Developer-internal vocabulary (English
+statuses, execution mentions, milestones, technical names) disappears from ALL user views.
 
-## État actuel
-Exposé sur de multiples écrans : statuts en anglais (`extracted`, `received`, `processed`,
-`error`, `run_pipeline`, `active`), sous-titres techniques (« Pipeline email → facturation
-(silencieux, consultation D11) », « Extractions du pipeline — validation humaine par transition
-de statut (D6) », « Registre de traitement du pipeline (statuts, retries, erreurs) », « Recherche
-sémantique … documents indexés … OCR », « Registry clients (runner D9, lecture) »), références de
-roadmap (« P3/P4 », « M2.6-bis », « classification branchée en M2.6-bis »).
+## Current state
+Exposed on multiple screens: statuses in English (`extracted`, `received`, `processed`,
+`error`, `run_pipeline`, `active`), technical subtitles ("Pipeline email → facturation
+(silencieux, consultation D11)" [silent, D11 consultation], "Extractions du pipeline — validation humaine par transition
+de statut (D6)" [Pipeline extractions — human validation via status transition (D6)], "Registre de traitement du pipeline (statuts, retries, erreurs)" [Pipeline processing register (statuses, retries, errors)], "Recherche
+sémantique … documents indexés … OCR" [Semantic search … indexed documents … OCR], "Registry clients (runner D9, lecture)" [Client registry (runner D9, read-only)]), roadmap
+references ("P3/P4", "M2.6-bis", "classification wired in M2.6-bis").
 
-## État attendu
-- Statuts et filtres **français, accordés, explicites** et **identiques d'un écran à l'autre**
-  (cf. liste normée contractuelle § état attendu plus bas).
-- Retirés / reformulés : toute mention pipeline, run/runs, runner, retries, D6/D9/D11, P0-P4, Mx,
-  registry, OCR, openapi, Supabase, « transition de statut », « silencieux ».
-- Les sous-titres deviennent des phrases orientées valeur (ex. « Factures extraites
-  automatiquement, à valider ») — jamais une explication du mécanisme informatique.
-- **Liste normée des statuts** (à suivre partout) :
-  - Factures : `À traiter` (état d'entrée, ex `extracted`) · `Validée` · `Rejetée` · `Payée` · `Archivée`
-  - Conversations/Emails : `Non lu` · `À traiter` · `Traitée` (une erreur = `En erreur` + visible ⚠)
-  - Ces libellés sont des AFFICHAGES ; le backend peut conserver ses codessous-jacents.
+## Expected state
+- Statuses and filters in **French, gender-agreed, explicit** and **identical from one screen to the next**
+  (see the contractual normative list in the expected-state section below).
+- Removed / reworded: any mention of pipeline, run/runs, runner, retries, D6/D9/D11, P0-P4, Mx,
+  registry, OCR, openapi, Supabase, "status transition", "silent".
+- Subtitles become value-oriented sentences (e.g. "Factures extraites
+  automatiquement, à valider" [Invoices automatically extracted, awaiting validation]) — never an explanation of the computing mechanism.
+- **Normative status list** (to be followed everywhere):
+  - Invoices: `À traiter` (entry state, e.g. `extracted`) · `Validée` · `Rejetée` · `Payée` · `Archivée`
+  - Conversations/Emails: `Non lu` · `À traiter` · `Traitée` (an error = `En erreur` + visible ⚠)
+  - These labels are DISPLAYS; the backend may keep its underlying codes.
 
-## La "douleur" du persona
-Des mots incompréhensibles = produit « pas fini » dans la tête du gérant, de l'opératrice et de
-l'accompagnateur. Fateh ne peut pas montrer un écran qui « parle code ». Le jargon tue la
-confiance et l'adoption.
+## The persona's "pain"
+Incomprehensible words = a "unfinished" product in the mind of the manager, the operator and the
+advisor. Fateh cannot show a screen that "speaks code". Jargon kills trust
+and adoption.
 
-## Critères d'acceptation
-- [ ] Balayage de TOUTES les vues : zéro occurrence des termes listés ci-dessus
-- [ ] Chaque statut affiché utilise un libellé FR de la liste normée (accordé, explicite)
-- [ ] Un libellé donné (ex. « À traiter ») est cohérent quelle que soit la vue
-- [ ] Aucun fichier d'interface ne présente une phrase qui explique un mécanisme technique à l'utilisateur
+## Acceptance criteria
+- [ ] Sweep of ALL views: zero occurrences of the terms listed above
+- [ ] Every displayed status uses an FR label from the normative list (gender-agreed, explicit)
+- [ ] A given label (e.g. "À traiter") is consistent no matter the view
+- [ ] No interface file contains a sentence explaining a technical mechanism to the user
 
 ## Notes
-A distinguer des tickets-module (statuts dans la liste Factures = TKT-106). Faire un balayage
-composant après changement pour vérifier A3 du REFERENCE.
+To be distinguished from module tickets (statuses in the Invoices list = TKT-106). Do a component
+sweep after the change to check A3 of the REFERENCE.

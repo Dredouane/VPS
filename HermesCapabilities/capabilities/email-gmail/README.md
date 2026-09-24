@@ -1,48 +1,48 @@
-# Capability email-gmail (C1) — réception IMAP par alias client
+# Capability email-gmail (C1) — IMAP reception via client alias
 
-**Type** : `mix` · **Statut** : M2.1-bis — code IMAP + tests verts (dont
-intégration réelle readonly), wiring attach à M2.6
+**Type**: `mix` · **Status**: M2.1-bis — IMAP code + green tests (including
+real readonly integration), attach wiring at M2.6
 
-Collecte les emails pro arrivant sur l'alias Gmail du client
-(`REDACTED_EMAIL` — filtre strict, D10) via **IMAP app password**
-(décision D13 — OAuth plan B documenté). Poller déterministe en routine
-(cron `*/10 8-19`, heures creuses D1) : EXAMINE readonly, X-GM-RAW,
-X-GM-THRID, parsing RFC822 (`email.parser`), PJ en fichiers spool,
-marquage `ia-traite` par déplacement (idempotent).
+Collects professional emails arriving on the client's Gmail alias
+(`REDACTED_EMAIL` — strict filter, D10) via **IMAP app password**
+(decision D13 — OAuth documented as plan B). Deterministic poller as a
+routine (cron `*/10 8-19`, off-peak hours D1): readonly EXAMINE, X-GM-RAW,
+X-GM-THRID, RFC822 parsing (`email.parser`), attachments as spool files,
+`ia-traite` marking by move (idempotent).
 
-## Composants
+## Components
 
-| Fichier | Rôle |
+| File | Role |
 |---|---|
-| [manifest.yaml](manifest.yaml) | Contrat : secrets IMAP, env (alias, label, max, spool), code, skill, routine |
-| [decision.md](decision.md) | Révision IMAP (D13) — OAuth rétrogradé plan B (refresh expiré 7j Testing) |
-| [skill.md](skill.md) | Skill `gmail-poll` (procédure poller + marquage) |
-| [routine.yaml](routine.yaml) | Routine `email-poll` (cron, prompt complet activé M2.6) |
-| [code/imap_poll.py](code/imap_poll.py) | Poller déterministe (login, EXAMINE, X-GM-RAW/THRID, RFC822, spool, exit 0/2/3) |
-| [code/imap_mark_done.py](code/imap_mark_done.py) | Marquage : crée le label si absent, COPY + \Deleted + UID EXPUNGE, skip si déjà labelisé |
-| [soul-addendum.md](soul-addendum.md) | Refus : jamais d'envoi, jamais d'autres alias, jamais de mot de passe cité |
-| [tests/test.sh](tests/test.sh) | Contrat + unitaires (fixtures RFC822, sans réseau) + intégration réelle readonly si creds |
+| [manifest.yaml](manifest.yaml) | Contract: IMAP secrets, env (alias, label, max, spool), code, skill, routine |
+| [decision.md](decision.md) | IMAP revision (D13) — OAuth demoted to plan B (refresh expired every 7d in Testing) |
+| [skill.md](skill.md) | Skill `gmail-poll` (poller procedure + marking) |
+| [routine.yaml](routine.yaml) | Routine `email-poll` (cron, full prompt activated M2.6) |
+| [code/imap_poll.py](code/imap_poll.py) | Deterministic poller (login, EXAMINE, X-GM-RAW/THRID, RFC822, spool, exit 0/2/3) |
+| [code/imap_mark_done.py](code/imap_mark_done.py) | Marking: creates the label if missing, COPY + \Deleted + UID EXPUNGE, skips if already labeled |
+| [soul-addendum.md](soul-addendum.md) | Refusals: never any sending, never other aliases, never quoting the password |
+| [tests/test.sh](tests/test.sh) | Contract + unit tests (RFC822 fixtures, no network) + real readonly integration if creds |
 
-## Secrets requis (dans `HermesConfig/clients/<slug>/client.env`, 600)
+## Required secrets (in `HermesConfig/clients/<slug>/client.env`, 600)
 
-| Variable | Rôle |
+| Variable | Role |
 |---|---|
-| `VPS_GMAIL_RECEPTION_IMAP_ADRESS` | Adresse de la boîte (`REDACTED_EMAIL` — orthographe conservée) |
-| `VPS_GMAIL_RECEPTION_IMAP_MDP` | App password IMAP (2FA Gmail requise ; IMAP activé — vérifié live 01/09) |
+| `VPS_GMAIL_RECEPTION_IMAP_ADRESS` | Mailbox address (`REDACTED_EMAIL` — spelling kept as is) |
+| `VPS_GMAIL_RECEPTION_IMAP_MDP` | IMAP app password (Gmail 2FA required; IMAP enabled — verified live 01/09) |
 
-Env non secrètes : `GMAIL_ALIAS_TAG=+AREV`, `GMAIL_LABEL_DONE=ia-traite`,
+Non-secret env: `GMAIL_ALIAS_TAG=+AREV`, `GMAIL_LABEL_DONE=ia-traite`,
 `GMAIL_MAX_THREADS=5`, `GMAIL_SPOOL_DIR`, `GMAIL_NEWER_THAN_DAYS=90`.
 
-Plan B : OAuth API (`scripts/gmail-oauth-setup.sh`) — refresh expiré 7j en
-mode Testing sans vérification d'app.
+Plan B: OAuth API (`scripts/gmail-oauth-setup.sh`) — refresh expires every
+7d in Testing mode without app verification.
 
-## Coûts / quotas
+## Costs / quotas
 
-IMAP : gratuit, polling 10 min largement sous les limites. Confidentialité :
-boîte contrôlée par Redouane (D4 note).
+IMAP: free, 10-min polling well below the limits. Privacy:
+mailbox controlled by Redouane (D4 note).
 
-## Historique
+## History
 
-- 2026-09-01 : M2.1 initial (OAuth) révisé — **D13 : bascule IMAP app
-  password** (creds existants, stabilité, parsing déterministe) ; modules
-  OAuth retirés (historique git), helper conservé comme plan B.
+- 2026-09-01: original M2.1 (OAuth) revised — **D13: switch to IMAP app
+  password** (existing creds, stability, deterministic parsing); OAuth
+  modules removed (git history), helper kept as plan B.

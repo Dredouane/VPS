@@ -1,50 +1,50 @@
-# Capability rag-supabase (C5) — pilote HermesCapabilities
+# Capability rag-supabase (C5) — HermesCapabilities pilot
 
-**Type** : `natif` · **Statut** : contrat M1 validé — implémentation M2
+**Type**: `native` · **Status**: M1 contract validated — M2 implementation
 
-Indexe les documents métier du client (texte extrait des emails/OCR) dans
-Supabase pgvector et permet la recherche par similarité (RAG), via le MCP
-`supabase` natif de Hermes. Clé d'accès limitée par RLS/RPC — jamais la
+Indexes the client's business documents (text extracted from emails/OCR)
+into Supabase pgvector and enables similarity search (RAG), via the Hermes
+native `supabase` MCP. Access key limited by RLS/RPC — never the
 service key.
 
-## Composants
+## Components
 
-| Fichier | Rôle |
+| File | Role |
 |---|---|
-| [manifest.yaml](manifest.yaml) | Contrat : secrets `SUPABASE_URL` + `SUPABASE_RPC_KEY`, MCP `supabase`, skill `rag-search` |
-| [decision.md](decision.md) | Analyse natif/mix/sidecar (MCP catalog vérifié 30/08 v0.20.6) |
-| [skill.md](skill.md) | Skill `rag-search` (recherche par similarité, RPC génériques) |
-| [mcp.json](mcp.json) | Config MCP supabase (secrets par référence) |
-| [soul-addendum.md](soul-addendum.md) | Clauses sait/peut/refuse/escalade |
-| [tests/test.sh](tests/test.sh) | Contrat hérité TEMPLATE + checks C5 + intégration VPS |
+| [manifest.yaml](manifest.yaml) | Contract: secrets `SUPABASE_URL` + `SUPABASE_RPC_KEY`, MCP `supabase`, skill `rag-search` |
+| [decision.md](decision.md) | Native/mix/sidecar analysis (MCP catalog checked 08/30 v0.20.6) |
+| [skill.md](skill.md) | Skill `rag-search` (similarity search, generic RPCs) |
+| [mcp.json](mcp.json) | MCP supabase config (secrets by reference) |
+| [soul-addendum.md](soul-addendum.md) | knows/can-do/refuse/escalate clauses |
+| [tests/test.sh](tests/test.sh) | Contract inherited from TEMPLATE + C5 checks + VPS integration |
 
-## Secrets requis (dans `HermesConfig/clients/<slug>/client.env`, 600)
+## Required secrets (in `HermesConfig/clients/<slug>/client.env`, 600)
 
-| Variable | Rôle |
+| Variable | Role |
 |---|---|
-| `SUPABASE_URL` | URL du projet Supabase du client |
-| `SUPABASE_RPC_KEY` | Clé du rôle capability (RLS + EXECUTE sur `rpc_cap_*`) — **jamais la service key** |
+| `SUPABASE_URL` | URL of the client's Supabase project |
+| `SUPABASE_RPC_KEY` | Key of the capability role (RLS + EXECUTE on `rpc_cap_*`) — **never the service key** |
 
-## À faire en M2 (implémentation)
+## To do in M2 (implementation)
 
-> Design complet du pipeline : [`../../PIPELINE_EMAIL_AREV.md`](../../PIPELINE_EMAIL_AREV.md)
-> · Schéma/RPC/RLS : [`../../sql/arev/`](../../sql/arev/) (source de vérité, D9)
+> Full pipeline design: [`../../PIPELINE_EMAIL_AREV.md`](../../PIPELINE_EMAIL_AREV.md)
+> · Schema/RPC/RLS: [`../../sql/arev/`](../../sql/arev/) (source of truth, D9)
 
-1. Supabase : créer le schéma `cap_arev` (table `documents` + pgvector),
-   le rôle capability (RLS), les RPC génériques `rpc_cap_doc_search|doc_upsert` (+ doc_delete à ajouter si besoin)
-   — projet TEST d'abord, puis prod client.
-2. Valider le wiring MCP sur `hermes-arev-pro` : `hermes mcp install supabase`
-   + env (émuler `capability-attach.sh arev rag-supabase --dry-run` puis réel).
-3. Valider l'emplacement/chargement de la skill custom (`data/skills/`).
-4. Tests d'intégration VPS : upsert + search + delete sur le projet TEST.
-5. Attacher à `arev` (état : `instances/arev/capabilities.yaml`), vérifier
-   SOUL.md mergé, gateway reconnecté et sain.
+1. Supabase: create the `cap_arev` schema (`documents` table + pgvector),
+   the capability role (RLS), the generic RPCs `rpc_cap_doc_search|doc_upsert` (+ doc_delete to add if needed)
+   — TEST project first, then client prod.
+2. Validate the MCP wiring on `hermes-arev-pro`: `hermes mcp install supabase`
+   + env (emulate `capability-attach.sh arev rag-supabase --dry-run` then real).
+3. Validate the location/loading of the custom skill (`data/skills/`).
+4. VPS integration tests: upsert + search + delete on the TEST project.
+5. Attach to `arev` (state: `instances/arev/capabilities.yaml`), check the
+   SOUL.md is merged, gateway reconnected and healthy.
 
-## Coûts / quotas
+## Costs / quotas
 
-Aucun coût direct C5 (Supabase existant). Les coûts d'embeddings sont portés
-par C4 (`rag-embeddings`).
+No direct C5 cost (existing Supabase). Embedding costs are carried
+by C4 (`rag-embeddings`).
 
-## Historique
+## History
 
-- 2026-08-30 : création du contrat (M1, capability pilote)
+- 2026-08-30: contract creation (M1, pilot capability)

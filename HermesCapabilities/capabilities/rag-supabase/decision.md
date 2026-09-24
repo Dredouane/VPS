@@ -1,46 +1,46 @@
-# Decision — Capability rag-supabase (C5, pilote)
+# Decision — Capability rag-supabase (C5, pilot)
 
-> Règle d'ordre : **NATIF > MIX > SIDECAR** (ARCHITECTURE.md §2).
+> Order of rule: **NATIVE > MIX > SIDECAR** (ARCHITECTURE.md §2).
 
-## Besoin
+## Need
 
-Indexer des documents métier (texte extrait des emails/OCR) dans un store
-vectoriel et permettre à l'agent de faire des recherches par similarité —
-base du RAG client. La DB cible est **Supabase** (déjà en place côté client,
-webapp CRUD desservie par le même projet).
+Index business documents (text extracted from emails/OCR) into a vector
+store and let the agent run similarity searches — basis of the client RAG.
+The target DB is **Supabase** (already in place on the client side,
+CRUD webapp served by the same project).
 
-## Options évaluées
+## Options evaluated
 
-| Option | Disponibilité vérifiée | Verdict |
+| Option | Verified availability | Verdict |
 |---|---|---|
-| **Natif** : MCP `supabase` du catalogue Hermes + pgvector + RPC/RLS | ✅ `hermes mcp catalog` (VPS, 30/08/2026, v0.20.6) : `supabase — Database, auth, and storage from your Supabase projects` | ✅ **retenu** |
-| Mix : API PostgREST pilotée par skill | Disponible mais redondant avec le MCP | ❌ |
-| Sidecar : worker Python embeddings+save | Code custom à maintenir, inutile ici | ❌ |
+| **Native**: Hermes catalog MCP `supabase` + pgvector + RPC/RLS | ✅ `hermes mcp catalog` (VPS, 08/30/2026, v0.20.6): `supabase — Database, auth, and storage from your Supabase projects` | ✅ **kept** |
+| Mix: PostgREST API driven by skill | Available but redundant with the MCP | ❌ |
+| Sidecar: Python worker embeddings+save | Custom code to maintain, useless here | ❌ |
 
-## Décision
+## Decision
 
-**NATIF** — le MCP `supabase` du catalogue couvre l'accès DB. La sécurité est
-assurée par le modèle d'accès :
+**NATIVE** — the `supabase` MCP of the catalog covers DB access. Security is
+provided by the access model:
 
-- Clé **limitée** (`SUPABASE_RPC_KEY`) = rôle Postgres dédié capability, avec
-  RLS + droits `EXECUTE` sur les RPC génériques `rpc_cap_*` uniquement. **Jamais
-  la service key** (full-access).
-- Schéma/pgvector dédié par client (`cap_<slug>`), table `documents`
+- **Limited** key (`SUPABASE_RPC_KEY`) = dedicated Postgres role for the
+  capability, with RLS + `EXECUTE` rights on the generic RPCs `rpc_cap_*` only. **Never
+  the service key** (full-access).
+- Dedicated schema/pgvector per client (`cap_<slug>`), `documents` table
   (`id, client_id, source, title, content, embedding vector, metadata jsonb,
   created_at`).
-- RPC exposées (M2, à créer côté Supabase) :
-  - `rpc_cap_doc_search(slug, secret, query_embedding, match_count)` → similarité
+- Exposed RPCs (M2, to be created on the Supabase side):
+  - `rpc_cap_doc_search(slug, secret, query_embedding, match_count)` → similarity
   - `rpc_cap_doc_upsert(slug, secret, kind, message_id, content, embedding, …)`
-  - `rpc_cap_doc_delete` (à ajouter si besoin — hors scope M2)
-- Embeddings : hors périmètre de C5 — fournis par la capability
-  `rag-embeddings` (C4, mix : API Gemini/OpenRouter). DeepSeek n'en fournit
-  pas.
-- Plan B si le MCP catalogue disparaît : basculer C5 en **mix** (skill →
-  PostgREST) sans changer le manifest côté client (secrets inchangés), ou
-  MCP `neon`/`prisma-postgres` (catalog) si migration DB.
+  - `rpc_cap_doc_delete` (to add if needed — outside M2 scope)
+- Embeddings: outside C5's scope — provided by the
+  `rag-embeddings` capability (C4, mix: Gemini/OpenRouter API). DeepSeek does not
+  provide any.
+- Plan B if the MCP catalog entry disappears: switch C5 to **mix** (skill →
+  PostgREST) without changing the client-side manifest (secrets unchanged), or
+  `neon`/`prisma-postgres` MCP (catalog) if DB migration.
 
-## Re-vérification
+## Re-check
 
-| Date | Hermes | Verdict inchangé ? | Notes |
+| Date | Hermes | Verdict unchanged? | Notes |
 |---|---|---|---|
-| 2026-08-30 | v0.20.6 | — (décision initiale) | Catalog vérifié sur VPS |
+| 2026-08-30 | v0.20.6 | — (initial decision) | Catalog checked on VPS |

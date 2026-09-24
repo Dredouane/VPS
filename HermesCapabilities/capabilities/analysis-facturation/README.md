@@ -1,30 +1,30 @@
-# Capability analysis-facturation (C6) — expert facturation
+# Capability analysis-facturation (C6) — invoicing expert
 
-**Type** : `natif` · **Statut** : M2.5 — skills + RPC testées (smoke), wiring
-pipeline à M2.6
+**Type**: `native` · **Status**: M2.5 — skills + RPC tested (smoke), pipeline
+wiring at M2.6
 
-**Chain of Experts** (D2) : `expert-router` détermine les experts concernés
-par un email structuré ; `expert-facturation` assemble le contexte complet
-(mail + facture canonique pré-vérifiée par le check montant C3) et persiste
-la facture structurée dans Supabase (`rpc_cap_facture_upsert`, statut
-`extracted` — D6), disponible pour la webApp CRUD et les autres agents.
+**Chain of Experts** (D2): `expert-router` determines the experts concerned
+by a structured email; `expert-facturation` assembles the full context
+(mail + invoice pre-verified by the C3 amount check) and persists the
+structured invoice into Supabase (`rpc_cap_facture_upsert`, status
+`extracted` — D6), available for the webApp CRUD and the other agents.
 
-## Composants
+## Components
 
-| Fichier | Rôle |
+| File | Role |
 |---|---|
-| [manifest.yaml](manifest.yaml) | Contrat : skills router + expert, zéro code (RPC C5) |
-| [skill.md](skill.md) | `expert-router` — liste JSON stricte d'experts |
-| [skill2.md](skill2.md) | `expert-facturation` — matching + upsert + règles strictes |
-| [soul-addendum.md](soul-addendum.md) | Refus : pas de numero inventé, pas de statut humain touché |
-| [tests/test.sh](tests/test.sh) | Contrat (les RPC sont testées dans supabase-sql.sh --smoke) |
+| [manifest.yaml](manifest.yaml) | Contract: router + expert skills, zero code (C5 RPC) |
+| [skill.md](skill.md) | `expert-router` — strict JSON list of experts |
+| [skill2.md](skill2.md) | `expert-facturation` — matching + upsert + strict rules |
+| [soul-addendum.md](soul-addendum.md) | Refusals: no invented numero, no human status touched |
+| [tests/test.sh](tests/test.sh) | Contract (the RPCs are tested in supabase-sql.sh --smoke) |
 
-## Données produites
+## Data produced
 
-`cap_factures` : numero, fournisseur (+identifiant), dates, montants HT/TVA/
-TTC, statut `extracted` → validation humaine webApp (`valide`/`rejete`),
-confiance, liens email_message_id + document_id, payload audit `extraction`.
+`cap_factures`: numero, supplier (+identifier), dates, amounts net/VAT/
+gross, status `extracted` → human validation webApp (`valide`/`rejete`),
+confidence, links email_message_id + document_id, audit payload `extraction`.
 
-## Historique
+## History
 
-- 2026-09-01 : création (M2.5) — skills experts + wiring RPC génériques.
+- 2026-09-01: creation (M2.5) — expert skills + generic RPC wiring.

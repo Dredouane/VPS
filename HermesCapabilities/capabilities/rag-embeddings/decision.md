@@ -1,30 +1,30 @@
 # Decision — Capability rag-embeddings (C4)
 
-> Règle d'ordre : **NATIF > MIX > SIDECAR** (ARCHITECTURE.md §2).
+> Order of rule: **NATIVE > MIX > SIDECAR** (ARCHITECTURE.md §2).
 
-## Besoin
+## Need
 
-Générer les vecteurs 768d des contenus à indexer (mails nouveaux, OCR PJ)
-pour le RAG — modèle FIGÉ (D5 : changer = réindexer tout).
+Generate the 768d vectors of the contents to index (new mails, attachment
+OCR) for the RAG — FROZEN model (D5: changing = reindex everything).
 
-## Options évaluées
+## Options evaluated
 
 | Option | Verdict |
 |---|---|
-| **Mix** : Gemini `gemini-embedding-001` (768d) via API stdlib — clé SUREN existante | ✅ **retenu** |
-| OpenAI embeddings (1536d) | ❌ nouvelle clé + dimension ≠ schéma actuel |
-| Embeddings locaux (Ollama) | ❌ brique de plus sur le VPS |
-| DeepSeek | ❌ n'expose pas d'API embeddings |
+| **Mix**: Gemini `gemini-embedding-001` (768d) via stdlib API — existing SUREN key | ✅ **kept** |
+| OpenAI embeddings (1536d) | ❌ new key + dimension ≠ current schema |
+| Local embeddings (Ollama) | ❌ one more piece on the VPS |
+| DeepSeek | ❌ does not expose an embeddings API |
 
-## Décision
+## Decision
 
-**MIX** — `embed_gemini.py` (stdlib) : `embedContent` avec dimension
-vérifiée (768) et troncature 6000 chars. L'upsert passe par les RPC
-génériques C5. Plan B si Google retire le modèle : ré-évaluer OpenAI
-(migration = réindexation complète, D5).
+**MIX** — `embed_gemini.py` (stdlib): `embedContent` with dimension
+checked (768) and 6000-char truncation. The upsert goes through the
+generic C5 RPCs. Plan B if Google removes the model: re-evaluate OpenAI
+(migration = full reindexation, D5).
 
-## Re-vérification
+## Re-check
 
-| Date | Hermes | Verdict inchangé ? | Notes |
+| Date | Hermes | Verdict unchanged? | Notes |
 |---|---|---|---|
-| 2026-09-01 | v0.20.6 | — (décision initiale) | intégration réelle 768d vérifiée |
+| 2026-09-01 | v0.20.6 | — (initial decision) | real integration 768d verified |

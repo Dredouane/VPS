@@ -1,33 +1,33 @@
 # Capability TEMPLATE
 
-**Type** : natif / mix / sidecar (voir [decision.md](decision.md))
+**Type**: native / mix / sidecar (see [decision.md](decision.md))
 
-## Compétence métier
+## Business competency
 
-Une phrase : ce que l'agent sait faire grâce à cette capability.
+One sentence: what the agent can do thanks to this capability.
 
-## Composants
+## Components
 
-| Fichier | Rôle |
+| File | Role |
 |---|---|
-| [manifest.yaml](manifest.yaml) | Contrat (secrets, env, mcp, skills, routines) |
-| [decision.md](decision.md) | Analyse natif/mix/sidecar + re-vérifications |
-| [skill.md](skill.md) | Skill Hermes (si manifest.skills non vide) |
-| [mcp.json](mcp.json) | Config MCP (si manifest.mcp non vide) |
-| [routine.yaml](routine.yaml) | Routines cron (si manifest.routines non vide) |
-| [soul-addendum.md](soul-addendum.md) | Clauses mergées dans le SOUL.md client |
-| [tests/test.sh](tests/test.sh) | Tests unitaires |
+| [manifest.yaml](manifest.yaml) | Contract (secrets, env, mcp, skills, routines) |
+| [decision.md](decision.md) | Native/mix/sidecar analysis + re-checks |
+| [skill.md](skill.md) | Hermes skill (if manifest.skills is not empty) |
+| [mcp.json](mcp.json) | MCP config (if manifest.mcp is not empty) |
+| [routine.yaml](routine.yaml) | Cron routines (if manifest.routines is not empty) |
+| [soul-addendum.md](soul-addendum.md) | Clauses merged into the client SOUL.md |
+| [tests/test.sh](tests/test.sh) | Unit tests |
 
-## Secrets requis (noms — valeurs dans `clients/<slug>/client.env`, 600)
+## Required secrets (names — values in `clients/<slug>/client.env`, 600)
 
-| Variable | Rôle | Où l'obtenir |
+| Variable | Role | Where to get it |
 |---|---|---|
 | | | |
 
-## Coûts / quotas
+## Costs / quotas
 
-Documenter tout appel API payant (OCR, embeddings…) et son estimation.
+Document every paid API call (OCR, embeddings…) and its estimate.
 
-## Historique
+## History
 
-- 2026-08-30 : création (TEMPLATE)
+- 2026-08-30: creation (TEMPLATE)

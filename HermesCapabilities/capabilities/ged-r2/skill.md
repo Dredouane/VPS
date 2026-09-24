@@ -1,34 +1,35 @@
 ---
 name: ged-archive
 description: >-
-  Archivage R2 des fichiers bruts email : lance ged_save.py sur le dossier
-  thread du spool après l'extraction (slug = sous-dossier client). Copie de
-  référence des documents bruts — à exécuter systématiquement en fin de
-  polling réussi.
+  R2 archiving of raw email files: runs ged_save.py on the spool thread
+  folder after extraction (slug = client subfolder). Reference copy of
+  raw documents — to run systematically at the end of a successful
+  polling.
 ---
 
 # Skill ged-archive
 
-## Rôle
+## Role
 
-Archiver les fichiers bruts de chaque email traité vers la GED R2
-(clé `<prefix>/<slug>/emails/<thread_id>/…`) — copie de référence avant RAG.
+Archive the raw files of each processed email to the R2 GED
+(key `<prefix>/<slug>/emails/<thread_id>/…`) — reference copy before RAG.
 
-## Procédure
+## Procedure
 
-1. Après le poll réussi (imap_poll) et AVANT le marquage `ia-traite` :
+1. After the successful poll (imap_poll) and BEFORE the `ia-traite`
+   marking:
 
 ```bash
 python3 /opt/data/code/ged-r2/ged_save.py /opt/data/spool/gmail/threads/<thread_id>
 ```
 
-2. Vérifier la sortie JSON (`count` = nb de fichiers uploadés, `errors` vide).
-   Un échec d'archivage **n'interrompt pas** le pipeline : l'incident est
-   consigné dans `pipeline_runs` (cf. soul-addendum).
+2. Check the JSON output (`count` = number of uploaded files, empty
+   `errors`). An archiving failure **does not interrupt** the pipeline: the
+   incident is recorded in `pipeline_runs` (cf. soul-addendum).
 
-## Limites
+## Limits
 
-- Clé R2 scopée au slug (`CLIENT_SLUG`) — jamais d'écriture hors
+- R2 key scoped to the slug (`CLIENT_SLUG`) — never write outside
   `<prefix>/<slug>/…`.
-- `delete` réservé au nettoyage de tests (`_hermes-test/`).
-- Clés R2 uniquement via l'environnement.
+- `delete` reserved for test cleanup (`_hermes-test/`).
+- R2 keys via the environment only.

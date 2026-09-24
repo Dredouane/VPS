@@ -1,41 +1,41 @@
-# 📦 Installation — Documentation technique du VPS
+# 📦 Installation — VPS technical documentation
 
-Ce dossier contient toute la documentation technique et les scripts liés à la **mise en place, la sécurisation et l'exploitation** du VPS Contabo.
+This folder contains all the technical documentation and scripts related to the **setup, securing and operation** of the Contabo VPS.
 
-## Contenu
+## Contents
 
-| Fichier | Description |
+| File | Description |
 |---|---|
-| `VPS_HARDENING_PLAN_FINAL.md` | Plan de blindage complet du VPS (13 sections) — le document source de référence du durcissement |
-| `DOCUMENTATION_VPS.md` | Documentation globale post-installation : accès, utilisateurs, sécurité, flotte d'agents Hermes, TO DO |
-| `SYNCTHING_OBSIDIAN.md` | Guide d'exploitation Syncthing & Obsidian : devices, folder, tunnel SSH, sauvegarde |
-| `RAPPORT_AUDIT_2026-08-30.md` | Rapport d'audit de sécurité (checkpoints vérifiés, tests dynamiques) |
-| `spawn-hermes.sh` | Script de déploiement des agents Hermes Dockerisés (flotte) |
+| `VPS_HARDENING_PLAN_FINAL.md` | Complete hardening plan for the VPS (13 sections) — the source-of-truth hardening document |
+| `DOCUMENTATION_VPS.md` | Overall post-installation documentation: access, users, security, Hermes agent fleet, TO DO |
+| `SYNCTHING_OBSIDIAN.md` | Syncthing & Obsidian operations guide: devices, folder, SSH tunnel, backup |
+| `RAPPORT_AUDIT_2026-08-30.md` | Security audit report (verified checkpoints, dynamic tests) |
+| `spawn-hermes.sh` | Deployment script for Dockerized Hermes agents (fleet) |
 
-## Contexte
+## Context
 
-- **Serveur** : `$VPS_HOSTNAME` — Ubuntu 22.04 LTS — `$VPS_IP`
-- **Accès SSH** : `ssh nemo` (admin@$VPS_SSH_PORT, clé `$VPS_SSH_KEY`)
-- **Repo GitHub** : [Dredouane/VPS](https://github.com/Dredouane/VPS) (privé)
+- **Server**: `$VPS_HOSTNAME` — Ubuntu 22.04 LTS — `$VPS_IP`
+- **SSH access**: `ssh nemo` (admin@$VPS_SSH_PORT, key `$VPS_SSH_KEY`)
+- **GitHub repo**: [Dredouane/VPS](https://github.com/Dredouane/VPS) (private)
 
-> Les valeurs ci-dessus (`$VPS_*`, `$SOURCE_IP`…) sont de simples variables
-> d'environnement chargées automatiquement depuis votre bloc
-> "VPS infrastructure identity" de `~/.bashrc` — voir
-> [`LOCAL_SETUP.md`](../LOCAL_SETUP.md). Copier-coller les commandes de ce
-> dossier fonctionne tel quel dans un terminal où ces variables sont définies.
+> The values above (`$VPS_*`, `$SOURCE_IP`…) are mere environment
+> variables loaded automatically from the "VPS infrastructure identity" block
+> of your `~/.bashrc` — see
+> [`LOCAL_SETUP.md`](../LOCAL_SETUP.md). Copy-pasting the commands in this
+> folder works as-is in a terminal where these variables are defined.
 
-## Ordre de lecture recommandé
+## Recommended reading order
 
-1. `VPS_HARDENING_PLAN_FINAL.md` — comprendre le durcissement appliqué
-2. `DOCUMENTATION_VPS.md` — état final du système
-3. `SYNCTHING_OBSIDIAN.md` — gestion de la synchro du vault
-4. `RAPPORT_AUDIT_2026-08-30.md` — garanties de sécurité vérifiées
+1. `VPS_HARDENING_PLAN_FINAL.md` — understand the applied hardening
+2. `DOCUMENTATION_VPS.md` — final state of the system
+3. `SYNCTHING_OBSIDIAN.md` — vault sync management
+4. `RAPPORT_AUDIT_2026-08-30.md` — verified security guarantees
 
 ## Scripts
 
-Le fichier `spawn-hermes.sh` est le script de référence pour déployer un agent Hermes Dockerisé :
+The file `spawn-hermes.sh` is the reference script for deploying a Dockerized Hermes agent:
 ```bash
-# Sur le VPS (en root) :
+# On the VPS (as root):
 cd /home/admin/hermes-fleet
-./spawn-hermes.sh <nom_agent> "<telegram_bot_token>"
+./spawn-hermes.sh <agent_name> "<telegram_bot_token>"
 ```

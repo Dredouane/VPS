@@ -1,41 +1,41 @@
 ---
 name: gmail-poll
 description: >-
-  Poller email de l'agent : lance le module déterministe imap_poll.py pour
-  récupérer les threads Gmail non traités de l'alias client (+AREV) via IMAP
-  (app password) et les exporter vers le spool (threads + PJ). Exécuté par la
-  routine email-poll (cron 8h-19h) ou à la demande. Utiliser quand il faut
-  traiter les nouveaux emails reçus.
+  Email poller of the agent: runs the deterministic module imap_poll.py to
+  fetch the client alias's (+AREV) unprocessed Gmail threads via IMAP
+  (app password) and export them to the spool (threads + attachments). Run by
+  the email-poll routine (cron 8am-7pm) or on demand. Use when the new
+  received emails have to be processed.
 ---
 
 # Skill gmail-poll
 
-## Rôle
+## Role
 
-Collecter les nouveaux emails professionnels de l'alias client et préparer le
-travail du pipeline (thread-parser → OCR → RAG → experts).
+Collect the new professional emails of the client alias and prepare the
+pipeline's work (thread-parser → OCR → RAG → experts).
 
-## Procédure
+## Procedure
 
-1. Exécuter le poller déterministe (jamais d'IMAP ad-hoc dans une session) :
+1. Run the deterministic poller (never ad-hoc IMAP in a session):
 
 ```bash
 python3 /opt/data/code/email-gmail/imap_poll.py
 ```
 
-2. Lire la sortie stdout (`{"count", "thread_ids", "spool_dir"}`) :
-   - `count == 0` → rien à faire, terminer.
-   - Pour chaque thread : lire
-     `<spool_dir>/threads/<thread_id>/thread.json` puis suivre le pipeline
-     (C2 thread-parser — PIPELINE_EMAIL_AREV.md §2). Les PJ sont des
-     **fichiers spool** (champ `path` des attachments).
-3. Marquage `ia-traite` UNIQUEMENT en fin de pipeline réussie :
+2. Read the stdout output (`{"count", "thread_ids", "spool_dir"}`):
+   - `count == 0` → nothing to do, finish.
+   - For each thread: read
+     `<spool_dir>/threads/<thread_id>/thread.json` then follow the pipeline
+     (C2 thread-parser — PIPELINE_EMAIL_AREV.md §2). Attachments are
+     **spool files** (`path` field of the attachments).
+3. `ia-traite` marking ONLY at the end of a successful pipeline:
    `python3 /opt/data/code/email-gmail/imap_mark_done.py <uid> …`
-   (déplacement vers label, idempotent — skip si déjà labelisé).
+   (move to label, idempotent — skips if already labeled).
 
-## Limites
+## Limits
 
-- Max 5 threads par run (D12) — un pic d'emails s'étale sur plusieurs runs.
-- Lecture = EXAMINE + BODY.PEEK (jamais de flag \Seen posé en lecture) ;
-  le mode écriture n'est utilisé que par `imap_mark_done.py`.
-- Ne JAMAIS passer le mot de passe IMAP sur la ligne de commande (env only).
+- Max 5 threads per run (D12) — an email spike spreads over several runs.
+- Reading = EXAMINE + BODY.PEEK (never the \Seen flag set on reading);
+  write mode is used only by `imap_mark_done.py`.
+- NEVER pass the IMAP password on the command line (env only).

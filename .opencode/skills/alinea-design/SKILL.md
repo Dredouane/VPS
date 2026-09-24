@@ -1,101 +1,101 @@
 ---
 name: alinea-design
-description: Guide design de la webapp Alinea (Next.js + shadcn + Tailwind v4) — tokens, shells de page, états, tables, badges de statut, responsive. Use when the user says "design pass", "revoir le design", "alinea-design", "design system", or when creating/modifying pages or components in Alinea — to keep the UI sobre, cohérente et revisable sans casser.
+description: Design guide for the Alinea webapp (Next.js + shadcn + Tailwind v4) — tokens, page shells, states, tables, status badges, responsive. Use when the user says "design pass", "revoir le design", "alinea-design", "design system", or when creating/modifying pages or components in Alinea — to keep the UI sober, consistent and reviewable without breaking it.
 ---
 
-# 🎨 alinea-design — Design system Alinea
+# 🎨 alinea-design — Alinea design system
 
-Style : **sobre, pro, dense**. Backoffice clients PME (desktop prioritaire,
-mobile supporté). Ne jamais surcharger : couleurs = tokens uniquement,
-pas de gradients, pas d'ombres fortes.
+Style: **sober, professional, dense**. SME client backoffice (desktop first,
+mobile supported). Never overload: colors = tokens only,
+no gradients, no strong shadows.
 
-## 1. Où vit quoi (règle d'or)
+## 1. Where things live (golden rule)
 
-| Type | Emplacement | Exemple |
+| Type | Location | Example |
 |---|---|---|
-| Tokens + primitives génériques | `Alinea/packages/ui` | button, card, badge, page-header, empty-state, skeleton |
-| Composants métier neutres | `packages/ui` (mapper l'état → variante) | statut-facture-badge |
-| Logique de page + queries TanStack | `Alinea/apps/web/src/app/(app)/*` | dashboard, factures, chains |
+| Tokens + generic primitives | `Alinea/packages/ui` | button, card, badge, page-header, empty-state, skeleton |
+| Neutral business components | `packages/ui` (map state → variant) | statut-facture-badge |
+| Page logic + TanStack queries | `Alinea/apps/web/src/app/(app)/*` | dashboard, factures, chains |
 
-Une refonte visuelle = modifier `packages/ui` (tokens + primitives) —
-les pages ne changent pas. Inversement : une page ne contient JAMAIS de
-couleur/tailles custom hors tokens (`text-muted-foreground`, `bg-accent`…).
+A visual redesign = modify `packages/ui` (tokens + primitives) —
+the pages don't change. Conversely: a page NEVER contains custom
+colors/sizes outside tokens (`text-muted-foreground`, `bg-accent`…).
 
-## 2. Shells de page obligatoires
+## 2. Mandatory page shells
 
-- Toute page principale commence par `<PageHeader title description actions?>`
-  (titre `text-2xl font-semibold tracking-tight`, description `text-sm muted`).
-- Les filtres/actions secondaires vont dans `actions` (boutons `size="sm"`).
-- Contenu principal dans une `<Card className="py-0">` + `<CardContent className="px-0">`
-  pour les tables (bordures au fil de la carte, padding géré par les cellules).
+- Every main page starts with `<PageHeader title description actions?>`
+  (title `text-2xl font-semibold tracking-tight`, description `text-sm muted`).
+- Secondary filters/actions go in `actions` (buttons `size="sm"`).
+- Main content in a `<Card className="py-0">` + `<CardContent className="px-0">`
+  for tables (borders along the card edges, padding handled by cells).
 
-## 3. États (TANStack Query)
+## 3. States (TANStack Query)
 
-- **Loading** : skeletons (`Skeleton` ou `bg-accent animate-pulse`), jamais de
-  spinner plein écran. Dimensionner les skeletons comme le contenu final.
-- **Erreur** : `text-destructive text-sm` avec le message de l'enveloppe
-  contractuelle (`apiErrorMessage`), jamais de stack ni de code HTTP brut.
-- **Vide** : `<EmptyState icon title description>` (icône lucide discrète,
-  ronde `bg-muted`). Toujours expliquer POURQUOI c'est vide (ex : "apparaît
-  quand le pipeline traite les emails").
-- Wrapper utilitaire : `@/components/query-state` (apps).
+- **Loading**: skeletons (`Skeleton` or `bg-accent animate-pulse`), never a
+  full-screen spinner. Size the skeletons like the final content.
+- **Error**: `text-destructive text-sm` with the message from the contract
+  envelope (`apiErrorMessage`), never a stack or raw HTTP code.
+- **Empty**: `<EmptyState icon title description>` (discrete lucide icon,
+  round `bg-muted`). Always explain WHY it is empty (e.g. "appears
+  when the pipeline processes emails").
+- Utility wrapper: `@/components/query-state` (apps).
 
 ## 4. Tables
 
-- Rows **cliquables** quand un détail existe : `TableRow className="cursor-pointer"`
-  + `router.push` — avec une icône discrète en dernière colonne (`FileText`,
+- Rows **clickable** when a detail exists: `TableRow className="cursor-pointer"`
+  + `router.push` — with a discrete icon in the last column (`FileText`,
   `size-4 muted`).
-- Header row : `className="hover:bg-transparent"`, premier `th` en `pl-6`,
-  dernier `td` en `pr-6`.
-- Truncation : `max-w-** truncate` sur cellules texte long ; nombres en
+- Header row: `className="hover:bg-transparent"`, first `th` at `pl-6`,
+  last `td` at `pr-6`.
+- Truncation: `max-w-** truncate` on long text cells; numbers in
   `tabular-nums text-right`.
-- Pagination en footer de carte : `border-t px-6 py-3`, compte à gauche,
-  boutons `size="sm" variant="outline"` à droite, disabled aux bornes.
+- Pagination in the card footer: `border-t px-6 py-3`, count on the left,
+  `size="sm" variant="outline"` buttons on the right, disabled at bounds.
 
-## 5. Badges de statut (mapping unique)
+## 5. Status badges (single mapping)
 
-Statut métier → Badge (dans `packages/ui`, jamais dupliqué dans les pages) :
+Business status → Badge (in `packages/ui`, never duplicated in pages):
 
-| Statut | Variante |
+| Status | Variant |
 |---|---|
 | valide / processed / active | `success` |
 | extracted / received / suspended | `warning` |
 | rejete / error | `destructive` |
 | paye | `default` (primary) |
 | archive / inactif | `secondary` |
-| rôle neutre (nouveau/réponse/transfert) | `outline` / `secondary` / `default` |
+| neutral role (nouveau/réponse/transfert) | `outline` / `secondary` / `default` |
 
-## 6. Détails / vues composites
+## 6. Details / composite views
 
-- Grille `lg:grid-cols-3` : colonne étroite = metadata (Card), large = contenu.
-- Timeline (mailChain) : 1 Card par message, header = auteur + badge rôle +
-  date à droite (`text-xs muted`), contenu `whitespace-pre-line text-sm
-  leading-relaxed`, zone `max-h-80 overflow-y-auto` si long.
-- Fichiers/PJ : rangées bordées `px-3 py-2` (icône + nom truncate + bouton
-  `sm outline` "Ouvrir"). Bouton **disabled** si le brut est indisponible
-  (`metadata.r2_key` absent) + mention "(brut indisponible)".
+- Grid `lg:grid-cols-3`: narrow column = metadata (Card), wide = content.
+- Timeline (mailChain): 1 Card per message, header = author + role badge +
+  date on the right (`text-xs muted`), content `whitespace-pre-line text-sm
+  leading-relaxed`, `max-h-80 overflow-y-auto` area if long.
+- Files/attachments: bordered rows `px-3 py-2` (icon + truncated name +
+  `sm outline` "Open" button). Button **disabled** if the raw file is unavailable
+  (`metadata.r2_key` absent) + mention "(raw unavailable)".
 
-## 7. Responsive mobile
+## 7. Mobile responsive
 
-- Header : nav horizontale scrollable (`overflow-x-auto`), sidebar cachée
+- Header: horizontally scrollable nav (`overflow-x-auto`), sidebar hidden
   (`lg:` breakpoint).
-- Grilles : `sm:grid-cols-3` (KPI), `lg:grid-cols-3` (détails), gap-4.
-- Touch : targets ≥ 36px (`size="sm"` h-8 min), pas de hover-only.
+- Grids: `sm:grid-cols-3` (KPIs), `lg:grid-cols-3` (details), gap-4.
+- Touch: targets ≥ 36px (`size="sm"` h-8 min), no hover-only.
 
-## 8. Checklist design-review (avant commit)
+## 8. Design-review checklist (before commit)
 
-1. Chaque page a un PageHeader et un EmptyState ?
-2. Loading = skeletons dimensionnés ? Erreur = message contractuel ?
-3. Toutes les couleurs via tokens (zéro hex/rgb custom) ?
-4. Rows cliquables → cursor-pointer + icône discrète ?
-5. Statuts passent par les badges du package ui (pas de couleur inline) ?
-6. Mobile : nav scrollable, grilles empilées, targets ≥ 36px ?
-7. Aucune logique métier dans packages/ui (composants neutres uniquement) ?
+1. Do all pages have a PageHeader and an EmptyState?
+2. Loading = sized skeletons? Error = contractual message?
+3. All colors via tokens (zero custom hex/rgb)?
+4. Clickable rows → cursor-pointer + discrete icon?
+5. Statuses go through the ui package badges (no inline colors)?
+6. Mobile: scrollable nav, stacked grids, targets ≥ 36px?
+7. No business logic in packages/ui (neutral components only)?
 
-## 9. Interdits
+## 9. Forbidden
 
-- Gradients, ombres fortes (`shadow-lg`+), couleurs saturées hors tokens
-  success/warning/destructive.
-- Modals pour lire du contenu (préférer pages/routes) ; dialogs réservés aux
-  confirmations destructives (`confirm()` natif acceptable pour l'instant).
-- Couleurs par code statut écrites inline dans une page.
+- Gradients, strong shadows (`shadow-lg`+), saturated colors outside
+  success/warning/destructive tokens.
+- Modals for reading content (prefer pages/routes); dialogs reserved for
+  destructive confirmations (native `confirm()` acceptable for now).
+- Status-code colors written inline in a page.

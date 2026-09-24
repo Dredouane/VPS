@@ -1,29 +1,30 @@
-# Decision — Capability TEMPLATE (natif / mix / sidecar)
+# Decision — Capability TEMPLATE (native / mix / sidecar)
 
-> Chaque capability documente ici sa décision technique. Règle d'ordre :
-> **NATIF > MIX > SIDECAR** (voir `../../ARCHITECTURE.md` §2). La décision est
-> **re-vérifiée à chaque montée de version Hermes** (catalogue MCP, skills
-> bundlées) — reporter la version vérifiée ci-dessous.
+> Each capability documents its technical decision here. Order of rule:
+> **NATIVE > MIX > SIDECAR** (see `../../ARCHITECTURE.md` §2). The decision is
+> **re-checked at every Hermes version bump** (MCP catalog, bundled
+> skills) — report the checked version below.
 
-## Besoin
+## Need
 
-Décrire le besoin métier en une phrase.
+Describe the business need in one sentence.
 
-## Options évaluées
+## Options evaluated
 
-| Option | Disponibilité vérifiée (date, version Hermes) | Verdict |
+| Option | Verified availability (date, Hermes version) | Verdict |
 |---|---|---|
-| Natif (MCP catalogue / skill bundlée / routine) | | ✅ retenu / ❌ |
-| Mix (API externe pilotée par skill/routine Hermes) | | |
-| Sidecar (conteneur dédié) | | |
+| Native (MCP catalog / bundled skill / routine) | | ✅ kept / ❌ |
+| Mix (external API driven by Hermes skill/routine) | | |
+| Sidecar (dedicated container) | | |
 
-## Décision
+## Decision
 
-**NATIF** — justification en 2-3 lignes : pourquoi c'est suffisant, quels sont
-les limites connues, et quel est le plan B si la brique native disparaît.
+**NATIVE** — justification in 2-3 lines: why it is sufficient, what the
+known limitations are, and what the plan B is if the native component
+disappears.
 
-## Re-vérification
+## Re-check
 
-| Date | Hermes | Verdict inchangé ? | Notes |
+| Date | Hermes | Verdict unchanged? | Notes |
 |---|---|---|---|
-| 2026-08-30 | v0.20.6 | — (décision initiale) | |
+| 2026-08-30 | v0.20.6 | — (initial decision) | |

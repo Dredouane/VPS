@@ -1,31 +1,31 @@
-# Ticket AREV-109 — Detail Email : Refonte de la disposition des composants (Layout & Rendu)
+# Ticket AREV-109 — Email Detail: Redesign of the component layout (Layout & Rendering)
 
-- **Date** : 2026-09-09
-- **Référence spec** : `SPEC_Produit_Emails_Factures.md` §1.2 (la vision "Gmail augmenté")
-- **Scénarios NonReg** : C1, C2, C3
-- **Persona** : Salarie_Backoffice (principal) · Gerant_PME · Fateh_Ug
-- **Priorité** : Haute (P1)
-- **Type** : Refonte UX/UI / Qualité d'affichage
+- **Date**: 2026-09-09
+- **Spec reference**: `SPEC_Produit_Emails_Factures.md` §1.2 (the "augmented Gmail" vision)
+- **NonReg scenarios**: C1, C2, C3
+- **Persona**: Salarie_Backoffice (primary) · Gerant_PME · Fateh_Ug
+- **Priority**: High (P1)
+- **Type**: UX/UI redesign / Display quality
 
-## Description (le contrat)
-La page détail d'une conversation email (`/chains/[id]`) doit offrir une expérience de lecture fluide, sobre et professionnelle type "Gmail augmenté", et non un affichage brut de données de base de données.
+## Description (the contract)
+An email conversation detail page (`/chains/[id]`) must offer a smooth, sober and professional reading experience in the "augmented Gmail" style, not a raw display of database data.
 
-## État actuel
-1. **Cartes latérales redondantes** : La colonne de droite affiche deux cartes qui se répètent ("En résumé" ré-affiche `Factures liées: 2026-163`, suivi de la carte "Factures liées (1)" qui ré-affiche exactement la même facture).
-2. **En-tête sans structure** : Les adresses emails des participants sont affichées sous forme de texte brut non structuré (`REDACTED_EMAIL, REDACTED_EMAIL Dernier : 06/09/2026`).
-3. **Corps de mail non nettoyé** :
-   - Présence de balises brutes d'images alt (`[image: Titre : Mobile - Description : mobile-icon]`).
-   - En-têtes de transfert Outlook affichés en texte brut au milieu du corps (`*De :* MAHMOOD MOHSAN`, `*Envoyé :* lundi 30 mars...`).
-   - Signatures d'emails dupliquées et non repliées.
-4. **Vignette Pièce Jointe** : Noyée à l'intérieur du corps de mail au lieu d'être mise en valeur dans un composant/section d'attachement dédié.
+## Current state
+1. **Redundant side cards**: The right column shows two cards that repeat each other ("En résumé" [In summary] re-displays `Factures liées: 2026-163` [Linked invoices: 2026-163], followed by the "Factures liées (1)" [Linked invoices (1)] card which re-displays exactly the same invoice).
+2. **Unstructured header**: The participants' email addresses are displayed as unstructured plain text (`REDACTED_EMAIL, REDACTED_EMAIL Dernier : 06/09/2026` [Last: 06/09/2026]).
+3. **Uncleaned email body**:
+   - Raw image alt tags present (`[image: Titre : Mobile - Description : mobile-icon]` [image: Title: Mobile - Description: mobile-icon]).
+   - Outlook forwarding headers displayed as plain text in the middle of the body (`*De :* MAHMOOD MOHSAN` [From:], `*Envoyé :* lundi 30 mars...` [Sent: Monday, March 30...]).
+   - Duplicated, non-collapsed email signatures.
+4. **Attachment thumbnail**: Buried inside the email body instead of being highlighted in a dedicated attachment component/section.
 
-## État attendu
-- **Layout épuré** : Un fil principal clair à gauche (ou centré) et un panneau latéral synthétique à droite sans doublon.
-- **Masquage / Repliement** : Replier par défaut les citations de transferts ("De:", "Envoyé:") et les signatures répétitives.
-- **Nettoyage du texte** : Supprimer les rendus bruts de balises d'images cassées (`[image: Titre...]`).
-- **Composant Pièce Jointe** : Mettre en valeur la vignette PJ (nom, type PDF, taille, bouton Ouvrir) dans une zone dédiée de l'email.
+## Expected state
+- **Clean layout**: A clear main thread on the left (or centered) and a synthetic side panel on the right with no duplicate.
+- **Masking / Collapsing**: Collapse by default forward quotes ("From:", "Sent:") and repetitive signatures.
+- **Text cleanup**: Remove raw renderings of broken image tags (`[image: Titre...]`).
+- **Attachment component**: Highlight the attachment thumbnail (name, PDF type, size, Open button) in a dedicated area of the email.
 
-## Critères d'acceptation
-- [ ] Suppression des doublons de cartes dans le panneau latéral
-- [ ] Repliement / nettoyage des signatures et des en-têtes de transfert bruts
-- [ ] Mise en valeur propre de la vignette de pièce jointe PDF
+## Acceptance criteria
+- [ ] Duplicate cards removed from the side panel
+- [ ] Collapsing / cleanup of signatures and raw forwarding headers
+- [ ] Clean highlighting of the PDF attachment thumbnail

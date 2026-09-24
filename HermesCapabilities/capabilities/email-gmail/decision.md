@@ -1,40 +1,42 @@
 # Decision — Capability email-gmail (C1)
 
-> Règle d'ordre : **NATIF > MIX > SIDECAR** (ARCHITECTURE.md §2).
-> **Révision M2.1-bis (01/09)** : réception basée sur **IMAP app password**
-> (décision D13) — les modules OAuth API ont été remplacés.
+> Order of rule: **NATIVE > MIX > SIDECAR** (ARCHITECTURE.md §2).
+> **M2.1-bis revision (01/09)**: reception based on **IMAP app password**
+> (decision D13) — the OAuth API modules have been replaced.
 
-## Besoin
+## Need
 
-Recevoir les emails pro du client (alias `+AREV` d'une boîte contrôlée)
-et les exporter vers le spool (threads + PJ) — sans exposer l'agent à plus
-de scope que nécessaire, avec idempotence de traitement.
+Receive the client's professional emails (+AREV alias of a controlled
+mailbox) and export them to the spool (threads + attachments) — without
+exposing the agent to more scope than necessary, with idempotent
+processing.
 
-## Options évaluées
+## Options evaluated
 
-| Option | Vérifié | Verdict |
+| Option | Verified | Verdict |
 |---|---|---|
-| Natif : MCP Gmail catalogue / support email Hermes / `hermes webhook` | ❌ aucun (v0.20.6, 30-31/08 — webhook inutilisable headless) | ❌ |
-| Mix OAuth Gmail API | ⚠️ fonctionnel mais **refresh token expiré tous les 7 jours** pour une app Testing non vérifiée (politique Google) | ❌ rétrogradé en plan B |
-| **Mix IMAP app password** (`imaplib` stdlib) | ✅ **vérifié live 01/09** : login, X-GM-RAW, X-GM-THRID, X-GM-LABELS | ✅ **retenu** |
-| Sidecar worker | code séparé à maintenir | ❌ |
+| Native: MCP Gmail catalog / Hermes email support / `hermes webhook` | ❌ none (v0.20.6, 08/30-31 — webhook unusable headless) | ❌ |
+| Mix OAuth Gmail API | ⚠️ functional but **refresh token expires every 7 days** for an unverified Testing app (Google policy) | ❌ demoted to plan B |
+| **Mix IMAP app password** (`imaplib` stdlib) | ✅ **verified live 01/09**: login, X-GM-RAW, X-GM-THRID, X-GM-LABELS | ✅ **kept** |
+| Sidecar worker | separate code to maintain | ❌ |
 
-## Décision (révisée 01/09 — D13)
+## Decision (revised 01/09 — D13)
 
-**MIX** (IMAP app password — D13) — `imap_poll.py` (EXAMINE readonly, X-GM-RAW
-`to:+AREV -label:ia-traite newer_than:90d`, X-GM-THRID threading, parsing
-RFC822 via `email.parser` stdlib — **plus déterministe** que l'arbre MIME API)
-et `imap_mark_done.py` (déplacement vers label `[Gmail]/ia-traite` : COPY +
-\Deleted + UID EXPUNGE ciblé, skip si déjà labelisé). Filtre strict `+AREV`
-(D10). PJ en **fichiers spool** (décision 01/09) — pas de binaires dans le JSON.
+**MIX** (IMAP app password — D13) — `imap_poll.py` (readonly EXAMINE, X-GM-RAW
+`to:+AREV -label:ia-traite newer_than:90d`, X-GM-THRID threading, RFC822
+parsing via `email.parser` stdlib — **more deterministic** than the API MIME
+tree) and `imap_mark_done.py` (move to `[Gmail]/ia-traite` label: COPY +
+\Deleted + targeted UID EXPUNGE, skips if already labeled). Strict `+AREV`
+filter (D10). Attachments as **spool files** (01/09 decision) — no binaries
+in the JSON.
 
-**Plan B** : OAuth API (helper `gmail-oauth-setup.sh` conservé) — à considérer
-si app password révoqué ou après vérification Google de l'app (refresh stable).
-Les modules OAuth restent dans l'historique git.
+**Plan B**: OAuth API (helper `gmail-oauth-setup.sh` kept) — to consider
+if the app password is revoked or after Google verification of the app
+(stable refresh). The OAuth modules remain in the git history.
 
-## Re-vérification
+## Re-check
 
-| Date | Hermes | Verdict inchangé ? | Notes |
+| Date | Hermes | Verdict unchanged? | Notes |
 |---|---|---|---|
-| 2026-08-31 | v0.20.6 | — (initial : OAuth) | catalog + gateway + webhook vérifiés |
-| 2026-09-01 | v0.20.6 | ✅ IMAP | sonde live read-only (login/RAW/THRID/LABELS) |
+| 2026-08-31 | v0.20.6 | — (initial: OAuth) | catalog + gateway + webhook checked |
+| 2026-09-01 | v0.20.6 | ✅ IMAP | live read-only probe (login/RAW/THRID/LABELS) |

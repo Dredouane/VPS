@@ -1,47 +1,47 @@
-# Ticket AREV-105 — Détail d'une conversation : fil vertical « type Gmail » + pièces jointes
+# Ticket AREV-105 — Conversation detail: "Gmail-style" vertical thread + attachments
 
-- **Date** : 2026-09-08
-- **Référence spec** : `SPEC_Produit_Emails_Factures.md` §1.2 (fil Gmail)
-- **Scénarios NonReg** : C1, C2, A4
-- **Persona** : Salarie_Backoffice (principal) · Gerant_PME
-- **Priorité** : Haute
-- **Type** : Amélioration UX / refonte du détail conversation
+- **Date**: 2026-09-08
+- **Spec reference**: `SPEC_Produit_Emails_Factures.md` §1.2 (Gmail thread)
+- **NonReg scenarios**: C1, C2, A4
+- **Persona**: Salarie_Backoffice (primary) · Gerant_PME
+- **Priority**: High
+- **Type**: UX improvement / conversation detail redesign
 
-## Description (le contrat)
-Le détail d'une conversation s'affiche comme **une boîte mail familiale (Gmail)** : un fil de
-messages vertical dans l'ordre chronologique, lisible et pro. L'utilisateur reconnaît le
-pattern sans formation.
+## Description (the contract)
+A conversation's detail displays as **a familiar mailbox (Gmail)**: a vertical thread of
+messages in chronological order, readable and professional. The user recognizes the
+pattern without training.
 
-## État actuel
-Le détail (ex. sur le fil « Fwd: Facture situ MARS 26 ») affiche le corps bruts mélangés à des
-notes techniques internes (« Pas encore de résumé (classification branchée en M2.6-bis) »,
-champs Classification/Reçu le/Date meta vides, « Contenu extrait » jeté en bloc). Aucune
-présentation de fil Gmail.
+## Current state
+The detail (e.g. on the "Fwd: Facture situ MARS 26" thread) shows raw bodies mixed with internal
+technical notes ("Pas encore de résumé (classification branchée en M2.6-bis)" [No summary yet (classification wired in M2.6-bis)],
+empty Classification/Received/Meta date fields, "Contenu extrait" [Extracted content] dumped as one block). No
+Gmail-style thread presentation.
 
-## État attendu
-- Chaque email du fil = un **bloc distinct** : expéditeur (nom + avatar/initiale), date/heure,
-  corps mis en forme (sauts de ligne, pièges dans la signature masquée si possible), lecteur de
-  transferts (« Fwd: » affiché comme contenu transféré).
-- Les réponses s'**empilent dans l'ordre** du plus ancien au plus récent.
-- **Pièces jointes** = vignettes (nom, type, taille) cliquables qui ouvrent un **aperçu** (pas un
-  téléchargement d'office) ; absence d'aperçu → message aidant + téléchargement possible.
-- Les **notes techniques internes** (« M2.6-bis », explications de mécanisme) sont supprimées de
-  ce qui est montré à l'utilisateur.
-- Un bouton/rien de cassé : l'accès se fait depuis la liste conversations (TKT-101) et le retour
-  fonctionne (A4).
+## Expected state
+- Each email in the thread = a **distinct block**: sender (name + avatar/initial), date/time,
+  formatted body (line breaks, traps hidden in the signature masked if possible), reader for
+  forwarded messages ("Fwd:" displayed as forwarded content).
+- Replies **stack in order** from oldest to newest.
+- **Attachments** = clickable thumbnails (name, type, size) that open a **preview** (not a
+  forced download); no preview → helpful message + download still possible.
+- The **internal technical notes** ("M2.6-bis", mechanism explanations) are removed from
+  what is shown to the user.
+- A button/nothing broken: access is from the conversations list (TKT-101) and the back
+  navigation works (A4).
 
-## La "douleur" du persona
-L'opératrice de backoffice veut lire un échange comme dans sa boîte mail habituelle pour
-comprendre vite ; les blocs bruts et les phrases de roadmap la déroutent et lui font perdre
-confiance.
+## The persona's "pain"
+The backoffice operator wants to read an exchange like in her usual mailbox to
+understand quickly; raw blocks and roadmap phrases disorient her and cost her
+trust.
 
-## Critères d'acceptation
-- [ ] Le fil affiche les messages en blocs distincts ordonnés (Gmail-like)
-- [ ] Nom + avatar + date visibles sur chaque bloc ; transferts reconnaissables
-- [ ] Les pièces jointes s'ouvrent en aperçu (ou message aidant + téléchargement)
-- [ ] Aucune mention M2.6-bis / LLM / mécanisme dans l'UI
-- [ ] Accès depuis la liste + retour sans perte ; aucune erreur JS
+## Acceptance criteria
+- [ ] The thread displays messages as distinct ordered blocks (Gmail-like)
+- [ ] Name + avatar + date visible on each block; forwards recognizable
+- [ ] Attachments open in preview (or helpful message + download)
+- [ ] No M2.6-bis / LLM / mechanism mention in the UI
+- [ ] Access from the list + back navigation without loss; no JS errors
 
 ## Notes
-Construit après TKT-101 (liste). Versions suivantes : intégrer la classification/statuts réels
-(ils font l'objet du TKT-102 vocabulaire) et le panneau latéral + le chat (TKT-106/110).
+Built after TKT-101 (list). Next versions: integrate the real classification/statuses
+(covered by TKT-102 vocabulary) and the side panel + chat (TKT-106/110).

@@ -1,197 +1,197 @@
-# 🔐 Rapport d'Audit Sécurité — VPS Contabo `nemo`
+# 🔐 Security Audit Report — Contabo VPS `nemo`
 
-**Date** : 30/08/2026 | **Cible** : $VPS_IP ($VPS_HOSTNAME, Ubuntu 22.04 LTS, kernel 5.15.0-190)
-**Méthode** : Vérifications en lecture seule + tests dynamiques externes (aucune modification de configuration)
-**Référentiel** : `DOCUMENTATION_VPS.md` (état documenté du 30/08/2026)
-**Connexion audit** : alias `nemo` (port $VPS_SSH_PORT), clé `$VPS_SSH_KEY` — note : `id_ed25519` est protégé par passphrase et aucun agent SSH ne tournait sur la machine locale ; un `ssh-add` au boot de session WSL est recommandé (confort local, hors périmètre serveur).
+**Date**: 30/08/2026 | **Target**: $VPS_IP ($VPS_HOSTNAME, Ubuntu 22.04 LTS, kernel 5.15.0-190)
+**Method**: Read-only checks + external dynamic tests (no configuration modification)
+**Baseline**: `DOCUMENTATION_VPS.md` (documented state as of 30/08/2026)
+**Audit connection**: alias `nemo` (port $VPS_SSH_PORT), key `$VPS_SSH_KEY` — note: `id_ed25519` is passphrase-protected and no SSH agent was running on the local machine; an `ssh-add` at WSL session start is recommended (local comfort, outside server scope).
 
 ---
 
-## 1. 🟢 Checkpoints Validés (Conformes et sécurisés)
+## 1. 🟢 Validated Checkpoints (Compliant and secured)
 
-### 1.1 SSH & SSHD Hardening — ✅ CONFORME
-| Test | Résultat |
+### 1.1 SSH & SSHD Hardening — ✅ COMPLIANT
+| Test | Result |
 |---|---|
-| Port d'écoute | **$VPS_SSH_PORT uniquement** (`0.0.0.0:$VPS_SSH_PORT` + `[::]:$VPS_SSH_PORT`), port 22 non écouté et **filtré de l'extérieur** |
-| `PermitRootLogin` | `no` (test dynamique : `ssh root@` → `Permission denied (publickey)`) |
-| `PasswordAuthentication` / `KbdInteractive` | `no` / `no` (test dynamique avec `PreferredAuthentications=password` → rejeté, le serveur n'offre QUE publickey) |
-| `AuthenticationMethods` | `publickey` uniquement, `MaxAuthTries 3` |
-| Durcissement additionnel | `X11Forwarding no`, `AllowTcpForwarding no`, `AllowAgentForwarding no`, `UseDNS no`, `PermitEmptyPasswords no` |
+| Listening port | **$VPS_SSH_PORT only** (`0.0.0.0:$VPS_SSH_PORT` + `[::]:$VPS_SSH_PORT`), port 22 not listened on and **filtered externally** |
+| `PermitRootLogin` | `no` (dynamic test: `ssh root@` → `Permission denied (publickey)`) |
+| `PasswordAuthentication` / `KbdInteractive` | `no` / `no` (dynamic test with `PreferredAuthentications=password` → rejected, the server offers ONLY publickey) |
+| `AuthenticationMethods` | `publickey` only, `MaxAuthTries 3` |
+| Additional hardening | `X11Forwarding no`, `AllowTcpForwarding no`, `AllowAgentForwarding no`, `UseDNS no`, `PermitEmptyPasswords no` |
 | Permissions | `/home/admin/.ssh` = **700**, `authorized_keys` = **600** ✅ |
-| Config effective | Appliquée via `/etc/ssh/sshd_config.d/00-hardening.conf` (prioritaire sur le fichier principal) |
+| Effective config | Applied via `/etc/ssh/sshd_config.d/00-hardening.conf` (takes precedence over the main file) |
 
-### 1.2 Network & Pare-feu — ✅ CONFORME
-| Test | Résultat |
+### 1.2 Network & Firewall — ✅ COMPLIANT
+| Test | Result |
 |---|---|
 | UFW | `active`, default `deny incoming` / `allow outgoing` / `deny routed` |
-| Règles ouvertes | `$VPS_SSH_PORT/tcp ALLOW`, `22000/tcp ALLOW **depuis $SOURCE_IP uniquement**` |
-| Ports Hermes | `8642 DENY`, `8650 DENY` (explicites) |
-| Docker bypass UFW | **Neutralisé** : chaîne `DOCKER-USER` active → RETURN pour RFC1918/loopback/ESTABLISHED, **DROP pour tout le reste** (6 300+ paquets traités) |
-| Probes externes (depuis machine distante) | 22, 25, 8384, 8642, 8650, **8651, 8652, 8653**, 22000 → tous **FILTERED** ; $VPS_SSH_PORT → seul port OPEN |
-| Syncthing | GUI bindée sur `127.0.0.1:8384` ✅ ; `22000` exposé mais restreint UFW à 1 IP (TO DO doc **appliqué**) |
-| Postfix | `inet_interfaces = loopback-only`, écoute `127.0.0.1:25` et `[::1]:25` exclusivement ✅ |
+| Open rules | `$VPS_SSH_PORT/tcp ALLOW`, `22000/tcp ALLOW **from $SOURCE_IP only**` |
+| Hermes ports | `8642 DENY`, `8650 DENY` (explicit) |
+| Docker bypassing UFW | **Neutralized**: `DOCKER-USER` chain active → RETURN for RFC1918/loopback/ESTABLISHED, **DROP for everything else** (6,300+ packets processed) |
+| External probes (from a remote machine) | 22, 25, 8384, 8642, 8650, **8651, 8652, 8653**, 22000 → all **FILTERED**; $VPS_SSH_PORT → only OPEN port |
+| Syncthing | GUI bound to `127.0.0.1:8384` ✅ ; `22000` exposed but UFW-restricted to 1 IP (doc TO DO **applied**) |
+| Postfix | `inet_interfaces = loopback-only`, listening on `127.0.0.1:25` and `[::1]:25` exclusively ✅ |
 
-### 1.3 Anti-Intrusion — ✅ CONFORME
-| Test | Résultat |
+### 1.3 Anti-Intrusion — ✅ COMPLIANT
+| Test | Result |
 |---|---|
-| Fail2ban | Service actif, 1 jail `sshd` : port **$VPS_SSH_PORT**, backend systemd, `maxretry 3`, `bantime 86400` (24h), `banaction ufw` |
-| Efficacité prouvée | **2 IP bannies actuellement** (41.63.63.211, 47.80.59.134) = les 2 règles `REJECT` UFW → chaîne fail2ban→UFW opérationnelle |
-| AIDE | `99_custom` présent avec exclusions pertinentes (node_modules, venv, git, docker, containerd, tmp, var/log) |
-| Base AIDE | `aide.db` **régénérée le 30/08 à 11:56** (post-changements → TO DO doc **appliqué**, fausses alertes évitées) |
-| Cron AIDE | Quotidien à 3h (`/etc/cron.d/aide`), dernier check OK (10 min 49 s) |
+| Fail2ban | Service active, 1 `sshd` jail: port **$VPS_SSH_PORT**, systemd backend, `maxretry 3`, `bantime 86400` (24h), `banaction ufw` |
+| Proven effectiveness | **2 IPs currently banned** (41.63.63.211, 47.80.59.134) = the 2 `REJECT` UFW rules → fail2ban→UFW chain operational |
+| AIDE | `99_custom` present with relevant exclusions (node_modules, venv, git, docker, containerd, tmp, var/log) |
+| AIDE database | `aide.db` **regenerated on 30/08 at 11:56** (post-changes → doc TO DO **applied**, false alerts avoided) |
+| AIDE cron | Daily at 3am (`/etc/cron.d/aide`), last check OK (10 min 49 s) |
 
-### 1.4 Flotte Hermes — ✅ CONFORME (6/6 agents actifs)
-| Agent | Mode | État |
+### 1.4 Hermes Fleet — ✅ COMPLIANT (6/6 agents active)
+| Agent | Mode | State |
 |---|---|---|
-| leanConstruction | Docker (port 8650) | `Up`, `restart=unless-stopped`, gateway démarre, agent exécute des tools |
+| leanConstruction | Docker (port 8650) | `Up`, `restart=unless-stopped`, gateway starts, agent runs tools |
 | copycat | Docker (8651) | `Up`, `restart=unless-stopped` |
 | aquisition | Docker (8652) | `Up`, `restart=unless-stopped` |
 | va_agent | Docker (8653) | `Up`, `restart=unless-stopped` |
-| hermesrunner (@pipou200bot) | Natif `hermes-gateway-hermesrunner` | `active` + `enabled`, Telegram `connected`, v0.20.6 |
-| arev-chantier-runner (@Arev_Chantiers_AssistBot) | Natif `hermes-gateway-arev` | `active` + `enabled`, Telegram `connected`, v0.20.6 |
+| hermesrunner (@pipou200bot) | Native `hermes-gateway-hermesrunner` | `active` + `enabled`, Telegram `connected`, v0.20.6 |
+| arev-chantier-runner (@Arev_Chantiers_AssistBot) | Native `hermes-gateway-arev` | `active` + `enabled`, Telegram `connected`, v0.20.6 |
 
-- **Conflit de polling Telegram : AUCUN** — seuls 2 processus gateway natifs tournent (hermesrunner + arev) ; `loukyrunner` n'a ni service systemd ni crontab ; **0 erreur 409/Conflict** dans les logs des 2 dernières heures. Le doublon documenté est bien neutralisé.
-- Docker daemon : `no-new-privileges: true`, `live-restore`, logs 10 MB × 3 ✅
-- Script `spawn-hermes.sh` : présent, `-rwxr-xr-x root root` (755) ✅, token passé en argument (pas de secret codé en dur).
-- Bonus TO DOC appliqué : les agents `aquisition`, `va_agent` et `copycat` (marqués « aucune trace » dans la doc) sont désormais déployés et fonctionnels.
+- **Telegram polling conflict: NONE** — only 2 native gateway processes running (hermesrunner + arev); `loukyrunner` has neither systemd service nor crontab; **0 409/Conflict error** in the logs over the last 2 hours. The documented duplicate is indeed neutralized.
+- Docker daemon: `no-new-privileges: true`, `live-restore`, logs 10 MB × 3 ✅
+- Script `spawn-hermes.sh`: present, `-rwxr-xr-x root root` (755) ✅, token passed as argument (no hardcoded secret).
+- Bonus TO DO applied: the `aquisition`, `va_agent` and `copycat` agents (marked "no trace" in the doc) are now deployed and functional.
 
-### 1.5 Isolation Système — ✅ CONFORME
-| Composant | État |
+### 1.5 System Isolation — ✅ COMPLIANT
+| Component | State |
 |---|---|
 | snapd | `disabled` + `inactive` ✅ |
-| sysctl (`99-hardening.conf`) | `kptr_restrict=2`, `dmesg_restrict=1`, `perf_event_paranoid=3`, `unprivileged_bpf_disabled=1`, `yama.ptrace_scope=2`, `rp_filter`, `tcp_syncookies`, redirects off, `fs.protected_hardlinks/symlinks` — **valeurs runtime confirmées par `sysctl -n`** ✅ |
+| sysctl (`99-hardening.conf`) | `kptr_restrict=2`, `dmesg_restrict=1`, `perf_event_paranoid=3`, `unprivileged_bpf_disabled=1`, `yama.ptrace_scope=2`, `rp_filter`, `tcp_syncookies`, redirects off, `fs.protected_hardlinks/symlinks` — **runtime values confirmed by `sysctl -n`** ✅ |
 | Unattended-upgrades | `enabled`, `Update-Package-Lists=1`, `Unattended-Upgrade=1` ✅ |
-| Docker daemon.json | Conforme doc (`no-new-privileges`, pas d'userns-remap assumé) ✅ |
+| Docker daemon.json | Compliant with doc (`no-new-privileges`, no userns-remap by design) ✅ |
 
 ---
 
-## 2. 🟡 Avertissements / Améliorations mineures
+## 2. 🟡 Warnings / Minor improvements
 
-| # | Constat | Recommandation |
+| # | Finding | Recommendation |
 |---|---|---|
-| Y1 | **Cron AIDE** : nom de fichier log **hardcodé** `aide-20260830.log` → chaque run quotidien écrase le même fichier (la « date » ne change jamais) | Utiliser `/var/log/aide/aide-$(date +\%Y\%m\%d).log` + rotation logrotate |
-| Y2 | **`/etc/ssh/sshd_config` principal** contient encore `PermitRootLogin yes` / `X11Forwarding yes` (neutralisés par `00-hardening.conf`, mais piégeux pour une future modif) | Nettoyer le fichier principal pour ne garder qu'une seule source de vérité |
-| Y3 | Gateway **natif** Hermes écoute sur `0.0.0.0:8642` (protégé par UFW `deny 8642`, vérifié filtré de l'extérieur) | Defense-in-depth : binder sur `127.0.0.1` dans la config du service natif |
-| Y4 | **`spawn-hermes.sh`** fait `chmod -R 777 "$BASE_DIR/data"` (répertoires world-writable) | Remplacer par `chmod -R 750` ou `770` + propriétaire adapté (l'utilisateur conteneur est 10000) |
-| Y5 | Résidu `hermes-gateway.service` **not-found/failed** dans `systemctl list-units` | `sudo systemctl reset-failed` (cosmétique) |
-| Y6 | `jail.local` fail2ban : `logpath = /var/log/auth.log` inutile avec `backend = systemd` (ignoré) | Supprimer la ligne pour éviter la confusion |
-| Y7 | `/root/.bashrc` en mode **644** | Passer à **600** (réduit la surface si /root venait à être assoupli) |
-| Y8 | Résidus snap (`/snap` : core22, lxd) après désactivation | Purge : `apt purge snapd` + suppression `/snap` si non requis |
-| Y9 | Tokens Telegram passés en argument de `docker run` (visibles via `docker inspect` / `ps` root) | Acceptable (accès limité à admin/root) ; alternative : `--env-file` 600 |
-| Y10 | Utilisateurs résiduels : `hermes` (verrouillé, doc dit « inutilisé »), `loukyrunner` (doublon, verrouillé) | Supprimer si definitivement abandonnés : `userdel -r` |
-| Y11 | `kernel.kexec_load_disabled = 0` (non configuré) | Optionnel : ajouter `kernel.kexec_load_disabled=1` au `99-hardening.conf` |
-| Y12 | Logs AIDE volumineux (aide.log 87 MB, run log 44 MB) | Mettre en place logrotate sur `/var/log/aide/` |
+| Y1 | **AIDE cron**: **hardcoded** log filename `aide-20260830.log` → each daily run overwrites the same file (the "date" never changes) | Use `/var/log/aide/aide-$(date +\%Y\%m\%d).log` + logrotate rotation |
+| Y2 | **Main `/etc/ssh/sshd_config`** still contains `PermitRootLogin yes` / `X11Forwarding yes` (neutralized by `00-hardening.conf`, but misleading for a future edit) | Clean the main file to keep a single source of truth |
+| Y3 | **Native** Hermes gateway listens on `0.0.0.0:8642` (protected by UFW `deny 8642`, verified filtered externally) | Defense-in-depth: bind to `127.0.0.1` in the native service config |
+| Y4 | **`spawn-hermes.sh`** does `chmod -R 777 "$BASE_DIR/data"` (world-writable directories) | Replace with `chmod -R 750` or `770` + appropriate owner (the container user is 10000) |
+| Y5 | `hermes-gateway.service` residue **not-found/failed** in `systemctl list-units` | `sudo systemctl reset-failed` (cosmetic) |
+| Y6 | fail2ban `jail.local`: `logpath = /var/log/auth.log` useless with `backend = systemd` (ignored) | Remove the line to avoid confusion |
+| Y7 | `/root/.bashrc` in mode **644** | Change to **600** (reduces the attack surface if /root permissions were ever loosened) |
+| Y8 | Snap residues (`/snap`: core22, lxd) after deactivation | Purge: `apt purge snapd` + remove `/snap` if not required |
+| Y9 | Telegram tokens passed as `docker run` argument (visible via `docker inspect` / `ps` as root) | Acceptable (access limited to admin/root); alternative: `--env-file` 600 |
+| Y10 | Residual users: `hermes` (locked, doc says "unused"), `loukyrunner` (duplicate, locked) | Delete if definitively abandoned: `userdel -r` |
+| Y11 | `kernel.kexec_load_disabled = 0` (not configured) | Optional: add `kernel.kexec_load_disabled=1` to `99-hardening.conf` |
+| Y12 | Large AIDE logs (aide.log 87 MB, run log 44 MB) | Set up logrotate on `/var/log/aide/` |
 
 ---
 
-## 3. 🔴 Files rouges / Incohérences majeures à corriger immédiatement
+## 3. 🔴 Red flags / Major inconsistencies to fix immediately
 
-### 🔴 R1 — Porte root-équivalente non documentée : utilisateur `ubuntu` (cloud-init)
-**Découverte hors doc** (la section §2 de `DOCUMENTATION_VPS.md` ne le mentionne pas) :
-- Utilisateur `ubuntu` (uid 1000, shell `/bin/bash`), mot de passe verrouillé (`passwd -S` → `L`)
-- **`/home/ubuntu/.ssh/authorized_keys` présent** (injecté par cloud-init à la réinstallation, clé identique à celle de `admin`)
-- **`ubuntu ALL=(ALL) NOPASSWD:ALL`** dans `/etc/sudoers.d/90-cloud-init-users`
+### 🔴 R1 — Undocumented root-equivalent door: `ubuntu` user (cloud-init)
+**Discovery outside the doc** (section §2 of `DOCUMENTATION_VPS.md` does not mention it):
+- User `ubuntu` (uid 1000, shell `/bin/bash`), locked password (`passwd -S` → `L`)
+- **`/home/ubuntu/.ssh/authorized_keys` present** (injected by cloud-init at reinstallation, identical key to `admin`'s)
+- **`ubuntu ALL=(ALL) NOPASSWD:ALL`** in `/etc/sudoers.d/90-cloud-init-users`
 
-→ Toute personne/procédure en possession de la clé privée admin peut ouvrir une **seconde session root-équivalente** via `ssh ubuntu@` en contournant le modèle d'accès documenté (admin seul). Ce n'est pas une exposition externe (toujours protégée par la clé), mais c'est une incohérence de durcissement : un canal root non audité, non monitoré par la jail documentée, et invisible dans la doc.
+→ Anyone/any procedure in possession of the admin private key can open a **second root-equivalent session** via `ssh ubuntu@`, bypassing the documented access model (admin only). This is not an external exposure (still protected by the key), but it is a hardening inconsistency: an unaudited root channel, unmonitored by the documented jail, and invisible in the doc.
 
-**Correction immédiate** :
+**Immediate fix**:
 ```bash
 sudo userdel -r ubuntu
 sudo rm /etc/sudoers.d/90-cloud-init-users
 ```
-(ou a minima : vider `/home/ubuntu/.ssh/authorized_keys` et retirer la règle sudoers)
+(or at minimum: empty `/home/ubuntu/.ssh/authorized_keys` and remove the sudoers rule)
 
-### 🔴 R2 — ~40 secrets en clair dans `/root/.bashrc` ; `/etc/secrets/` vide (TO DO doc non appliqué)
-- `/etc/secrets/` existe bien (700 root) mais est **VIDE** → incohérence directe avec la doc (« Secrets : /etc/secrets (700, root) »).
-- `/root/.bashrc` contient en clair : `DEEPSEEK_API_KEY`, `SUPABASE_SERVICE_KEY` (+ `PROD_SUPABASE_SERVICE_KEY`), `PROD_JWT_SECRET`, `TEST_JWT_SECRET`, `GITHUB_TOKEN`, `GITEA_TOKEN`, tokens Telegram prod/test (@suren_construction_bot), credentials Cloudflare (GED), OAuth Gmail (client secret + **refresh token**), `SUREN_TEST_LOGIN`/`SUREN_TEST_PASSWORD`, clés OpenRouter/Gemini, etc.
-- Mitigations constatées : `/root` en **700** (donc illisible par les autres utilisateurs locaux), serveur sans service web exposé. Risque résiduel : fuite par versionnage/backup du bashrc, injection dans les conteneurs (`DEEPSEEK_API_KEY` est sourcé depuis ce fichier pour `spawn-hermes.sh`), et exfiltration en cas de compromission root (ce qu'AIDE/fail2ban ne préviennent pas).
+### 🔴 R2 — ~40 secrets in plaintext in `/root/.bashrc`; `/etc/secrets/` empty (doc TO DO not applied)
+- `/etc/secrets/` does exist (700 root) but is **EMPTY** → direct inconsistency with the doc ("Secrets: /etc/secrets (700, root)").
+- `/root/.bashrc` contains in plaintext: `DEEPSEEK_API_KEY`, `SUPABASE_SERVICE_KEY` (+ `PROD_SUPABASE_SERVICE_KEY`), `PROD_JWT_SECRET`, `TEST_JWT_SECRET`, `GITHUB_TOKEN`, `GITEA_TOKEN`, prod/test Telegram tokens (@suren_construction_bot), Cloudflare credentials (GED), Gmail OAuth (client secret + **refresh token**), `SUREN_TEST_LOGIN`/`SUREN_TEST_PASSWORD`, OpenRouter/Gemini keys, etc.
+- Mitigations observed: `/root` in **700** (thus unreadable by other local users), server with no exposed web service. Residual risk: leak via versioning/backup of the bashrc, injection into containers (`DEEPSEEK_API_KEY` is sourced from this file for `spawn-hermes.sh`), and exfiltration in case of root compromise (which AIDE/fail2ban do not prevent).
 
-**Correction prioritaire** :
+**Priority fix**:
 ```bash
-# Extraire les secrets vers /etc/secrets (un fichier par var, 600 root)
-sudo install -m 600 /dev/null /etc/secrets/hermes.env   # puis y déplacer les export
-# Dans /root/.bashrc, remplacer les blocs de secrets par :  . /etc/secrets/hermes.env
+# Extract the secrets to /etc/secrets (one file per var, 600 root)
+sudo install -m 600 /dev/null /etc/secrets/hermes.env   # then move the exports there
+# In /root/.bashrc, replace the secret blocks with:  . /etc/secrets/hermes.env
 sudo chmod 600 /root/.bashrc
 ```
 
 ---
 
-## 4. 📋 Verdict global : ~~À CORRIGER~~ → **VALIDÉ** (remédiation appliquée le 30/08, voir §5)
+## 4. 📋 Overall verdict: ~~TO BE FIXED~~ → **VALIDATED** (remediation applied on 30/08, see §5)
 
-> **Mise à jour post-audit** : les 2 files rouges (R1, R2) et les avertissements Y1/Y4/Y5/Y7 ont été **corrigés le 30/08/2026** et re-validés (voir section 5). Le verdict initial de l'audit était « À CORRIGER (mineur — aucune exposition réseau) ».
+> **Post-audit update**: the 2 red flags (R1, R2) and warnings Y1/Y4/Y5/Y7 were **fixed on 30/08/2026** and re-validated (see section 5). The initial audit verdict was "TO BE FIXED (minor — no network exposure)".
 
-| Périmètre | Statut |
+| Scope | Status |
 |---|---|
-| SSH/SSHD | ✅ Validé (tests dynamiques inclus) |
-| Réseau/UFW/Docker | ✅ Validé (DOCKER-USER opérationnel, 9 ports testés fermés de l'extérieur) |
-| Fail2ban | ✅ Validé (bans actifs prouvés) |
-| AIDE | ✅ Validé (base à jour) — 🟡 bug cron log |
-| Flotte Hermes (6 agents) | ✅ Validée (zéro conflit polling) |
+| SSH/SSHD | ✅ Validated (dynamic tests included) |
+| Network/UFW/Docker | ✅ Validated (DOCKER-USER operational, 9 ports tested closed externally) |
+| Fail2ban | ✅ Validated (active bans proven) |
+| AIDE | ✅ Validated (database up to date) — 🟡 cron log bug |
+| Hermes Fleet (6 agents) | ✅ Validated (zero polling conflict) |
 | Secrets & isolation | 🔴 R1 + R2 |
 
-**Synthèse** : Le durcissement documenté est **réel et vérifié en conditions dynamiques** — tous les tests d'intrusion simulés (root, password, 9 ports) échouent comme attendu, Docker ne shunte pas UFW, fail2ban a déjà prouvé son efficacité (2 bans). La flotte Hermes est 100 % opérationnelle (4 Docker + 2 natifs) sans conflit Telegram. Les deux files rouges sont **simples à corriger (< 10 min)** et concernent la gestion d'identité résiduelle (utilisateur cloud-init `ubuntu`) et l'hygiène des secrets — aucune n'expose le serveur à l'heure actuelle, mais R1 doit être traitée en premier car elle crée un canal root non documenté.
+**Summary**: The documented hardening is **real and verified under dynamic conditions** — all simulated intrusion tests (root, password, 9 ports) fail as expected, Docker does not bypass UFW, fail2ban has already proven its effectiveness (2 bans). The Hermes fleet is 100% operational (4 Docker + 2 native) without Telegram conflict. The two red flags are **simple to fix (< 10 min)** and concern residual identity management (cloud-init `ubuntu` user) and secrets hygiene — neither currently exposes the server, but R1 must be addressed first because it creates an undocumented root channel.
 
-**Checklist de remédiation suggérée** :
-1. ✅ Supprimer `ubuntu` + sa règle sudoers (R1) — **fait le 30/08**
-2. ✅ Migrer les secrets de `/root/.bashrc` vers `/etc/secrets/` (R2) + `chmod 600 /root/.bashrc` — **fait le 30/08**
-3. ✅ Corriger le cron AIDE (nom de log dynamique) — **fait le 30/08**
-4. ✅ Nettoyer `sshd_config` principal (🟡 Y2, reste à faire), `reset-failed` le service résiduel (fait), data-dir dans spawn-hermes.sh (fait)
-5. ✅ Mettre à jour `DOCUMENTATION_VPS.md` (§2 utilisateurs, §3 secrets, §4.3 flotte, §6 TO DO) — **fait le 30/08**
+**Suggested remediation checklist**:
+1. ✅ Delete `ubuntu` + its sudoers rule (R1) — **done on 30/08**
+2. ✅ Migrate the secrets from `/root/.bashrc` to `/etc/secrets/` (R2) + `chmod 600 /root/.bashrc` — **done on 30/08**
+3. ✅ Fix the AIDE cron (dynamic log name) — **done on 30/08**
+4. ✅ Clean the main `sshd_config` (🟡 Y2, still to do), `reset-failed` the residual service (done), data-dir in spawn-hermes.sh (done)
+5. ✅ Update `DOCUMENTATION_VPS.md` (§2 users, §3 secrets, §4.3 fleet, §6 TO DO) — **done on 30/08**
 
 ---
 
-## 5. ✅ Remédiation appliquée et re-validée (30/08/2026)
+## 5. ✅ Remediation applied and re-validated (30/08/2026)
 
-Remédiation exécutée en une session `sudo bash -s` via SSH, avec sauvegardes et points d'abortion (rollback automatique en cas d'erreur de syntaxe). Aucune interruption de service constatée (flotte 6/6 opérationnelle après intervention).
+Remediation executed in a single `sudo bash -s` session over SSH, with backups and abort points (automatic rollback on syntax error). No service interruption observed (fleet 6/6 operational after intervention).
 
-### 5.1 Corrections R1 + R2 + mineures — détail
+### 5.1 R1 + R2 + minor fixes — detail
 
-| # | Action | Résultat re-validé |
+| # | Action | Re-validated result |
 |---|---|---|
-| **R1** | `userdel -r ubuntu` + suppression `/etc/sudoers.d/90-cloud-init-users` | `id ubuntu` → inexistant, `/home/ubuntu` supprimé, `visudo -c` OK, il ne reste que `90-admin` |
-| **R2** | Migration de **55 variables** (49 + 6 avec chiffres dans le nom) de `/root/.bashrc` vers `/etc/secrets/hermes.env` (600, root) ; `.bashrc` (désormais **600**) se termine par un sourcing gardé `[ -f /etc/secrets/hermes.env ] && . /etc/secrets/hermes.env` ; backup `/root/.bashrc.preaudit-20260830` conservé | `0` ligne `export` restante dans `.bashrc` ; `bash -n` OK sur les deux fichiers ; shell root interactif : `DEEPSEEK_API_KEY`, `TELEGRAM_USER_ID`, `SUREN_GOOGLE_GEMINI_CREDENTIALS_B64`, `E2E_BOT_TOKEN` → **CHARGÉS** (test par nom, valeurs jamais affichées) |
-| **Y1** | Réécriture de `/etc/cron.d/aide` : log daté dynamique avec `%` **échappé** (`aide-$(date +\%Y\%m\%d).log`) | Ligne cron valide (un `%` non échappé aurait cassé la crontab) |
-| **Y4** | `spawn-hermes.sh` : `chmod -R 777` remplacé par `chown -R 10000:10000 … && chmod -R 700 …` | Appliqué aux **futurs** déploiements ; les 4 data-dirs existants étaient déjà à `700` (travail Doer 13:26-13:28), plus stricts que prévu — laissés intacts |
-| **Y5** | `systemctl reset-failed` (résidu `hermes-gateway.service`) | `0 failed units` |
-| **Y7** | `chmod 600 /root/.bashrc` (+ backup 600) | Confirmé par `stat` |
+| **R1** | `userdel -r ubuntu` + removal of `/etc/sudoers.d/90-cloud-init-users` | `id ubuntu` → nonexistent, `/home/ubuntu` deleted, `visudo -c` OK, only `90-admin` remains |
+| **R2** | Migration of **55 variables** (49 + 6 with digits in the name) from `/root/.bashrc` to `/etc/secrets/hermes.env` (600, root) ; `.bashrc` (now **600**) ends with the kept sourcing `[ -f /etc/secrets/hermes.env ] && . /etc/secrets/hermes.env` ; backup `/root/.bashrc.preaudit-20260830` kept | `0` remaining `export` line in `.bashrc` ; `bash -n` OK on both files ; interactive root shell: `DEEPSEEK_API_KEY`, `TELEGRAM_USER_ID`, `SUREN_GOOGLE_GEMINI_CREDENTIALS_B64`, `E2E_BOT_TOKEN` → **LOADED** (test by name, values never displayed) |
+| **Y1** | Rewrite of `/etc/cron.d/aide`: dynamic dated log with `%` **escaped** (`aide-$(date +\%Y\%m\%d).log`) | Valid cron line (an unescaped `%` would have broken the crontab) |
+| **Y4** | `spawn-hermes.sh`: `chmod -R 777` replaced by `chown -R 10000:10000 … && chmod -R 700 …` | Applied to **future** deployments ; the 4 existing data-dirs were already at `700` (Doer work 13:26-13:28), stricter than expected — left untouched |
+| **Y5** | `systemctl reset-failed` (`hermes-gateway.service` residue) | `0 failed units` |
+| **Y7** | `chmod 600 /root/.bashrc` (+ 600 backup) | Confirmed by `stat` |
 
-### 5.2 Écarts volontaires par rapport au bloc de remédiation proposé
+### 5.2 Deliberate deviations from the proposed remediation block
 
-1. **R2 complète** : le `grep` proposé (`DEEPSEEK|TELEGRAM|SUPABASE|JWT|...`) oubliait ~10 secrets (`PROD_JWT_SECRET`, `TEST_SUPABASE_SERVICE_KEY`, `LOUKI_DEEP_SEEK_API_KEY`, `TOOLS_API_KEY`, `DATABASE_URL`, variables `E2E`/`B64`/`S3`...) et **ne retirait pas les secrets de `.bashrc`** (simple copie = duplication). La migration a déplacé **toutes** les lignes `export` (pattern avec `[A-Za-z_0-9]`) et fait sourcer le fichier centralisé — `spawn-hermes.sh` (exécuté en root interactif) continue de fonctionner à l'identique.
-2. **Y1** : `$(date +%Y%m%d)` brut dans un cron est invalide (le `%` est un caractère spécial crontab) → `\%`.
-3. **Y4** : `chmod -R 750` aurait **bloqué l'écriture des conteneurs** (uid 10000 ni owner ni group) → `chown 10000:10000` + `chmod 700`, aligné sur l'état constaté des data-dirs.
+1. **R2 completion**: the proposed `grep` (`DEEPSEEK|TELEGRAM|SUPABASE|JWT|...`) forgot ~10 secrets (`PROD_JWT_SECRET`, `TEST_SUPABASE_SERVICE_KEY`, `LOUKI_DEEP_SEEK_API_KEY`, `TOOLS_API_KEY`, `DATABASE_URL`, `E2E`/`B64`/`S3` variables...) and **did not remove the secrets from `.bashrc`** (mere copy = duplication). The migration moved **all** the `export` lines (pattern with `[A-Za-z_0-9]`) and made the centralized file sourced — `spawn-hermes.sh` (run in an interactive root shell) keeps working identically.
+2. **Y1**: raw `$(date +%Y%m%d)` in a cron is invalid (the `%` is a special crontab character) → `\%`.
+3. **Y4**: `chmod -R 750` would have **blocked container writes** (uid 10000 neither owner nor group) → `chown 10000:10000` + `chmod 700`, aligned with the observed state of the data-dirs.
 
-### 5.3 Observations supplémentaires post-remédiation (nouveaux 🟡)
+### 5.3 Additional post-remediation observations (new 🟡)
 
-- **N-Y13** : le conteneur `hermes-leanConstruction` exécute son gateway **en root** (uid 0 dans le conteneur — d'où les fichiers `root:root 700` de son data-dir), contrairement aux 3 autres conteneurs (uid 10000). Recommandation : rebuilder/re-lancer avec `USER 10000` (Dockerfile) ou `docker run --user 10000` après `chown -R 10000:10000` du data-dir, pour uniformiser.
-- **N-Y14** : le prochain run AIDE (3h) signalera les diffs attendus (`.bashrc`, `/etc/secrets/`, `/etc/cron.d/aide`, `spawn-hermes.sh`, suppression `/home/ubuntu`) → après vérification, régénérer la base (`aideinit --force`) pour repartir propre.
-- **N-Y15** : les avertissements Y2 (`sshd_config` principal : `PermitRootLogin yes` mort mais piégeux), Y3 (bind `127.0.0.1` du gateway natif), Y6/Y8-Y12 restent ouverts (mineurs).
+- **N-Y13**: the `hermes-leanConstruction` container runs its gateway **as root** (uid 0 in the container — hence the `root:root 700` files of its data-dir), unlike the 3 other containers (uid 10000). Recommendation: rebuild/re-run with `USER 10000` (Dockerfile) or `docker run --user 10000` after `chown -R 10000:10000` of the data-dir, to standardize.
+- **N-Y14**: the next AIDE run (3am) will report the expected diffs (`.bashrc`, `/etc/secrets/`, `/etc/cron.d/aide`, `spawn-hermes.sh`, deletion of `/home/ubuntu`) → after verification, regenerate the database (`aideinit --force`) to start clean.
+- **N-Y15**: warnings Y2 (main `sshd_config`: dead but misleading `PermitRootLogin yes`), Y3 (bind `127.0.0.1` of the native gateway), Y6/Y8-Y12 remain open (minor).
 
-### 5.4 État final de sécurité (re-validation après remédiation)
+### 5.4 Final security state (re-validation after remediation)
 
-| Contrôle | État |
+| Control | State |
 |---|---|
-| Utilisateurs root-équivalents | **1 seul** : `admin` (NOPASSWD via `90-admin`) — porte `ubuntu` fermée |
-| Secrets | **0 en clair** dans `.bashrc` ; centralisés dans `/etc/secrets/hermes.env` (600, dir 700) |
-| Flotte Hermes | 6/6 actifs (4 Docker + 2 natifs), fail2ban actif, 0 unit failed |
-| Exposition réseau | inchangée et conforme ($VPS_SSH_PORT seul public) |
+| Root-equivalent users | **A single one**: `admin` (NOPASSWD via `90-admin`) — `ubuntu` door closed |
+| Secrets | **0 in plaintext** in `.bashrc` ; centralized in `/etc/secrets/hermes.env` (600, dir 700) |
+| Hermes Fleet | 6/6 active (4 Docker + 2 native), fail2ban active, 0 failed unit |
+| Network exposure | unchanged and compliant ($VPS_SSH_PORT only public) |
 
-### 5.5 Supervision Telegram active (30/08, ajout post-audit)
+### 5.5 Active Telegram Monitoring (30/08, post-audit addition)
 
-Architecture d'alerte centralisée déployée et validée de bout en bout :
+Centralized alert architecture deployed and validated end to end:
 
-| Composant | Rôle | Validation |
+| Component | Role | Validation |
 |---|---|---|
-| `/usr/local/bin/telegram-alert.sh` (700 root) | Envoi Telegram centralisé ; credentials sourcés depuis `/etc/secrets/hermes.env` (`ALERT_TELEGRAM_BOT_TOKEN`, `ALERT_TELEGRAM_CHAT_ID`) ; erreurs tracées via `logger -t telegram-alert` | Test direct **HTTP 200** ; messages reçus sur Telegram |
-| `/usr/local/bin/telegram-alert-ssh.sh` + hook PAM (`/etc/pam.d/sshd` : `session optional pam_exec.so quiet seteuid …`) | Notifie **uniquement les connexions SSH inhabituelles** : autre IP que `SSH_ALERT_ALLOWED_IPS` (`$SOURCE_IP`, allowlist dans `hermes.env`), autre utilisateur que `admin`, ou connexion locale — silence pour `admin@$SOURCE_IP` (trafic routine des agents, tracé dans `journalctl`) ; `optional` = ne peut jamais bloquer un login ; backups `sshd.preaudit-20260830` / `telegram-alert-ssh.sh.preaudit-policy-20260830` | Simulation `admin@$SOURCE_IP` → silence (exit 0) ; `admin@203.0.113.99` (IP test) → notification reçue ; `close_session` → silence |
-| `/usr/local/bin/aide-check-alert.sh` (cron 3h via `/etc/cron.d/aide`) | Check AIDE quotidien → alerte Telegram **uniquement si** fichiers ajoutés/supprimés/modifiés (sinon silence) | Chaîne validée : alertes parties lors des checks en écarts (reçues), silence après base propre |
+| `/usr/local/bin/telegram-alert.sh` (700 root) | Centralized Telegram sending ; credentials sourced from `/etc/secrets/hermes.env` (`ALERT_TELEGRAM_BOT_TOKEN`, `ALERT_TELEGRAM_CHAT_ID`) ; errors logged via `logger -t telegram-alert` | Direct test **HTTP 200** ; messages received on Telegram |
+| `/usr/local/bin/telegram-alert-ssh.sh` + PAM hook (`/etc/pam.d/sshd`: `session optional pam_exec.so quiet seteuid …`) | Notifies **only unusual SSH logins**: IP other than `SSH_ALERT_ALLOWED_IPS` (`$SOURCE_IP`, allowlist in `hermes.env`), user other than `admin`, or local login — silence for `admin@$SOURCE_IP` (routine agent traffic, traced in `journalctl`) ; `optional` = can never block a login ; backups `sshd.preaudit-20260830` / `telegram-alert-ssh.sh.preaudit-policy-20260830` | Simulation `admin@$SOURCE_IP` → silence (exit 0) ; `admin@203.0.113.99` (test IP) → notification received ; `close_session` → silence |
+| `/usr/local/bin/aide-check-alert.sh` (cron 3am via `/etc/cron.d/aide`) | Daily AIDE check → Telegram alert **only if** files added/deleted/modified (otherwise silence) | Chain validated: alerts went out during out-of-band checks (received), silence after clean database |
 
-**Correctifs imposés par la mise en œuvre** :
-1. **`hermes.env` reconstruit** : les lignes exportées brutes depuis `.bashrc` contenaient des références non développées (`DATABASE_URL` avec `$p` → `unbound variable` fatal sous `set -u` dans les scripts) → valeurs capturées depuis l'environnement réel d'un shell root, échappées `printf %q`, dédupliquées (57→50 lignes), sourcing validé sous `set -u`. Backup : `/etc/secrets/hermes.env.preaudit-quote-20260830`.
-2. **Exclusions de churn ajoutées à `99_custom`** (sinon fausses alertes nocturnes garanties — 97 diffs mesurés au 1ᵉʳ check) : data-dirs des agents Docker (`hermes-fleet/*/data`), `.hermes` des 3 users (hermesrunner, arev-chantier-runner, admin : états/sessions/logs/tickers), index Syncthing, `fail2ban.sqlite3`, cache landscape, vault Obsidian (contenu utilisateur synchronisé), `/run/containerd`. L'AIDE continue de couvrir binaires, configs système, scripts et sudoers.
-3. **Base AIDE régénérée** (21:34) et check de validation **100 % propre** (0 ajout / 0 suppression / 0 modification, 6 min) → le cron de 3h repart sur une base saine.
+**Fixes imposed by the implementation**:
+1. **`hermes.env` rebuilt**: the raw exported lines from `.bashrc` contained unexpanded references (`DATABASE_URL` with `$p` → fatal `unbound variable` under `set -u` in scripts) → values captured from the real environment of a root shell, escaped with `printf %q`, deduplicated (57→50 lines), sourcing validated under `set -u`. Backup: `/etc/secrets/hermes.env.preaudit-quote-20260830`.
+2. **Churn exclusions added to `99_custom`** (otherwise nightly false alerts guaranteed — 97 diffs measured at the 1st check): Docker agent data-dirs (`hermes-fleet/*/data`), `.hermes` of the 3 users (hermesrunner, arev-chantier-runner, admin: states/sessions/logs/tickers), Syncthing index, `fail2ban.sqlite3`, landscape cache, Obsidian vault (synced user content), `/run/containerd`. AIDE continues to cover binaries, system configs, scripts and sudoers.
+3. **AIDE database regenerated** (21:34) and validation check **100% clean** (0 added / 0 deleted / 0 modified, 6 min) → the 3am cron restarts on a sound database.
 
-**Observations** : activité concurrente détectée pendant l'opération (création de `/home/admin/.hermes` à 21:14:30 — session Doer), prise en compte par les exclusions. Vérification du repo git local initialisé le même jour : **aucun secret dans l'historique** (token d'alerte absent, `spawn-hermes.sh` ne référence que des noms de variables). ✅ **Rotation du token d'alerte effectuée le 30/08 21:50** (transitoirement en clair dans la conversation) : ancien token révoqué confirmé (API 401), nouveau validé (API 200, @pipou200bot), test d'envoi OK, permissions 600 conservées, backup `/etc/secrets/hermes.env.pre-rotation-20260830`. Note : le bot d'alerte est @pipou200bot, le même que le runner natif hermesrunner — sans conflit (le script n'utilise que `sendMessage`, le gateway que `getUpdates`).
+**Observations**: concurrent activity detected during the operation (creation of `/home/admin/.hermes` at 21:14:30 — Doer session), accounted for by the exclusions. Verification of the local git repo initialized the same day: **no secrets in the history** (alert token absent, `spawn-hermes.sh` only references variable names). ✅ **Alert token rotation performed on 30/08 21:50** (transiently in plaintext in the conversation): old token confirmed revoked (API 401), new one validated (API 200, @pipou200bot), send test OK, 600 permissions kept, backup `/etc/secrets/hermes.env.pre-rotation-20260830`. Note: the alert bot is @pipou200bot, the same as the native runner hermesrunner — without conflict (the script only uses `sendMessage`, the gateway only `getUpdates`).
 
 ---
-*Rapport d'audit généré en lecture seule ; la remédiation (§5) et la supervision (§5.5) ont été appliquées et re-validées le 30/08/2026.*
+*Audit report generated in read-only mode; the remediation (§5) and the monitoring (§5.5) were applied and re-validated on 30/08/2026.*

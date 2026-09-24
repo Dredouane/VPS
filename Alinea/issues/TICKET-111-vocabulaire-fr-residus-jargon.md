@@ -1,26 +1,26 @@
-# Ticket AREV-111 — Vocabulaire FR : Nettoyage des 4 résidus de jargon dev (TKT-102 suite)
+# Ticket AREV-111 — FR Vocabulary: Cleanup of the 4 dev-jargon leftovers (TKT-102 follow-up)
 
-- **Date** : 2026-09-09
-- **Référence spec** : `SPEC_Produit_Emails_Factures.md` §0 & §3 (anti-exigences)
-- **Scénarios NonReg** : A3
-- **Persona** : Fateh_Ug · Gerant_PME · Salarie_Backoffice
-- **Priorité** : Moyenne (P2)
-- **Type** : Amélioration UX / Francisation
+- **Date**: 2026-09-09
+- **Spec reference**: `SPEC_Produit_Emails_Factures.md` §0 & §3 (anti-requirements)
+- **NonReg scenarios**: A3
+- **Persona**: Fateh_Ug · Gerant_PME · Salarie_Backoffice
+- **Priority**: Medium (P2)
+- **Type**: UX improvement / French localization
 
-## Description (le contrat)
-L'ensemble des écrans du produit doit être libellé en français métier, sans terme technique de développement.
+## Description (the contract)
+All of the product's screens must be labeled in business French, with no technical development terms.
 
-## État actuel (4 résidus constatés)
-1. **Page `/login`** : Paragraphe en bas de carte `Accès réservé — mapping dans app_users (admin / backoffice / terrain)`.
-2. **Page `/recherche`** : Titre principal H1 `Recherche RAG` (`RAG` = jargon dev).
-3. **Page `/chains` (Conversations)** : Sous-titre `Conversations email (threads Gmail) traitées par le pipeline — vue type inbox`.
-4. **Page `/admin`** : En-tête `runner D9` + note de bas de page `Supabase / API admin`.
+## Current state (4 leftovers observed)
+1. **`/login` page**: Paragraph at the bottom of the card `Accès réservé — mapping dans app_users (admin / backoffice / terrain)` [Restricted access — mapping in app_users (admin / backoffice / field)].
+2. **`/recherche` page**: Main H1 title `Recherche RAG` (`RAG` = dev jargon).
+3. **`/chains` page (Conversations)**: Subtitle `Conversations email (threads Gmail) traitées par le pipeline — vue type inbox` [Email conversations (Gmail threads) processed by the pipeline — inbox-style view].
+4. **`/admin` page**: Header `runner D9` + footer note `Supabase / API admin`.
 
-## État attendu
-1. `/login` : Remplacer par une phrase simple type `Accès réservé aux utilisateurs autorisés.` (ou supprimer).
-2. `/recherche` : Titre H1 `Recherche` ou `Recherche de documents`.
-3. `/chains` : Sous-titre `Vos échanges emails et documents associés`.
-4. `/admin` : Supprimer les termes `runner D9`, `Supabase`, `API admin`.
+## Expected state
+1. `/login`: Replace with a simple sentence such as `Accès réservé aux utilisateurs autorisés.` [Restricted access for authorized users.] (or remove).
+2. `/recherche`: H1 title `Recherche` [Search] or `Recherche de documents` [Document search].
+3. `/chains`: Subtitle `Vos échanges emails et documents associés` [Your email exchanges and related documents].
+4. `/admin`: Remove the terms `runner D9`, `Supabase`, `API admin`.
 
-## Critères d'acceptation
-- [ ] Remplacement des 4 textes ciblés par du vocabulaire métier
+## Acceptance criteria
+- [ ] The 4 targeted texts replaced with business vocabulary

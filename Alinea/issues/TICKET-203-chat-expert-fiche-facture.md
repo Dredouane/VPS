@@ -1,51 +1,50 @@
-# Ticket AREV-203 — Module Factures : assistant dédié expert de la fiche + données liées
+# Ticket AREV-203 — Invoices module: dedicated assistant expert of the detail page + linked data
 
-- **Date** : 2026-09-08
-- **Référence spec** : `SPEC_Produit_Emails_Factures.md` §2.2 (Zone C — le chat dédié à la facture)
-- **Scénarios NonReg** : E7 (et C6/C7 comme principe d'honnêteté et d'isolation)
-- **Persona** : Salarie_Backoffice (principal) · Gerant_PME
-- **Priorité** : Moyenne
-- **Type** : Nouvelle feature (fonctionnalité signature module Factures)
+- **Date**: 2026-09-08
+- **Spec reference**: `SPEC_Produit_Emails_Factures.md` §2.2 (Zone C — the chat dedicated to the invoice)
+- **NonReg scenarios**: E7 (and C6/C7 as honesty and isolation principles)
+- **Persona**: Salarie_Backoffice (primary) · Gerant_PME
+- **Priority**: Medium
+- **Type**: New feature (signature feature of the Invoices module)
 
-## Description (le contrat)
-Chaque fiche facture dispose d'un **assistant contextuel** qui répond en connaissance de la fiche
-VISIBLE et des **data points liés** à la facture (emails d'origine, fournisseur, projets/chantiers,
-actions). C'est le trait d'union qui fait évoluer le produit vers un « expert du dossier », et le
-prolongement du chat de conversation (TKT-107).
+## Description (the contract)
+Each invoice detail page has a **contextual assistant** that answers with knowledge of the VISIBLE
+detail page and of the **data points linked** to the invoice (origin emails, supplier, projects/side jobs,
+actions). It is the connecting thread that evolves the product toward an "expert of the case file", and the
+extension of the conversation chat (TKT-107).
 
-## État actuel
-Aucun assistant dédié à une facture. Le produit ne relie pas encore la fiche à des données voisines
-(emails, projets). L'utilisateur doit retomber sur des recherches manuelles pour toute question
-interprétative.
+## Current state
+No assistant dedicated to an invoice. The product does not yet link the detail page to neighboring data
+(emails, projects). The user must fall back on manual searches for any interpretive question.
 
-## État attendu (définition de fini)
-Un assistant (panneau/zone de question) accessible sur la fiche détail qui :
-1. Comprend **la fiche affichée** (les valeurs extraites qu'on voit à l'écran) + les **data points
-   liés** disponibles côté données (mailchain(s) d'origine, fournisseur, en-cours/projet, actions).
-2. Répond en langage naturel à des questions interprétatives et factuelles sur LA facture et son
-   dossier, en citant/référençant la source (la fiche, un email, un doc lié).
-3. Avoue honnêtement quand une info n'est pas dispo (« je n'ai pas cette donnée ») plutôt que
-   d'inventer (principe C6).
-4. Reste **isolé au dossier courant** — ne mélange jamais une autre facture/client (C7).
-Exemples de questions cibles : « Cette facture correspond à quel email ? », « À quel chantier est
-liée ? », « Qui était le contact du donneur d'ordre ? », « Le montant HT semble étrange, tu peux
-relire le PDF ? ».
+## Expected state (definition of done)
+An assistant (panel/question zone) accessible on the detail page that:
+1. Understands **the displayed detail page** (the extracted values seen on screen) + the **linked data
+   points** available on the data side (origin mailchain(s), supplier, ongoing work/project, actions).
+2. Answers in natural language interpretive and factual questions about THE invoice and its
+   case file, citing/referencing the source (the detail page, an email, a linked doc).
+3. Honestly admits when an info is not available ("I don't have this data") rather than
+   inventing (principle C6).
+4. Stays **isolated to the current case file** — never mixes another invoice/client (C7).
+Examples of target questions: "Which email does this invoice correspond to?", "Which construction site is it
+linked to?", "Who was the contact of the ordering party?", "The net amount seems odd, can you
+reread the PDF?".
 
-## La "douleur" du persona (value)
-C'est le prolongement de la promesse « l'IA comprend le dossier ». Pour l'opératrice : répondre aux
-questions du gérant ou d'un tiers sans charger 3 outils. Pour le gérant : interroger la situation
-comptable/dossier d'un coup d'œil. C'est ce qui rend une facture « expliquée », pas seulement
-« saisie ».
+## The persona's "pain" (value)
+It is the extension of the promise "the AI understands the case file". For the operator: answering the
+manager's or a third party's questions without loading 3 tools. For the manager: querying the
+accounting/case-file situation at a glance. This is what makes an invoice "explained", not just
+"entered".
 
-## Critères d'acceptation
-- [ ] Accès à l'assistant depuis la fiche facture (cohérent avec TKT-107 si le motif est réutilisé)
-- [ ] Une question factuelle sur la fiche visible → réponse exacte et argument de la fiche
-- [ ] Une question sur les données liées (email d'origine, chantier) → réponse bonnes lorsqu'elles
-      existent, « pas dispo » sinon, jamais inventé
-- [ ] Isolation par facture/client vérifiée (2 fiches distinctes → aucune contamination)
-- [ ] Aucune erreur JS ; combo vocabulaire normé
+## Acceptance criteria
+- [ ] Assistant access from the invoice detail page (consistent with TKT-107 if the pattern is reused)
+- [ ] A factual question about the visible detail page → exact answer with arguments from the detail page
+- [ ] A question about the linked data (origin email, construction site) → right answers when they
+      exist, "not available" otherwise, never invented
+- [ ] Isolation per invoice/client verified (2 distinct detail pages → no contamination)
+- [ ] No JS errors; normative vocabulary combo
 
 ## Notes
-S'appuie sur le socle « chat sourcé » (TKT-107), le lien email↔facture (TKT-202) et, à terme, les
-objets métier (projets/actions) au fur et à mesure qu'ils existent. Vision : cet assistant devient
-l'expert du dossier complet quand les data points s'enrichiront.
+Builds on the "sourced chat" foundation (TKT-107), the email↔invoice link (TKT-202) and, eventually, the
+business objects (projects/actions) as they come into existence. Vision: this assistant becomes
+the expert of the complete case file as the data points get richer.

@@ -1,47 +1,47 @@
 # Decision — Capability doc-ocr (C3)
 
-> Règle d'ordre : **NATIF > MIX > SIDECAR** (ARCHITECTURE.md §2).
-> Révisions 01/09 : deux juges séparés (revue utilisateur) + extracteur #2.
+> Order of rule: **NATIVE > MIX > SIDECAR** (ARCHITECTURE.md §2).
+> 01/09 revisions: two separate judges (user review) + extractor #2.
 
-## Besoin
+## Need
 
-Extraire le texte de TOUTES les pièces jointes (factures, plans, PV, photos,
-courriers — pas que des factures), fiabiliser l'extraction en comparant deux
-fournisseurs, et vérifier l'arithmétique des factures (Σ lignes == HT,
-HT+TVA == TTC) sans jamais inventer de valeur.
+Extract the text from ALL attachments (invoices, plans, reports, photos,
+letters — not just invoices), make the extraction reliable by comparing
+two providers, and verify invoice arithmetic (Σ lines == net,
+net+VAT == gross) without ever inventing a value.
 
-## Options évaluées
+## Options evaluated
 
 | Option | Verdict |
 |---|---|
-| **Mix** : 2 extracteurs vision (Gemini + OpenRouter — familles différentes) + **2 juges séparés** (général code / montants code sur bifurcation) + adaptateur SLM Flash (branche facture) | ✅ **retenu** |
-| Un seul extracteur | ❌ pas de fiabilisation croisée |
-| Deux appels Gemini | ❌ même famille = diversité insuffisante |
-| Juge unique fusionnant qualité + montants | ❌ mélange des responsabilités (revue utilisateur 01/09) |
-| Schéma facture imposé à tous les documents | ❌ l'extraction est générique ; le schéma n'intervient QUE sur la bifurcation facture |
-| Tesseract sidecar | ❌ qualité faible sur photos, conteneur de plus |
+| **Mix**: 2 vision extractors (Gemini + OpenRouter — different families) + **2 separate judges** (general code / amounts code on fork) + SLM Flash adapter (invoice branch) | ✅ **kept** |
+| A single extractor | ❌ no cross-reliability |
+| Two Gemini calls | ❌ same family = insufficient diversity |
+| A single judge merging quality + amounts | ❌ mixes responsibilities (user review 01/09) |
+| Invoice schema imposed on all documents | ❌ extraction is generic; the schema comes in ONLY on the invoice fork |
+| Tesseract sidecar | ❌ low quality on photos, one more container |
 
-## Décision
+## Decision
 
-**MIX** — architecture en deux juges (D14) :
+**MIX** — two-judge architecture (D14):
 
-1. **Juge général** (toujours, code pur) : similarité token-overlap entre
-   les 2 transcriptions, complétude, confidence ×2, doc_type (hints
-   extracteurs majoritaires + heuristiques mots/montants), winner.
-   Désaccord fort → `low_agreement` + confiance réduite (jamais bloquant).
-2. **Bifurcation facture** (si doc_type == facture) :
-   adaptateur **Gemini Flash** — texte gagnant → JSON facture canonique
-   (`schemas/invoice_extraction.json`) — puis **check montant** (code pur) :
-   Σ lignes == HT, HT+TVA == TTC (±0,02). Reformat invalide = `sums_ok null`
-   (pas de check, pas d'invention). Résultat annoté pour l'expert C6.
+1. **General judge** (always, pure code): token-overlap similarity between
+   the 2 transcriptions, completeness, confidence ×2, doc_type (extractor
+   majority hints + word/amount heuristics), winner.
+   Strong disagreement → `low_agreement` + reduced confidence (never blocking).
+2. **Invoice fork** (if doc_type == invoice):
+   **Gemini Flash** adapter — winning text → canonical invoice JSON
+   (`schemas/invoice_extraction.json`) — then **amount check** (pure code):
+   Σ lines == net, net+VAT == gross (±0.02). Invalid reformat = `sums_ok null`
+   (no check, no invention). Result annotated for the C6 expert.
 
-Clés existantes réutilisées : `VPS_GEMINI_API_KEY` (vision #1 + adaptateur) et
-`VPS_OPEN_ROUTER_API_KEY` (vision #2, famille différente) — déjà présentes dans
-les secrets du VPS. Plan B extracteur : Tesseract sidecar (qualité/complexité
-— écarté sauf besoin confidentialité renforcée).
+Existing keys reused: `VPS_GEMINI_API_KEY` (vision #1 + adapter) and
+`VPS_OPEN_ROUTER_API_KEY` (vision #2, different family) — already present in
+the VPS secrets. Extractor plan B: Tesseract sidecar (quality/complexity
+— set aside unless a stronger-privacy need arises).
 
-## Re-vérification
+## Re-check
 
-| Date | Hermes | Verdict inchangé ? | Notes |
+| Date | Hermes | Verdict unchanged? | Notes |
 |---|---|---|---|
-| 2026-09-01 | v0.20.6 | — (décision initiale) | design deux juges + bifurcation |
+| 2026-09-01 | v0.20.6 | — (initial decision) | two-judge design + fork |

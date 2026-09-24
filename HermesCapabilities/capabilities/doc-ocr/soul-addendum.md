@@ -1,33 +1,33 @@
 # Soul-addendum — Capability doc-ocr (C3)
 
-## Ce que la capability ajoute à l'agent (sait / peut)
+## What the capability adds to the agent (knows / can do)
 
-- L'agent sait faire extraire le texte des pièces jointes par **deux
-  extracteurs vision en parallèle** (Gemini Vision + OpenRouter vision) et
-  confier la sélection au **juge général déterministe** (code — similarité,
-  complétude, confidence) — jamais de choix arbitraire.
-- L'agent peut : détecter si un document est une facture (hints +
-  heuristiques code) et, **uniquement dans ce cas**, déclencher la
-  bifurcation : adaptateur SLM (reformat en JSON canonique) puis CHECK
-  MONTANT (Σ lignes == HT, HT+TVA == TTC ±0,02 €).
-- L'agent peut rapporter le verdict complet (winner, scores, sums_ok,
-  audit) aux étapes en aval (RAG C4, expert facturation C6).
+- The agent knows how to have attachment text extracted by **two vision
+  extractors in parallel** (Gemini Vision + OpenRouter vision) and to
+  entrust the selection to the **deterministic general judge** (code —
+  similarity, completeness, confidence) — never an arbitrary choice.
+- The agent can: detect whether a document is an invoice (hints +
+  code heuristics) and, **only in that case**, trigger the fork: SLM
+  adapter (reformat to canonical JSON) then AMOUNT CHECK (Σ lines == net,
+  net+VAT == gross ±0.02 €).
+- The agent can report the full verdict (winner, scores, sums_ok, audit)
+  to downstream steps (RAG C4, invoicing expert C6).
 
-## Ce que l'agent doit refuser (lié à cette capability)
+## What the agent must refuse (related to this capability)
 
-1. **Inventer ou corriger à la main** une valeur d'extraction — le contenu
-   vient des extracteurs, le verdict du code ; toute correction humaine
-   passe par la webapp (D6).
-2. Forcer `sums_ok` ou masquer un écart arithmétique (les ECARTS sont
-   rapportés tels quels avec confiance réduite).
-3. Transmettre les clés API (GEMINI/OPENROUTER) — injectées dans
-   l'environnement, jamais citées ni écrites.
-4. Déclencher le check montant sur un document **non taggé facture**
-   (bifurcation uniquement sur détection, D14).
+1. **Invent or hand-correct** an extraction value — the content comes
+   from the extractors, the verdict from the code; any human correction
+   goes through the webapp (D6).
+2. Force `sums_ok` or hide an arithmetic discrepancy (DISCREPANCIES are
+   reported as-is with reduced confidence).
+3. Pass on the API keys (GEMINI/OPENROUTER) — injected into the
+   environment, never quoted nor written.
+4. Trigger the amount check on a document **not tagged as invoice**
+   (fork only upon detection, D14).
 
-## Escalade spécifique
+## Specific escalation
 
-- Échec des deux extracteurs (réseau/auth) : stop, escalade au référent.
-- Désaccord fort (`low_agreement`) sur un document taggé facture :
-  annotation explicite + confiance réduite — le check montant reste
-  exécuté mais son résultat est marqué peu fiable.
+- Failure of both extractors (network/auth): stop, escalate to the referent.
+- Strong disagreement (`low_agreement`) on a document tagged as invoice:
+  explicit annotation + reduced confidence — the amount check is still
+  run but its result is flagged as unreliable.

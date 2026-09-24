@@ -1,42 +1,43 @@
-# Capability ged-r2 — archivage R2 des emails bruts
+# Capability ged-r2 — R2 archiving of raw emails
 
-**Type** : `mix` · **Statut** : M2.2-ter — SigV4 stdlib validé (vecteur AWS +
-réel), save slug-scopé opérationnel
+**Type**: `mix` · **Status**: M2.2-ter — SigV4 stdlib validated (AWS vector +
+real), slug-scoped save operational
 
-Sauvegarde générique des fichiers bruts email (thread.json + PJ) vers
-**Cloudflare R2** (S3-compatible, SigV4 **stdlib** — aucun pip), appelée à la
-fin de l'extraction email. Clé R2 : `<GED_EMAIL_PREFIX>/<slug>/emails/<thread_id>/<fichier>`
-— le slug distingue les clients (exigence 01/09).
+Generic save of raw email files (thread.json + attachments) to
+**Cloudflare R2** (S3-compatible, **stdlib** SigV4 — no pip), called at
+the end of email extraction. R2 key:
+`<GED_EMAIL_PREFIX>/<slug>/emails/<thread_id>/<file>`
+— the slug distinguishes clients (requirement 01/09).
 
-## Composants
+## Components
 
-| Fichier | Rôle |
+| File | Role |
 |---|---|
-| [manifest.yaml](manifest.yaml) | Contrat : secrets R2, code [r2_client, ged_save] |
-| [decision.md](decision.md) | Mix SigV4 stdlib — token API ≠ session token S3 (vérifié) |
-| [code/r2_client.py](code/r2_client.py) | SigV4 (vecteur AWS test suite ✓) + put/get/head/delete |
-| [code/ged_save.py](code/ged_save.py) | Save d'un dossier thread → R2 (slug-scopé) |
-| [soul-addendum.md](soul-addendum.md) | Refus : autres slugs, contenu hors spool, R2 ≠ source primaire |
-| [tests/test.sh](tests/test.sh) | SigV4 vecteur AWS + intégration réelle put/get/head/delete |
+| [manifest.yaml](manifest.yaml) | Contract: R2 secrets, code [r2_client, ged_save] |
+| [decision.md](decision.md) | Mix SigV4 stdlib — API token ≠ S3 session token (verified) |
+| [code/r2_client.py](code/r2_client.py) | SigV4 (AWS test suite vector ✓) + put/get/head/delete |
+| [code/ged_save.py](code/ged_save.py) | Save of a thread folder → R2 (slug-scoped) |
+| [soul-addendum.md](soul-addendum.md) | Refusals: other slugs, content outside the spool, R2 ≠ primary source |
+| [tests/test.sh](tests/test.sh) | SigV4 AWS vector + real put/get/head/delete integration |
 
-## Secrets requis (dans `HermesConfig/clients/<slug>/client.env`, 600)
+## Required secrets (in `HermesConfig/clients/<slug>/client.env`, 600)
 
-| Variable | Rôle |
+| Variable | Role |
 |---|---|
-| `VPS_GED_CLOUDFLARE_S3_EU_ENDPOINT` | Endpoint R2 (eu.r2.cloudflarestorage.com) |
-| `VPS_GED_CLOUDFLARE_BUCKET_NAME` | Bucket GED |
-| `VPS_GED_CLOUDFLARE_ACCESS_KEY_ID` | Clé d'accès R2 |
-| `VPS_GED_CLOUDFLARE_SECRET_ACCESS_KEY` | Secret R2 |
-| `VPS_GED_CLOUDFLARE_TOKEN` | Token API Cloudflare (REST) — **non utilisé par S3** |
+| `VPS_GED_CLOUDFLARE_S3_EU_ENDPOINT` | R2 endpoint (eu.r2.cloudflarestorage.com) |
+| `VPS_GED_CLOUDFLARE_BUCKET_NAME` | GED bucket |
+| `VPS_GED_CLOUDFLARE_ACCESS_KEY_ID` | R2 access key |
+| `VPS_GED_CLOUDFLARE_SECRET_ACCESS_KEY` | R2 secret |
+| `VPS_GED_CLOUDFLARE_TOKEN` | Cloudflare API token (REST) — **not used by S3** |
 
-Env : `CLIENT_SLUG` (déjà dans client.env), `GED_EMAIL_PREFIX=emails`.
+Env: `CLIENT_SLUG` (already in client.env), `GED_EMAIL_PREFIX=emails`.
 
-## Coûts / quotas
+## Costs / quotas
 
-R2 : stockage class A/B par opérations — polling + PJ volumineuses à
-surveiller (estimation par client dans DEPLOYMENT.md).
+R2: class A/B storage per operations — polling + large attachments to
+watch out for (estimate per client in DEPLOYMENT.md).
 
-## Historique
+## History
 
-- 2026-09-01 : création (exigence utilisateur — archivage R2 en fin
-  d'extraction email) ; SigV4 stdlib validé réel.
+- 2026-09-01: creation (user requirement — R2 archiving at the end of
+  email extraction); SigV4 stdlib validated for real.

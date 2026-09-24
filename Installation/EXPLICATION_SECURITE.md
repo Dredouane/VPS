@@ -1,144 +1,144 @@
-# 🛡️ Explication sécurité — VPS nemo (avant / après)
+# 🛡️ Security Explanation — VPS nemo (before / after)
 
-> Pourquoi le serveur a été détruit, ce qui a changé, et pourquoi il est maintenant
-> démontrablement plus dur à attaquer. Rédigé après l'audit + remédiation du 30/08/2026,
-> complété le 01/09/2026 (4 derniers points réglés).
+> Why the server was destroyed, what changed, and why it is now
+> demonstrably harder to attack. Written after the 30/08/2026 audit + remediation,
+> completed on 01/09/2026 (last 4 points resolved).
 
 ---
 
-## 1. Avant : une maison avec les clés sous le paillasson
+## 1. Before: a house with the keys under the doormat
 
-Trois faiblesses fatales **combinées** :
+Three **combined** fatal weaknesses:
 
-| Faiblesse | Pourquoi c'était fatal |
+| Weakness | Why it was fatal |
 |---|---|
-| **SSH port 22, root + mot de passe** | Des milliers de robots scannent internet 24h/24 et testent des mots de passe sur le port 22. Un mot de passe faible = compromission en heures. Et `root` = le compte qui contrôle TOUT. |
-| **nginx exposé sur le seul port ouvert** | Un service web exposé = un programme complexe face au monde. Il suffit d'UNE faille (version ancienne, mauvaise config) pour un accès direct, sans mot de passe. |
-| **Tous les secrets dans `.bashrc`** | Le plus grave. Une fois dedans, l'attaquant lisait tout : clés DeepSeek/OpenRouter/Gemini, tokens Telegram, mots de passe Supabase, JWT prod, OAuth Gmail. Ces clés donnent accès aux comptes cloud **même après réinstallation** — le vol de secrets survit à la destruction de la machine. |
+| **SSH port 22, root + password** | Thousands of bots scan the internet 24/7 and try passwords on port 22. A weak password = compromise within hours. And `root` = the account that controls EVERYTHING. |
+| **nginx exposed on the only open port** | An exposed web service = a complex program facing the world. A SINGLE flaw (old version, bad config) is enough for direct access, without a password. |
+| **All the secrets in `.bashrc`** | The gravest. Once inside, the attacker could read everything: DeepSeek/OpenRouter/Gemini keys, Telegram tokens, Supabase passwords, prod JWT, Gmail OAuth. These keys give access to the cloud accounts **even after reinstallation** — secret theft survives the destruction of the machine. |
 
-Et surtout : **aucune détection**. Pas de pare-feu structuré, pas de bannissement, pas de contrôle d'intégrité, pas d'alerte.
+And above all: **no detection**. No structured firewall, no banning, no integrity checking, no alerting.
 
-### Le scénario probable de l'attaque
+### The likely attack scenario
 ```
-scan du port 22 → brute force (ou faille nginx) → shell → lecture .bashrc
-→ réutilisation des clés cloud + installation de charge (minage) → destruction
+port 22 scan → brute force (or nginx flaw) → shell → .bashrc read
+→ cloud key reuse + payload installation (mining) → destruction
 ```
-La seule "réponse" possible était la réinstallation — preuve qu'il n'y avait ni alarme ni containment.
+The only possible "response" was reinstallation — proof that there was neither alarm nor containment.
 
 ---
 
-## 2. Maintenant : défense en profondeur
+## 2. Now: defense in depth
 
-Le principe n'est plus "une porte sécurisée" mais **des couches qui se relaient** — chaque couche suppose que la précédente peut être percée :
+The principle is no longer "one secured door" but **layers that back each other up** — each layer assumes the previous one can be breached:
 
-| Couche | Avant | Maintenant |
+| Layer | Before | Now |
 |---|---|---|
-| 🚪 **La porte** | port 22, root, mot de passe | Port **$VPS_SSH_PORT**, **clé seule** (impossible de taper un mot de passe), root **interdit**, 3 tentatives max, forwarding interdit. Le scan du port 22 ne trouve même plus de porte. |
-| 🧱 **Les murs** | nginx exposé, Docker shuntant le firewall | **UFW refuse tout par défaut** + chaîne `DOCKER-USER` qui empêche Docker de contourner UFW. Seuls joignables : $VPS_SSH_PORT + Syncthing (réservé à l'IP locale). nginx supprimé. |
-| 🏦 **Le coffre** | secrets dans `.bashrc` | Secrets dans `/etc/secrets/hermes.env` (600, root uniquement), `.bashrc` verrouillé 600, token du bot **roté** après exposition. |
-| 🚨 **L'alarme** | rien | **fail2ban** (bannit 24 h — 2 IP déjà bannies), **hook PAM** (alerte Telegram si connexion SSH inhabituelle), **AIDE** (alerte Telegram si un fichier système est altéré). |
-| 🔒 **Cloisonnement** | tout en root | Agents dans des conteneurs sans privilèges (`no-new-privileges`, uid 10000), gateways natifs en users dédiés, un seul compte sudo (`admin`), porte dérobée cloud-init `ubuntu` **supprimée**. |
-| 🔧 **Entretien** | rien | Patchs sécurité automatiques (unattended-upgrades), durcissement kernel (sysctl), snapd désactivé. |
+| 🚪 **The door** | port 22, root, password | Port **$VPS_SSH_PORT**, **key only** (impossible to type a password), root **forbidden**, 3 attempts max, forwarding forbidden. A port 22 scan no longer even finds a door. |
+| 🧱 **The walls** | nginx exposed, Docker bypassing the firewall | **UFW denies everything by default** + `DOCKER-USER` chain preventing Docker from bypassing UFW. Only reachable: $VPS_SSH_PORT + Syncthing (reserved for the local IP). nginx removed. |
+| 🏦 **The vault** | secrets in `.bashrc` | Secrets in `/etc/secrets/hermes.env` (600, root only), `.bashrc` locked to 600, bot token **rotated** after exposure. |
+| 🚨 **The alarm** | nothing | **fail2ban** (bans for 24 h — 2 IPs already banned), **PAM hook** (Telegram alert on unusual SSH login), **AIDE** (Telegram alert if a system file is altered). |
+| 🔒 **Compartmentalization** | everything as root | Agents in unprivileged containers (`no-new-privileges`, uid 10000), native gateways under dedicated users, a single sudo account (`admin`), cloud-init `ubuntu` back door **removed**. |
+| 🔧 **Maintenance** | nothing | Automatic security patches (unattended-upgrades), kernel hardening (sysctl), snapd disabled. |
 
 ---
 
-## 3. Démonstrations du 30/08 (on a attaqué pour vérifier)
+## 3. Demonstrations of 30/08 (we attacked to verify)
 
-- Connexion `root` → **rejetée** (le serveur n'offre que la clé publique)
-- Connexion par mot de passe → **rejetée**
-- 9 ports sondés **depuis l'extérieur** (22, 25, 8384, 8642, 8650-8653, 22000) → **tous fermés** ; seul $VPS_SSH_PORT ouvert
-- fail2ban avec **2 IP bannies** au moment de l'audit (la chaîne bannissement→UFW est prouvée)
-- Alertes Telegram **réellement reçues** (connexions, altérations AIDE)
-- Le système a détecté spontanément une création de fichier inattendue (`/home/admin/.hermes`)
+- `root` login → **rejected** (the server only offers the public key)
+- Password login → **rejected**
+- 9 ports probed **from the outside** (22, 25, 8384, 8642, 8650-8653, 22000) → **all closed**; only $VPS_SSH_PORT open
+- fail2ban with **2 IPs banned** at audit time (the ban→UFW chain is proven)
+- Telegram alerts **actually received** (logins, AIDE alterations)
+- The system spontaneously detected an unexpected file creation (`/home/admin/.hermes`)
 
 ---
 
-## 4. Les 4 points restants et leurs solutions
+## 4. The 4 remaining points and their solutions
 
-| # | Point | Solution(s) | Statut |
+| # | Point | Solution(s) | Status |
 |---|---|---|---|
-| 1 | `leanConstruction` tournait en root dans son conteneur | Re-déploiement via compose régénéré (image à jour, entrypoint drop → uid 10000 comme les 3 autres), données préservées | ✅ Fait le 01/09 |
-| 2 | Sauvegardes inexistantes | **A** : cron serveur 4h30 → `/var/backups/vps-fleet/` (tar.gz 1,3 Go, rétention 7 j) · **B** : script local `vps-backup-pull.sh` + tâche planifiée Windows (rapatriement auto) · **C (2ᵉ temps)** : NAS Synology (le NAS pull en SSH) | ✅ A+B faits le 01/09, C documenté |
-| 3 | Dépendance à l'IP publique (allowlist SSH, Syncthing 22000) | **Tailscale** : serveur enrôlé ($TAILSCALE_IP) ; port 22000 **fermé définitivement en UFW** ; accès SSH possible même si l'IP change | ✅ Fait le 01/09 |
-| 4 | Clés SSH = le secret le plus précieux | Passphrase sur `$VPS_SSH_KEY` (dans le password manager) + commande `vps` (agent auto au socket fixe) + archive GPG chiffrée sur USB (`backup-keys.sh`) | ✅ Fait le 01/09 (resté : copie USB) |
+| 1 | `leanConstruction` ran as root in its container | Re-deployment via regenerated compose (up-to-date image, entrypoint drop → uid 10000 like the 3 others), data preserved | ✅ Done on 01/09 |
+| 2 | Non-existent backups | **A**: server cron 4:30am → `/var/backups/vps-fleet/` (tar.gz 1.3 GB, 7-day retention) · **B**: local script `vps-backup-pull.sh` + Windows scheduled task (automatic pull) · **C (2nd step)**: Synology NAS (the NAS pulls over SSH) | ✅ A+B done on 01/09, C documented |
+| 3 | Dependence on the public IP (SSH allowlist, Syncthing 22000) | **Tailscale**: server enrolled ($TAILSCALE_IP); port 22000 **closed for good in UFW**; SSH access possible even if the IP changes | ✅ Done on 01/09 |
+| 4 | SSH keys = the most precious secret | Passphrase on `$VPS_SSH_KEY` (in the password manager) + `vps` command (auto agent on fixed socket) + encrypted GPG archive on USB (`backup-keys.sh`) | ✅ Done on 01/09 (left: USB copy) |
 
 ---
 
-## 5. Ton rituel quotidien (30 secondes)
+## 5. Your daily ritual (30 seconds)
 
-1. Ouvrir un terminal WSL → taper **`vps`** → passphrase **une fois** → « ✅ VPS joignable »
-2. Lancer opencode depuis ce terminal → tout fonctionne (connexions agents, skills, backups)
-3. Le VPS te préviendra sur Telegram : connexion inhabituelle, fichier altéré, (et le cron de sauvegarde tourne seul à 4h30)
+1. Open a WSL terminal → type **`vps`** → passphrase **once** → "✅ VPS reachable"
+2. Launch opencode from that terminal → everything works (agent connections, skills, backups)
+3. The VPS will notify you on Telegram: unusual login, altered file, (and the backup cron runs on its own at 4:30am)
 
-## 6. Rappel : un serveur n'est jamais "secure"
+## 6. Reminder: a server is never "secure"
 
-Il est **moins attaQUABLE et surveillé**. Les vrais boucliers restants :
-- **Les sauvegardes** (faites + rapatriées — la capacité à restaurer vaut plus que n'importe quel durcissement)
-- **Tes clés privées** (passphrase dans le manager, archive GPG sur USB)
-- La vigilance : toute alerte Telegram inhabituelle = à regarder, pas à ignorer.
+It is **less attackable and monitored**. The real remaining shields:
+- **The backups** (made + pulled — the ability to restore is worth more than any hardening)
+- **Your private keys** (passphrase in the manager, GPG archive on USB)
+- Vigilance: any unusual Telegram alert = to look at, not to ignore.
 
 ---
 
-## 7. Procédures côté utilisateur (à faire une fois)
+## 7. User-side Procedures (to do once)
 
-### 7.1 Archive GPG des clés → clé USB
+### 7.1 GPG archive of keys → USB key
 ```bash
-bash ~/dev/VPS/Installation/scripts/backup-keys.sh    # passphrase GPG = celle de ta clé SSH
+bash ~/dev/VPS/Installation/scripts/backup-keys.sh    # GPG passphrase = the one of your SSH key
 ```
-Puis : copier `~/backups/keys/*.gpg` sur **une clé USB** et noter la passphrase dans le password manager. Restauration documentée en sortie du script.
+Then: copy `~/backups/keys/*.gpg` to **a USB key** and note the passphrase in the password manager. Restoration documented in the script output.
 
-### 7.2 Tâche planifiée Windows (rapatriement automatique du backup)
-Dans **Windows** (CMD ou PowerShell) :
+### 7.2 Windows Scheduled Task (automatic backup pull)
+In **Windows** (CMD or PowerShell):
 ```
 schtasks /Create /TN "VPS Backup Pull" /TR "wsl.exe -e bash /home/redouane/dev/VPS/Installation/scripts/vps-backup-pull.sh" /SC DAILY /ST 11:00
 ```
-Le script utilise la clé **dédiée** `$VPS_KEY_BACKUP` (sans passphrase mais enfermée côté serveur : `restrict` + commande forcée = streamer uniquement la dernière archive). Il ne peut rien faire d'autre, même volée. Vérification : `~/backups/vps-fleet/fleet-latest.tar.gz`.
+The script uses the **dedicated** key `$VPS_KEY_BACKUP` (no passphrase but locked server-side: `restrict` + forced command = stream only the latest archive). It can do nothing else, even if stolen. Check: `~/backups/vps-fleet/fleet-latest.tar.gz`.
 
-### 7.3 Tailscale sur tes appareils
-1. Installer l'app (PC : https://tailscale.com/download ; mobile : store) → login **REDACTED_EMAIL**
-2. Le serveur est déjà enrôlé : **$TAILSCALE_IP**
-3. Le futur sync Syncthing se fera via cette IP (le port 22000 public est fermé)
+### 7.3 Tailscale on your devices
+1. Install the app (PC: https://tailscale.com/download ; mobile: store) → login **REDACTED_EMAIL**
+2. The server is already enrolled: **$TAILSCALE_IP**
+3. The future Syncthing sync will go through this IP (the public port 22000 is closed)
 
-### 7.4 NAS Synology (2ᵉ temps — le NAS pull, pas le VPS)
-1. DSM → Panneau de configuration → Terminal & SNMP → activer SSH
-2. Sur le NAS : `ssh-keygen -t ed25519 -f /volume1/backups/.ssh/$VPS_SSH_KEY -N ""` → copier le `.pub` dans `/home/admin/.ssh/authorized_keys` du VPS (avec `restrict,command=` comme pour `$VPS_KEY_BACKUP` si on veut restreindre, ou en clé de lecture rsync)
-3. DSM → Planificateur de tâches → tâche planifiée (root) → script : `rsync -az --delete -e "ssh -i /volume1/backups/.ssh/$VPS_SSH_KEY -p $VPS_SSH_PORT" admin@$VPS_IP:/var/backups/vps-fleet/ /volume1/backups/nemo/`
+### 7.4 Synology NAS (2nd step — the NAS pulls, not the VPS)
+1. DSM → Control Panel → Terminal & SNMP → enable SSH
+2. On the NAS: `ssh-keygen -t ed25519 -f /volume1/backups/.ssh/$VPS_SSH_KEY -N ""` → copy the `.pub` into `/home/admin/.ssh/authorized_keys` on the VPS (with `restrict,command=` like `$VPS_KEY_BACKUP` if we want to restrict, or as an rsync read key)
+3. DSM → Task Scheduler → scheduled task (root) → script: `rsync -az --delete -e "ssh -i /volume1/backups/.ssh/$VPS_SSH_KEY -p $VPS_SSH_PORT" admin@$VPS_IP:/var/backups/vps-fleet/ /volume1/backups/nemo/`
 
-### 7.5 Hygiène locale (hors VPS) — À FAIRE dans une session dédiée
-Ton `.bashrc` **local** contient encore des secrets en clair (RUNPOD, HF, Supabase, tokens…). Le VPS est durci, mais ton PC reste le trésor. Procédure (même pattern que le VPS, ~20 min) :
+### 7.5 Local hygiene (outside the VPS) — TO DO in a dedicated session
+Your **local** `.bashrc` still contains secrets in plaintext (RUNPOD, HF, Supabase, tokens…). The VPS is hardened, but your PC remains the treasure. Procedure (same pattern as the VPS, ~20 min):
 
 ```bash
-# 1. Sauvegarde
+# 1. Backup
 cp -a ~/.bashrc ~/.bashrc.preaudit-$(date +%Y%m%d)
-# 2. Dossier sécurisé + extraction de TOUTES les lignes export
+# 2. Secure folder + extraction of ALL export lines
 mkdir -p ~/.config/secrets && chmod 700 ~/.config/secrets
 umask 077
 grep -E '^export [A-Za-z_][A-Za-z_0-9]*=' ~/.bashrc > ~/.config/secrets/env
-# 3. Vérification syntaxe + sourcing sous set -u
+# 3. Syntax check + sourcing under set -u
 bash -n ~/.config/secrets/env && bash -uc '. ~/.config/secrets/env && echo OK'
-# 4. Retrait des exports du .bashrc + sourcing gardé
+# 4. Remove the exports from .bashrc + keep the sourcing
 sed -i '/^export [A-Za-z_][A-Za-z_0-9]*=/d' ~/.bashrc
-printf '\n# Secrets locaux (ne jamais versionner)\n[ -f ~/.config/secrets/env ] && . ~/.config/secrets/env\n' >> ~/.bashrc
+printf '\n# Local secrets (never commit)\n[ -f ~/.config/secrets/env ] && . ~/.config/secrets/env\n' >> ~/.bashrc
 chmod 600 ~/.bashrc ~/.config/secrets/env
-# 5. Tester un NOUVEAU terminal (variables chargées) avant de fermer l'ancien
+# 5. Test a NEW terminal (variables loaded) before closing the old one
 ```
 
-### 7.6 Hook PAM SSH — alerte Telegram si IP non autorisée
+### 7.6 PAM SSH hook — Telegram alert on unauthorized IP
 
-Un hook PAM (`/usr/local/bin/telegram-alert-ssh.sh`) envoie une alerte Telegram ("Louky") à chaque connexion SSH depuis une IP **non whitelistée**.
+A PAM hook (`/usr/local/bin/telegram-alert-ssh.sh`) sends a Telegram alert ("Louky") on every SSH login from a **non-whitelisted** IP.
 
-**Whitelist** : variable `SSH_ALERT_ALLOWED_IPS` dans `/etc/secrets/hermes.env` (600, root).
+**Whitelist**: variable `SSH_ALERT_ALLOWED_IPS` in `/etc/secrets/hermes.env` (600, root).
 ```bash
-# Consulter
+# View
 sudo grep SSH_ALERT_ALLOWED_IPS /etc/secrets/hermes.env
-# Résultat : export SSH_ALERT_ALLOWED_IPS="$SOURCE_IP $SOURCE_IP_2"
+# Result: export SSH_ALERT_ALLOWED_IPS="$SOURCE_IP $SOURCE_IP_2"
 
-# Mettre à jour (IP dynamique SFR — à refaire si tu changes de IP)
-sudo sed -i 's/SSH_ALERT_ALLOWED_IPS=.*/SSH_ALERT_ALLOWED_IPS="ANCIENNE NOUVELLE"/' /etc/secrets/hermes.env
+# Update (dynamic SFR IP — to redo if you change IP)
+sudo sed -i 's/SSH_ALERT_ALLOWED_IPS=.*/SSH_ALERT_ALLOWED_IPS="OLD NEW"/' /etc/secrets/hermes.env
 ```
 
-**Comment savoir si ton IP a changé** : tu reçois des notifications "Connexion SSH - IP non autorisee" alors que c'est toi qui te connectes. L'IP affichée dans la notification est la bonne — ajoute-la à la whitelist.
+**How to know if your IP changed**: you receive "SSH Connection - Unauthorized IP" notifications while it is you who is connecting. The IP displayed in the notification is the right one — add it to the whitelist.
 
-**Note** : ce hook est **indépendant** du firewall Contabo (WebExposure) et du UFW. C'est un monitoring interne au VPS.
+**Note**: this hook is **independent** of the Contabo firewall (WebExposure) and UFW. It is monitoring internal to the VPS.
 
-Compléments : BitLocker activé sur le disque Windows (Panneau de configuration → Chiffrement de lecteur), 2FA sur Telegram + Google + GitHub, Kaspersky conservé + mises à jour Windows automatiques.
+Additions: BitLocker enabled on the Windows disk (Control Panel → Drive Encryption), 2FA on Telegram + Google + GitHub, Kaspersky kept + automatic Windows updates.

@@ -1,40 +1,40 @@
-# Ticket AREV-210 — Recherche : les résultats deviennent actionnables (ouvrir la ressource / aller à l'objet)
+# Ticket AREV-210 — Search: results become actionable (open the resource / go to the object)
 
-- **Date** : 2026-09-08
-- **Référence spec** : cohérent avec §1/§2 (tout résultat doit mener à l'objet métier pertinent) — compléments des 2 modules
-- **Scénarios NonReg** : (transversal) — cohérence retour sans casse
-- **Persona** : Salarie_Backoffice (principal) · Gerant_PME
-- **Priorité** : Moyenne
-- **Type** : Amélioration UX
+- **Date**: 2026-09-08
+- **Spec reference**: consistent with §1/§2 (every result must lead to the relevant business object) — complement of the 2 modules
+- **NonReg scenarios**: (cross-cutting) — consistency of the back navigation without breakage
+- **Persona**: Salarie_Backoffice (primary) · Gerant_PME
+- **Priority**: Medium
+- **Type**: UX improvement
 
-## Description (le contrat)
-La recherche sémantique (déjà d'excellente qualité) permet de trouver la bonne info **et d'y
-accéder** : chaque résultat mène, en un clic, à la ressource (fiche facture, fil email/document).
+## Description (the contract)
+The semantic search (already of excellent quality) makes it possible to find the right info **and to
+access it**: each result leads, in one click, to the resource (invoice detail page, email/document thread).
 
-## État actuel
-La recherche répond bien à une requête : on obtient 2 résultats (ex. le PDF « FACTURE N° 2026-163…
-.pdf », le fil « Fwd: Facture situ MARS 26 ») avec le score. Mais les résultats ne sont **pas
-cliquables** : aucun lien ni bouton « ouvrir » n'amène vers la fiche ou le fil. L'utilisateur
-retrouve l'info mais ne peut pas l'exploiter dans l'interface.
+## Current state
+The search answers a query well: we get 2 results (e.g. the PDF "FACTURE N° 2026-163…
+.pdf", the thread "Fwd: Facture situ MARS 26") with the score. But the results are **not
+clickable**: no link or "open" button leads to the detail page or the thread. The user
+finds the info but cannot use it in the interface.
 
-## État attendu
-- Chaque résultat est **cliquable/intégrable** vers le bon objet :
-  - un PDF/facture → mène à la **fiche détail facture** (TKT-202) si l'objet est relié ;
-  - un email/emailchain → mène au **fil de conversation** (TKT-105) ;
-  - options possible : le titre du résultat est un lien + un bouton action explicite.
-- Une fois ouvert, le retour fonctionne (pas de perte de contexte).
+## Expected state
+- Each result is **clickable/linkable** to the right object:
+  - a PDF/invoice → leads to the **invoice detail page** (TKT-202) if the object is linked;
+  - an email/emailchain → leads to the **conversation thread** (TKT-105);
+  - possible option: the result title is a link + an explicit action button.
+- Once opened, the back navigation works (no context loss).
 
-## La "douleur" du persona
-Retrouver rapidement un document (recherche), le voir/agir dessus sans repartir dans un autre menu,
-est un gros gain de temps pour le backoffice. Sinon la recherche (bonne fonction) reste « à moitié
-débouchi » et l'utilisateur retourne à une autre navigation.
+## The persona's "pain"
+Quickly finding a document (search), viewing it/acting on it without going back into another menu,
+is a big time saver for the backoffice. Otherwise the search (good feature) remains "half
+exploitable" and the user goes back to another navigation.
 
-## Critères d'acceptation
-- [ ] Chaque type de résultat a une action d'ouverture (fiche / fil / doc)
-- [ ] Le clic mène à la bonne ressource sans erreur ; retour possible
-- [ ] Cohérence : les libellés des résultats/objets respectent la vocabulaire FR (TKT-102)
-- [ ] Aucune erreur JS
+## Acceptance criteria
+- [ ] Each result type has an open action (detail page / thread / doc)
+- [ ] The click leads to the right resource without error; going back is possible
+- [ ] Consistency: result/object labels respect the FR vocabulary (TKT-102)
+- [ ] No JS errors
 
 ## Notes
-S'appuie sur le lien « mailchain ↔ facture » qui sera établi (TKT-202). À faire après les objets
-métier routables (fiche, fil).
+Builds on the "mailchain ↔ invoice" link that will be established (TKT-202). To be done after the
+routable business objects (detail page, thread).

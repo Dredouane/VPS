@@ -1,43 +1,43 @@
-# TKT-108 — Correction de valeurs d'une facture (mode edit fiche détail)
+# TKT-108 — Correcting an invoice's values (detail page edit mode)
 
-> Ticket webapp (session Alinea) — format calqué sur `../template_issue.md`,
-> sans référence spec/NonReg (hors périmètre).
+> Webapp ticket (Alinea session) — format modeled on `../template_issue.md`,
+> without spec/NonReg reference (outside scope).
 
-- **Date** : 2026-09-08
-- **Persona** : Salarie_Backoffice
-- **Priorité** : Haute (V2)
-- **Type** : Nouvelle feature (décision architecte D-B)
+- **Date**: 2026-09-08
+- **Persona**: Salarie_Backoffice
+- **Priority**: High (V2)
+- **Type**: New feature (architect decision D-B)
 
-## Description (le contrat)
-Sur la fiche d'une facture, l'opératrice peut **corriger ou alimenter les
-champs manquants** (échéance, montants, objet, fournisseur…) en mode edit
-normal de la page détail — sans ressaisie totale. La correction est tracée.
+## Description (the contract)
+On an invoice's detail page, the operator can **correct or fill in missing
+fields** (due date, amounts, subject, supplier…) using the detail page's normal
+edit mode — without full re-entry. The correction is traced.
 
-## État actuel
-La fiche est en lecture seule + transitions de statut (Valider/Rejeter).
-Les valeurs erronées ou manquantes (ex : échéance absente) ne peuvent pas
-être corrigées dans l'outil.
+## Current state
+The detail page is read-only + status transitions (Validate/Reject).
+Wrong or missing values (e.g. missing due date) cannot be
+corrected in the tool.
 
-## État attendu
-- Bouton **Modifier** sur la fiche → champs éditables (mode edit inline) →
-  Enregistrer / Annuler.
-- Champs éditables : `date_facture`, `date_echeance`, `montant_ht`,
+## Expected state
+- **Modifier** [Edit] button on the detail page → editable fields (inline edit mode) →
+  Enregistrer [Save] / Annuler [Cancel].
+- Editable fields: `date_facture`, `date_echeance`, `montant_ht`,
   `montant_tva`, `montant_ttc`, `objet`, `fournisseur`,
-  `fournisseur_identifiant`, `devise`. Non éditables : `numero`, `statut`
-  (transitions dédiées), champs système.
-- Chaque enregistrement trace dans `extraction` (jsonb) : horodatage, email
-  de l'auteur, champ, ancienne valeur → nouvelle valeur (audit lisible).
-- Le statut n'est JAMAIS modifié par l'édition (jamais `extracted` — garde
-  D6 déjà en place côté API).
+  `fournisseur_identifiant`, `devise`. Not editable: `numero`, `statut`
+  (dedicated transitions), system fields.
+- Each save traces in `extraction` (jsonb): timestamp, author's
+  email, field, old value → new value (readable audit).
+- The status is NEVER modified by the edit (never `extracted` — D6
+  guard already in place API-side).
 
-## Critères d'acceptation
-- [ ] Modifier → edit inline → Enregistrer → valeurs persistées (refresh OK)
-- [ ] Audit de correction visible (qui, quand, quoi)
-- [ ] Champs éditables uniquement = liste ci-dessus (API refuse le reste)
-- [ ] Aucun statut modifié par l'édition
-- [ ] Format FR sur les montants édités (validation)
+## Acceptance criteria
+- [ ] Modifier [Edit] → inline edit → Enregistrer [Save] → values persisted (refresh OK)
+- [ ] Correction audit visible (who, when, what)
+- [ ] Editable fields = only the list above (API refuses the rest)
+- [ ] No status modified by the edit
+- [ ] FR format on the edited amounts (validation)
 
 ## Notes
-Backend : `PATCH /api/v1/factures/{id}` étendu (pickFacturePatch →
-pickFactureUpdate : statut OU champs métier, jamais les deux dans le même
-appel). Contrat openapi régénéré (gen-all). Voir PLAN-ITER-001.md §2 (D-B).
+Backend: `PATCH /api/v1/factures/{id}` extended (pickFacturePatch →
+pickFactureUpdate: status OR business fields, never both in the same
+call). Openapi contract regenerated (gen-all). See PLAN-ITER-001.md §2 (D-B).

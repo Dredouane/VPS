@@ -1,77 +1,77 @@
-# Plan de Blindage & Restauration Complet – VPS Ubuntu 22.04 LTS (Clean Plate)
+# Complete Hardening & Restoration Plan – Ubuntu 22.04 LTS VPS (Clean Plate)
 
-**Objectif** : Transformer un VPS fraîchement ré-imagé en machine ultra-durcie, prête pour une flotte d’agents LLM (Hermes / LiteLLM), Syncthing, Vault Obsidian, sans jamais revoir de rootkit ou backdoor.
+**Objective**: Transform a freshly re-imaged VPS into an ultra-hardened machine, ready for a fleet of LLM agents (Hermes / LiteLLM), Syncthing, an Obsidian vault, without ever seeing a rootkit or backdoor again.
 
-**Contexte source** :
-- Guidelines SecOps 2026 (SSH, UFW+Docker, no-new-privileges, AIDE, secrets).
-- Post X @QuentinLecocq_ (27 Aug 2026) : UFW + Fail2ban + utilisateur dédié **sans sudo** + versions figées + least privilege strict pour l’agent.
-- Corrections critiques validées (post-incident) : pas de userns-remap, restauration d’archive, clé SSH réelle, gestion docker group, utilisateur/service Syncthing.
+**Source context**:
+- 2026 SecOps guidelines (SSH, UFW+Docker, no-new-privileges, AIDE, secrets).
+- X post by @QuentinLecocq_ (27 Aug 2026): UFW + Fail2ban + dedicated user **without sudo** + pinned versions + strict least privilege for the agent.
+- Validated critical fixes (post-incident): no userns-remap, archive restoration, real SSH key, docker group handling, Syncthing user/service.
 
-**Principe directeur** :
-1. Least privilege absolu (utilisateur service sans sudo).
-2. Surface d’attaque minimale.
-3. Détection immédiate de toute altération de binaires.
-4. Secrets jamais en clair dans les images ou variables d’environnement visibles.
-5. Tout doit être idempotent et testable.
-6. **Ne jamais casser les permissions des volumes partagés** (Obsidian, SQLite, Syncthing).
+**Guiding principles**:
+1. Absolute least privilege (service user without sudo).
+2. Minimal attack surface.
+3. Immediate detection of any binary alteration.
+4. Secrets never in plaintext in images or visible environment variables.
+5. Everything must be idempotent and testable.
+6. **Never break the permissions of shared volumes** (Obsidian, SQLite, Syncthing).
 
-**Avertissement critique pour l’agent OpenCode** :
-- Toujours garder **deux sessions SSH ouvertes** pendant les modifications SSH.
-- Tester chaque changement critique avant de passer à l’étape suivante.
-- Ne jamais exécuter `ufw enable` ou changer le port SSH sans avoir vérifié la connexion alternative.
-- **Remplacer impérativement la variable `ADMIN_PUBKEY` par la vraie clé publique avant de désactiver les mots de passe.**
-- En cas de doute → s’arrêter et demander confirmation humaine.
+**Critical warning for the OpenCode agent**:
+- Always keep **two SSH sessions open** during SSH changes.
+- Test every critical change before moving to the next step.
+- Never run `ufw enable` or change the SSH port without having verified the alternative connection.
+- **Imperatively replace the `ADMIN_PUBKEY` variable with the real public key before disabling passwords.**
+- When in doubt → stop and ask for human confirmation.
 
 ---
 
-## 0. Prérequis & Variables (à définir AVANT exécution)
+## 0. Prerequisites & Variables (to define BEFORE execution)
 
 ```bash
 # ============================================================
-# VARIABLES OBLIGATOIRES À ADAPTER
+# MANDATORY VARIABLES TO ADAPT
 # ============================================================
 
-ADMIN_USER="admin"                  # Utilisateur admin avec sudo
-HERMES_USER="hermes"                # Utilisateur service SANS sudo
-SSH_PORT="$VPS_SSH_PORT"                     # Port SSH non standard
+ADMIN_USER="admin"                  # Admin user with sudo
+HERMES_USER="hermes"                # Service user WITHOUT sudo
+SSH_PORT="$VPS_SSH_PORT"                     # Non-standard SSH port
 
-# ⚠️⚠️⚠️ CRITIQUE – REMPLACER PAR TA VRAIE CLÉ PUBLIQUE ⚠️⚠️⚠️
-# Si tu laisses la valeur placeholder, tu seras définitivement verrouillé hors du VPS
-ADMIN_PUBKEY="ssh-ed25519 AAAA... REMPLACE_MOI_PAR_TA_VRAIE_CLE_PUBLIQUE"
+# ⚠️⚠️⚠️ CRITICAL – REPLACE WITH YOUR REAL PUBLIC KEY ⚠️⚠️⚠️
+# If you leave the placeholder value, you will be permanently locked out of the VPS
+ADMIN_PUBKEY="ssh-ed25519 AAAA... REPLACE_ME_WITH_YOUR_REAL_PUBLIC_KEY"
 
 TIMEZONE="Europe/Paris"
 
-# Chemin de l’archive de backup (à adapter si besoin)
-BACKUP_ARCHIVE="/root/vps_clean_backup.tar.gz"   # ou le chemin réel où se trouve l’archive
+# Path of the backup archive (adapt if needed)
+BACKUP_ARCHIVE="/root/vps_clean_backup.tar.gz"   # or the actual path where the archive is located
 ```
 
 ---
 
-## 1. Première connexion & Mise à jour système
+## 1. First Connection & System Update
 
 ```bash
-# En root
+# As root
 apt update && apt full-upgrade -y
 apt autoremove -y
 apt install -y curl wget git htop jq unzip ufw fail2ban unattended-upgrades apt-listchanges rsync
 timedatectl set-timezone $TIMEZONE
 ```
 
-Redémarrer si un nouveau kernel a été installé :
+Reboot if a new kernel was installed:
 ```bash
 reboot
 ```
 
 ---
 
-## 2. Création des utilisateurs (Least Privilege)
+## 2. User Creation (Least Privilege)
 
-### 2.1 Utilisateur administrateur
+### 2.1 Administrator user
 ```bash
 adduser --disabled-password --gecos "" $ADMIN_USER
 usermod -aG sudo $ADMIN_USER
 
-# Ajouter l’alias syncthing dans le .bashrc d'admin
+# Add the syncthing alias to admin's .bashrc
 echo "alias sync-reset="syncthing-manage reset"" >> /home/$ADMIN_USER/.bashrc
 
 mkdir -p /home/$ADMIN_USER/.ssh
@@ -81,27 +81,27 @@ chmod 600 /home/$ADMIN_USER/.ssh/authorized_keys
 chown -R $ADMIN_USER:$ADMIN_USER /home/$ADMIN_USER/.ssh
 ```
 
-### 2.2 Utilisateur service Hermes (SANS sudo)
+### 2.2 Hermes service user (WITHOUT sudo)
 ```bash
 adduser --disabled-password --gecos "" $HERMES_USER
-# NE PAS ajouter au groupe sudo
-# NE PAS ajouter au groupe docker
+# DO NOT add to the sudo group
+# DO NOT add to the docker group
 mkdir -p /home/$HERMES_USER
 chown -R $HERMES_USER:$HERMES_USER /home/$HERMES_USER
 ```
 
-### 2.3 Utilisateur système Syncthing
+### 2.3 Syncthing system user
 ```bash
 adduser --system --group --home /home/syncthing syncthing
 ```
 
-**Test obligatoire** : se connecter en `$ADMIN_USER` avec la clé SSH **avant** de continuer et surtout avant de désactiver l’authentification par mot de passe.
+**Mandatory test**: log in as `$ADMIN_USER` with the SSH key **before** continuing and above all before disabling password authentication.
 
 ---
 
-## 3. Hardening SSH (priorité absolue)
+## 3. SSH Hardening (absolute priority)
 
-Créer le drop-in (préfixe bas pour primer sur cloud-init) :
+Create the drop-in (low prefix so it takes precedence over cloud-init):
 
 ```bash
 cat > /etc/ssh/sshd_config.d/00-hardening.conf << EOF
@@ -125,7 +125,7 @@ AllowUsers $ADMIN_USER
 EOF
 ```
 
-Chiffres modernes :
+Modern ciphers:
 ```bash
 cat > /etc/ssh/sshd_config.d/10-ciphers.conf << EOF
 KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,sntrup761x25519-sha512@openssh.com
@@ -135,14 +135,14 @@ HostKeyAlgorithms ssh-ed25519,rsa-sha2-512,rsa-sha2-256
 EOF
 ```
 
-Valider et recharger :
+Validate and reload:
 ```bash
 sshd -t
 systemctl reload ssh
 ```
 
-**Test obligatoire** : ouvrir une **nouvelle** session sur le port `$SSH_PORT` avec la clé.  
-Ne fermer l’ancienne session qu’après succès confirmé.
+**Mandatory test**: open a **new** session on port `$SSH_PORT` with the key.  
+Only close the old session after confirmed success.
 
 ---
 
@@ -173,21 +173,21 @@ fail2ban-client status sshd
 
 ---
 
-## 5. Pare-feu UFW + Gestion Docker
+## 5. UFW Firewall + Docker Handling
 
 ```bash
 ufw default deny incoming
 ufw default allow outgoing
 ufw allow $SSH_PORT/tcp comment 'SSH hardened'
-# Décommenter uniquement si besoin d’exposition publique
+# Uncomment only if public exposure is needed
 # ufw allow 80/tcp
 # ufw allow 443/tcp
 ufw --force enable
 ```
 
-### Règles DOCKER-USER (critique – Docker court-circuite UFW)
+### DOCKER-USER rules (critical – Docker short-circuits UFW)
 
-Ajouter à la fin de `/etc/ufw/after.rules` :
+Append at the end of `/etc/ufw/after.rules`:
 
 ```bash
 cat >> /etc/ufw/after.rules << 'EOF'
@@ -208,20 +208,20 @@ EOF
 ufw reload
 ```
 
-**Règle d’or** : tous les conteneurs d’agents doivent publier leurs ports en `127.0.0.1:port:port` uniquement.
+**Golden rule**: all agent containers must publish their ports as `127.0.0.1:port:port` only.
 
 ---
 
-## 6. Installation & Hardening Docker
+## 6. Docker Installation & Hardening
 
 ```bash
-# Installation officielle Docker
+# Official Docker installation
 curl -fsSL https://get.docker.com | sh
 
-# Ajouter UNIQUEMENT l’utilisateur admin au groupe docker
+# Add ONLY the admin user to the docker group
 usermod -aG docker $ADMIN_USER
 
-# daemon.json sécurisé (PAS de "userns-remap")
+# Secure daemon.json (NO "userns-remap")
 mkdir -p /etc/docker
 cat > /etc/docker/daemon.json << EOF
 {
@@ -247,55 +247,55 @@ systemctl restart docker
 
 ---
 
-## 7. Installation & Configuration de Syncthing
+## 7. Syncthing Installation & Configuration
 
 ```bash
-# Installation de Syncthing
+# Syncthing installation
 apt install -y syncthing
 
-# Activation et démarrage du service pour l'utilisateur syncthing
+# Enable and start the service for the syncthing user
 systemctl enable syncthing@syncthing.service
 systemctl start syncthing@syncthing.service
 ```
 
 ---
 
-## 8. Restauration de l’archive de backup (CRITIQUE)
+## 8. Backup Archive Restoration (CRITICAL)
 
 ```bash
-# 1. Créer un dossier temporaire de restauration
+# 1. Create a temporary restore folder
 mkdir -p /tmp/restore
 cd /tmp/restore
 
-# 2. Extraire l’archive
+# 2. Extract the archive
 tar -xzf "$BACKUP_ARCHIVE"
 
-# 3. Restaurer les dossiers utilisateurs Hermes / agents
+# 3. Restore the Hermes / agent user folders
 rsync -a /tmp/restore/home/hermesrunner/ /home/hermesrunner/ 2>/dev/null || true
 rsync -a /tmp/restore/home/loukyrunner/ /home/loukyrunner/ 2>/dev/null || true
 rsync -a /tmp/restore/home/hermes/ /home/hermes/ 2>/dev/null || true
 
-# 4. Restaurer le Vault Obsidian pour Syncthing
+# 4. Restore the Obsidian Vault for Syncthing
 mkdir -p /home/syncthing
 rsync -a /tmp/restore/home/syncthing/obsidian-vault/ /home/syncthing/obsidian-vault/ 2>/dev/null || true
 chown -R syncthing:syncthing /home/syncthing 2>/dev/null || true
 
-# 5. Restaurer la configuration LiteLLM
+# 5. Restore the LiteLLM configuration
 mkdir -p /opt/litellm
 cp /tmp/restore/opt/litellm/config.yaml /opt/litellm/config.yaml 2>/dev/null || true
 chown -R root:root /opt/litellm
 
-# 6. Restaurer le script spawn-agent
+# 6. Restore the spawn-agent script
 cp /tmp/restore/usr/local/bin/spawn-agent /usr/local/bin/spawn-agent 2>/dev/null || cp /tmp/restore/spawn-agent.sh /usr/local/bin/spawn-agent 2>/dev/null || true
 chmod +x /usr/local/bin/spawn-agent
 
-# 7. Restaurer les fichiers .hermes et bases SQLite si présents ailleurs
+# 7. Restore .hermes files and SQLite databases if present elsewhere
 find /tmp/restore -name "*.hermes" -o -name "state.db" 2>/dev/null
 ```
 
 ---
 
-## 9. Détection d’intégrité – AIDE
+## 9. Integrity Detection – AIDE
 
 ```bash
 apt install -y aide
@@ -308,7 +308,7 @@ mkdir -p /var/log/aide
 
 ---
 
-## 10. Mises à jour automatiques de sécurité
+## 10. Automatic Security Updates
 
 ```bash
 dpkg-reconfigure -plow unattended-upgrades
@@ -316,7 +316,7 @@ dpkg-reconfigure -plow unattended-upgrades
 
 ---
 
-## 11. Gestion des secrets (API keys)
+## 11. Secrets Handling (API keys)
 
 ```bash
 mkdir -p /etc/secrets
@@ -354,7 +354,7 @@ sysctl --system
 
 ---
 
-## 13. Nettoyage final & Vérifications
+## 13. Final Cleanup & Checks
 
 ```bash
 systemctl disable --now snapd 2>/dev/null || true

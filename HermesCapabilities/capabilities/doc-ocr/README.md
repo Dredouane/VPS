@@ -1,56 +1,56 @@
-# Capability doc-ocr (C3) — OCR multi-provider + deux juges
+# Capability doc-ocr (C3) — multi-provider OCR + two judges
 
-**Type** : `mix` · **Statut** : M2.3 — code + tests verts (réseau réel à M2.6
-sur vraies PJ)
+**Type**: `mix` · **Status**: M2.3 — code + tests green (real network at
+M2.6 on real attachments)
 
-Extrait le texte de toutes les pièces jointes (spool C1) avec **deux
-extracteurs vision en parallèle** (Gemini Vision + OpenRouter vision), désigne
-le meilleur via un **juge général déterministe**, et — uniquement pour les
-factures — enchaîne un **adaptateur SLM** (reformat JSON canonique) puis un
-**check montant** arithmétique (Σ lignes == HT, HT+TVA == TTC).
+Extracts the text of every attachment (C1 spool) with **two vision
+extractors in parallel** (Gemini Vision + OpenRouter vision), picks
+the best one via a **deterministic general judge**, and — only for invoices
+— chains an **SLM adapter** (canonical JSON reformat) then an arithmetic
+**amount check** (Σ lines == net, net+VAT == gross).
 
-## Composants
+## Components
 
-| Fichier | Rôle |
+| File | Role |
 |---|---|
-| [manifest.yaml](manifest.yaml) | Contrat : secrets GEMINI/OPENROUTER, code ×5, skill |
-| [decision.md](decision.md) | Deux juges séparés (revue 01/09) — D14 |
-| [code/ocr_gemini.py](code/ocr_gemini.py) | Extracteur #1 (Gemini Vision, générique) |
-| [code/ocr_openrouter.py](code/ocr_openrouter.py) | Extracteur #2 (OpenRouter vision, autre famille) |
-| [code/ocr_judge.py](code/ocr_judge.py) | **Juge général** : similarité, complétude, doc_type, winner |
-| [code/invoice_adapter.py](code/invoice_adapter.py) | **Bifurcation facture** : SLM Flash → JSON canonique |
-| [code/invoice_check.py](code/invoice_check.py) | Normalisation (aliases, nombres FR/EN) + **check montants** |
-| [schemas/invoice_extraction.json](schemas/invoice_extraction.json) | Schéma canonique facture versionné |
-| [soul-addendum.md](soul-addendum.md) | Refus : inventer des valeurs, masquer un écart, check hors facture |
-| [tests/test.sh](tests/test.sh) | Unitaires purs (juge, nombres, sommes, adaptateur) |
+| [manifest.yaml](manifest.yaml) | Contract: GEMINI/OPENROUTER secrets, code ×5, skill |
+| [decision.md](decision.md) | Two separate judges (01/09 review) — D14 |
+| [code/ocr_gemini.py](code/ocr_gemini.py) | Extractor #1 (Gemini Vision, generic) |
+| [code/ocr_openrouter.py](code/ocr_openrouter.py) | Extractor #2 (OpenRouter vision, other family) |
+| [code/ocr_judge.py](code/ocr_judge.py) | **General judge**: similarity, completeness, doc_type, winner |
+| [code/invoice_adapter.py](code/invoice_adapter.py) | **Invoice fork**: SLM Flash → canonical JSON |
+| [code/invoice_check.py](code/invoice_check.py) | Normalization (aliases, FR/EN numbers) + **amount check** |
+| [schemas/invoice_extraction.json](schemas/invoice_extraction.json) | Versioned canonical invoice schema |
+| [soul-addendum.md](soul-addendum.md) | Refusals: inventing values, hiding a discrepancy, check outside invoices |
+| [tests/test.sh](tests/test.sh) | Pure unit tests (judge, numbers, sums, adapter) |
 
-## Secrets requis (dans `HermesConfig/clients/<slug>/client.env`, 600)
+## Required secrets (in `HermesConfig/clients/<slug>/client.env`, 600)
 
-| Variable | Rôle |
+| Variable | Role |
 |---|---|
-| `VPS_GEMINI_API_KEY` | Vision #1 + adaptateur Flash (valeur SUREN_VPS_GEMINI_API_KEY réutilisable) |
-| `VPS_OPEN_ROUTER_API_KEY` | Vision #2 (valeur SUREN_VPS_OPEN_ROUTER_API_KEY) |
+| `VPS_GEMINI_API_KEY` | Vision #1 + Flash adapter (SUREN_VPS_GEMINI_API_KEY value reusable) |
+| `VPS_OPEN_ROUTER_API_KEY` | Vision #2 (SUREN_VPS_OPEN_ROUTER_API_KEY value) |
 
-Env : `OCR_OPENROUTER_MODEL=openai/gpt-4o-mini`, `OCR_INVOICE_TOLERANCE=0.02`.
+Env: `OCR_OPENROUTER_MODEL=openai/gpt-4o-mini`, `OCR_INVOICE_TOLERANCE=0.02`.
 
-## Points d'architecture (D14)
+## Architecture points (D14)
 
-- Sortie extracteurs **générique** (`{text, doc_type_hint, confidence}`) —
-  aucun schéma facture imposé à la transcription.
-- Juge général = code pur, **toujours** ; check montant = **bifurcation
-  uniquement** si facture détectée (hints majoritaires + heuristiques).
-- L'adaptateur SLM reformate mais **ne juge jamais** — sa sortie est
-  re-validée par le code ; reformat invalide → `sums_ok: null`.
-- `sums_ok: false` ≠ échec : écart rapporté + confiance réduite, le humain
-  tranche dans la webapp (D6).
+- Extractor output is **generic** (`{text, doc_type_hint, confidence}`) —
+  no invoice schema imposed on transcription.
+- General judge = pure code, **always**; amount check = **fork only** if an
+  invoice is detected (majority hints + heuristics).
+- The SLM adapter reformats but **never judges** — its output is
+  re-validated by the code; invalid reformat → `sums_ok: null`.
+- `sums_ok: false` ≠ failure: discrepancy reported + reduced confidence, the
+  human decides in the webapp (D6).
 
-## Coûts / quotas
+## Costs / quotas
 
-2 appels vision + (si facture) 1 appel Flash par PJ. Modèles low-cost
-(flash/4o-mini). À surveiller en volume — quotas par client.env.
+2 vision calls + (if invoice) 1 Flash call per attachment. Low-cost models
+(flash/4o-mini). To watch as volume grows — quotas per client.env.
 
-## Historique
+## History
 
-- 2026-09-01 : création (M2.3) — design révisé en cours de grill : deux juges
-  séparés (général / montants), extracteur #2 OpenRouter, adaptateur SLM
-  branché sur la bifurcation facture.
+- 2026-09-01: creation (M2.3) — design revised during team grind: two
+  separate judges (general / amounts), extractor #2 OpenRouter, SLM
+  adapter plugged onto the invoice fork.

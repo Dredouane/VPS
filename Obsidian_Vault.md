@@ -1,17 +1,17 @@
-# 🗂️ Obsidian Vault — Dossier dédié au projet VPS
+# 🗂️ Obsidian Vault — Dedicated folder for the VPS project
 
-## 📍 Emplacement du dossier Obsidian du projet
+## 📍 Location of the project's Obsidian folder
 
-Le vault Obsidian est hébergé sur le **VPS** et synchronisé via **Syncthing** entre les appareils.
+The Obsidian vault is hosted on the **VPS** and synchronized via **Syncthing** between devices.
 
-| Élément | Valeur |
+| Item | Value |
 |---|---|
-| **Vault principal (VPS)** | `/home/syncthing/obsidian-vault/` |
-| **Sous-dossier dédié au projet VPS** | `/home/syncthing/obsidian-vault/VPS/` **(à créer)** |
-| Folder Syncthing | `obsidian-vault` (sendreceive, synchronisé VPS + PC + Mobile) |
-| Accès GUI Syncthing | `syncthing-gui` → http://localhost:8384 |
+| **Main vault (VPS)** | `/home/syncthing/obsidian-vault/` |
+| **Sub-folder dedicated to the VPS project** | `/home/syncthing/obsidian-vault/VPS/` **(to be created)** |
+| Syncthing folder | `obsidian-vault` (sendreceive, synced VPS + PC + Mobile) |
+| Syncthing GUI access | `syncthing-gui` → http://localhost:8384 |
 
-## 🗃️ Structure du vault
+## 🗃️ Vault structure
 
 ```
 /home/syncthing/obsidian-vault/
@@ -20,31 +20,31 @@ Le vault Obsidian est hébergé sur le **VPS** et synchronisé via **Syncthing**
 ├── LeanConstruction/
 ├── VirtualAdministrativeAssistant/
 ├── lean-cognitive-atlas/
-├── VPS/                     ← 📌 DOSSIER DÉDIÉ À CE PROJET (à créer)
+├── VPS/                     ← 📌 FOLDER DEDICATED TO THIS PROJECT (to be created)
 ├── PAIN-002.md
 └── ...
 ```
 
-## ✅ Créer le sous-dossier `VPS` dans le vault
+## ✅ Create the `VPS` sub-folder in the vault
 
-**Sur le VPS** (via `ssh nemo`) :
+**On the VPS** (via `ssh nemo`):
 
 ```bash
 sudo mkdir -p /home/syncthing/obsidian-vault/VPS
 sudo chown syncthing:syncthing /home/syncthing/obsidian-vault/VPS
 ```
 
-Le dossier se synchronisera automatiquement vers le PC et le mobile via Syncthing.
+The folder will sync automatically to the PC and mobile via Syncthing.
 
-> 💡 **Alternative (recommandée)** : créer le dossier `VPS/` **depuis Obsidian** (PC ou mobile). Il apparaîtra alors dans le vault à la prochaine synchro, et vous pourrez y déposer vos notes de projet directement depuis l'application.
+> 💡 **Alternative (recommended)**: create the `VPS/` folder **from Obsidian** (PC or mobile). It will then appear in the vault at the next sync, and you can drop your project notes into it directly from the application.
 
-## 📝 Notes attendues dans ce dossier
+## 📝 Expected notes in this folder
 
-- Notes d'exploitation et décisions techniques du VPS
-- État de la flotte d'agents Hermes
-- Suivi des tâches (hardening, Syncthing, nginx, sauvegardes)
-- Copie de référence des documents de `Installation/` si besoin (au format notes)
+- VPS operations notes and technical decisions
+- Hermes agent fleet status
+- Task tracking (hardening, Syncthing, nginx, backups)
+- Reference copy of the `Installation/` documents if needed (as notes)
 
-## 🔗 Référence
+## 🔗 Reference
 
-Documentation technique complète : [`Installation/SYNCTHING_OBSIDIAN.md`](Installation/SYNCTHING_OBSIDIAN.md)
+Full technical documentation: [`Installation/SYNCTHING_OBSIDIAN.md`](Installation/SYNCTHING_OBSIDIAN.md)

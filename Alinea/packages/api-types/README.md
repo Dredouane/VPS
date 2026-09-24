@@ -1,16 +1,16 @@
-# @alinea/api-types — artefacts GÉNÉRÉS
+# @alinea/api-types — GENERATED artifacts
 
-Tout ce qui vit dans `src/generated/` est généré — **ne jamais éditer à la main**.
+Everything living in `src/generated/` is generated — **never edit by hand**.
 
-| Fichier | Générateur | Source |
+| File | Generator | Source |
 |---|---|---|
-| `schema.d.ts` | `pnpm gen:api-types` (openapi-typescript) | `openapi/openapi.yaml` (lui-même généré depuis le SQL) |
-| `database.types.ts` | `pnpm gen:db-types` (CLI Supabase, projet lié) | Schéma live du projet Supabase (= `sql/generic/`) |
+| `schema.d.ts` | `pnpm gen:api-types` (openapi-typescript) | `openapi/openapi.yaml` (itself generated from the SQL) |
+| `database.types.ts` | `pnpm gen:db-types` (Supabase CLI, linked project) | Live schema of the Supabase project (= `sql/generic/`) |
 
-Régénération complète : `pnpm gen-all` (depuis `Alinea/`).
-Vérif de désynchronisation (CI) : `pnpm gen:check`.
+Full regeneration: `pnpm gen-all` (from `Alinea/`).
+Drift check (CI): `pnpm gen:check`.
 
-Consommation :
+Consumption:
 
 ```ts
 import type { paths, components } from "@alinea/api-types/schema";

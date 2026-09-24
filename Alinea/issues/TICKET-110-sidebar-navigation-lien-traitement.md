@@ -1,23 +1,23 @@
-# Ticket AREV-110 — Navigation Sidebar : Corriger le lien et la route Traitement
+# Ticket AREV-110 — Sidebar Navigation: Fix the Traitement link and route
 
-- **Date** : 2026-09-09
-- **Référence spec** : `SPEC_Produit_Emails_Factures.md` §0 & §3
-- **Scénarios NonReg** : Nav1
-- **Persona** : Salarie_Backoffice · Gerant_PME · Fateh_Ug
-- **Priorité** : Moyenne (P2)
-- **Type** : Bug de Navigation / Routing
+- **Date**: 2026-09-09
+- **Spec reference**: `SPEC_Produit_Emails_Factures.md` §0 & §3
+- **NonReg scenarios**: Nav1
+- **Persona**: Salarie_Backoffice · Gerant_PME · Fateh_Ug
+- **Priority**: Medium (P2)
+- **Type**: Navigation / Routing bug
 
-## Description (le contrat)
-Chaque item de la navigation latérale (Sidebar) doit pointer vers sa vue propre sans doublon ni erreur 404.
+## Description (the contract)
+Each item of the side navigation (Sidebar) must point to its own view with no duplicate and no 404 error.
 
-## État actuel
-- Dans la sidebar, l'onglet nommé `Traitement` possède un `href="/emails"`, ce qui est un doublon exact avec l'item `Emails` (qui pointe aussi vers `/emails`).
-- Taper directement l'URL `/traitement` dans la barre d'adresse renvoie une page d'erreur **404 Next.js**.
+## Current state
+- In the sidebar, the tab named `Traitement` [Processing] has `href="/emails"`, which is an exact duplicate of the `Emails` item (which also points to `/emails`).
+- Typing the URL `/traitement` directly in the address bar returns a **404 Next.js** error page.
 
-## État attendu
-- Soit l'item `Traitement` pointe vers une vraie vue de suivi des traitements/flux,
-- Soit l'item doublon est retiré de la navigation si la vue n'existe pas.
+## Expected state
+- Either the `Traitement` item points to a real view for monitoring processing/flows,
+- Or the duplicate item is removed from the navigation if the view does not exist.
 
-## Critères d'acceptation
-- [ ] Aucun lien de navigation ne pointe vers une route identique à un autre lien
-- [ ] Aucun lien de la sidebar ne produit une erreur 404
+## Acceptance criteria
+- [ ] No navigation link points to a route identical to another link
+- [ ] No sidebar link produces a 404 error

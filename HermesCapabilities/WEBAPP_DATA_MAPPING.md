@@ -1,20 +1,20 @@
-# 🔌 WEBAPP_DATA_MAPPING.md — Contrat de données Supabase pour la webApp (Alinea)
+# 🔌 WEBAPP_DATA_MAPPING.md — Supabase data contract for the webApp (Alinea)
 
-> **Audience** : session opencode webApp. Date : 2026-09-06 (M2.7).
-> La pipeline écrit ; la webApp lit. Toutes les données sont dans le projet
-> Supabase unique (multi-tenant, le slug discrimine — DECISIONS D7-v2).
-> Schéma source de vérité : `HermesCapabilities/sql/generic/`.
+> **Audience**: webApp opencode session. Date: 2026-09-06 (M2.7).
+> The pipeline writes; the webApp reads. All data is in the single
+> Supabase project (multi-tenant, the slug discriminates — DECISIONS D7-v2).
+> Source-of-truth schema: `HermesCapabilities/sql/generic/`.
 
 ---
 
-## 1. Le modèle de données en un regard
+## 1. The data model at a glance
 
 ```mermaid
 erDiagram
     cap_clients ||--o{ cap_email_chains : "client_slug"
     cap_email_chains ||--o{ cap_emails : "thread_id"
     cap_emails ||--o{ cap_documents : "message_id (parent)"
-    cap_email_chains ||--o{ cap_documents : "thread_id (tous)"
+    cap_email_chains ||--o{ cap_documents : "thread_id (all)"
     cap_emails ||--o{ cap_factures : "email_message_id"
     cap_clients {
         text slug PK
@@ -25,7 +25,7 @@ erDiagram
     cap_email_chains {
         text client_slug
         text thread_id "X-GM-THRID Gmail"
-        text subject "normalisé (sans Re:/Tr:)"
+        text subject "normalized (without Re:/Tr:)"
         jsonb participants
         int messages_count
         timestamptz first_message_at
@@ -37,31 +37,31 @@ erDiagram
         text from_addr
         text subject
         timestamptz mail_date
-        text classification "M2.6-bis (NULL aujourd'hui)"
-        text resume "M2.6-bis (NULL aujourd'hui)"
+        text classification "M2.6-bis (NULL today)"
+        text resume "M2.6-bis (NULL today)"
         text status "received|processed|error"
         int attempts
         jsonb raw_metadata
     }
     cap_documents {
         text kind "email|attachment"
-        text content "texte EXTRAIT (nouveau contenu mail / OCR PJ)"
+        text content "EXTRACTED text (new mail content / attachment OCR)"
         vector embedding "768d"
         jsonb metadata "from, date, filename, mime, ocr, r2_key..."
     }
 ```
 
-> ⚠️ **`cap_emails` ≠ affichage des mails** : c'est le registre de traitement
-> (statut, erreurs, retries). Le **contenu** des mails vit dans
-> `cap_documents` (kind=`email`, join sur `message_id`). La mailChain
-> "gmail-like" = `cap_email_chains` (feuille) + `cap_emails` (rangées
-> ordonnées par `mail_date`) + contenus via `cap_documents`.
+> ⚠️ **`cap_emails` ≠ mail display**: it is the processing register
+> (status, errors, retries). Mail **content** lives in
+> `cap_documents` (kind=`email`, join on `message_id`). The "gmail-like" mailChain
+> = `cap_email_chains` (sheet) + `cap_emails` (rows
+> ordered by `mail_date`) + contents via `cap_documents`.
 
 ---
 
-## 2. Requêtes cookbook (webapp, service key ou RPC slug+secret)
+## 2. Cookbook queries (webapp, service key or RPC slug+secret)
 
-### 2.1 Liste des mailChains d'un client (inbox vue Gmail)
+### 2.1 List of a client's mailChains (Gmail-like inbox view)
 
 ```sql
 select e.*, (select count(*) from public.cap_documents d
@@ -72,54 +72,54 @@ where e.client_slug = :slug and e.statut_client = 'active'
 order by e.last_message_at desc;
 ```
 
-### 2.2 Détail d'une mailChain (vue "gmail-like")
+### 2.2 Detail of a mailChain ("gmail-like" view)
 
-- Chaîne : 1 ligne `cap_email_chains` par `thread_id`
-- Mails, ordre chronologique :
+- Chain: 1 `cap_email_chains` row per `thread_id`
+- Emails, chronological order:
 ```sql
 select message_id, thread_role, from_addr, subject, mail_date, status
 from public.cap_emails
 where client_slug = :slug and thread_id = :thread_id
 order by mail_date;
 ```
-- Contenu de chaque mail (corps) :
+- Content of each email (body):
 ```sql
 select title, content, metadata->>'r2_key' as r2_key
 from public.cap_documents
 where client_slug = :slug and thread_id = :thread_id and kind = 'email';
 ```
-- PJ du thread (OCR en texte + brut R2) :
+- Thread attachments (OCR text + raw R2):
 ```sql
 select id, title, content, metadata->>'r2_key' as r2_key,
        metadata->>'filename' as filename
 from public.cap_documents
 where client_slug = :slug and thread_id = :thread_id and kind = 'attachment';
 ```
-> Join email→PJ : `cap_documents.parent_message_id` = le mail porteur.
-> Lie facture→PJ : `cap_factures.document_id` → `cap_documents.id`.
+> Email→attachment join: `cap_documents.parent_message_id` = the carrying email.
+> Invoice→attachment link: `cap_factures.document_id` → `cap_documents.id`.
 
-### 2.3 Dernier mail reçu (par client)
+### 2.3 Last received email (per client)
 
 ```sql
 select * from public.cap_emails
 where client_slug = :slug
 order by mail_date desc limit 1;
--- chain associée : cap_email_chains par thread_id
+-- associated chain: cap_email_chains by thread_id
 ```
 
-> ⚔️ **Ordre des rangs** : pas de colonne `position` — trier par
-> `mail_date` (ré-ordonnancement déterministe suffit pour l'affichage gmail).
+> ⚔️ **Row ordering**: no `position` column — sort by
+> `mail_date` (deterministic re-ordering is enough for the gmail display).
 
-### 2.4 Chat spécialisé dans la mailChain (sémantique, thread-scopé)
+### 2.4 Chat specialized in the mailChain (semantic, thread-scoped)
 
-**Contrat** : la pipeline a déjà indexé le contenu de CHAQUE mail (contenu
-nouveau) et de CHAQUE PJ (OCR) avec embedding **`gemini-embedding-001`
-768d** (`cap_documents.embedding`, colonne `thread_id`).
+**Contract**: the pipeline has already indexed the content of EACH email (new
+content) and of EACH attachment (OCR) with an **`gemini-embedding-001`
+768d** embedding (`cap_documents.embedding`, `thread_id` column).
 
-Le **backend webapp** fait lui-même :
-1. `embed(question)` via Gemini API — **modelle identique, 768d**
-   (`gemini-embedding-001`, contrat figé D5)
-2. **Recherche vectorielle pgvector** :
+The **webapp backend** does itself:
+1. `embed(question)` via Gemini API — **identical model, 768d**
+   (`gemini-embedding-001`, frozen contract D5)
+2. **pgvector vector search**:
    ```sql
    select id, kind, title, content, metadata,
           1 - (embedding <=> :query_vector) as similarity
@@ -129,62 +129,62 @@ Le **backend webapp** fait lui-même :
    order by embedding <=> :query_vector
    limit :n;
    ```
-   (via client Postgres direct ou une fonction SQL exposée en rpc —
-   `sql/generic/007_doc_match.sql` fournit la fonction générique
+   (via a direct Postgres client or an SQL function exposed as an rpc —
+   `sql/generic/007_doc_match.sql` provides the generic function
    `rpc_cap_doc_match(slug, secret, embedding, count, thread_id)`)
-3. Alimenter le **context du system prompt** du LLM du chat avec les
-   passages top-N (ne pas dépasser la window du modèle)
+3. Feed the **system prompt context** of the chat LLM with the
+   top-N passages (do not exceed the model's window)
 
-> pgvector (`<=>`) ne passe pas par les filtres REST PostgREST standard —
-> la comparaison s'exécute **dans Postgres** (fonction SQL ou client PG).
-> La webapp ne passe **jamais** par le runtime pipeline pour le chat.
+> pgvector (`<=>`) does not go through standard PostgREST REST filters —
+> the comparison runs **inside Postgres** (SQL function or PG client).
+> The webapp **never** goes through the pipeline runtime for the chat.
 
-### 2.5 Voir l'email brut / la PJ d'origine (W12)
+### 2.5 View the raw email / original attachment (W12)
 
-- `cap_documents.metadata->>'r2_key'` = clé R2 exacte de l'objet archivé
-  (mail → `thread.json` ; PJ → son fichier) — même convention :
-  `<GED_EMAIL_PREFIX>/<slug>/emails/<thread_id>/<fichier>`
-  (GED_EMAIL_PREFIX=`emails` par défaut)
-- URL signée R2 : générer côté backend webapp avec les credentials R2
-  (durée courte, GET). Si `r2_key` absent → le GED a échoué pour ce doc
-  (non-bloquant, cf. D14/IED) — l'affichage brut n'est pas disponible.
+- `cap_documents.metadata->>'r2_key'` = exact R2 key of the archived object
+  (email → `thread.json`; attachment → its file) — same convention:
+  `<GED_EMAIL_PREFIX>/<slug>/emails/<thread_id>/<file>`
+  (GED_EMAIL_PREFIX=`emails` by default)
+- R2 signed URL: generated on the webapp backend side with the R2
+  credentials (short duration, GET). If `r2_key` is absent → the GED failed for this doc
+  (non-blocking, cf. D14/IED) — raw display is not available.
 
-### 2.4bis Factures (CRUD webapp)
+### 2.4bis Invoices (webapp CRUD)
 
 ```sql
 select * from public.cap_factures
 where client_slug = :slug
 order by created_at desc;
 ```
-- `statut` : `extracted` (auto) → humain fait"`valide`/`rejete` → `paye`/`archive`
-- `extraction` (jsonb) = payload audit : facture canonique + `sums`
-  (vérification arithmétique) + `judge` (scores OCR/agreement)
-- ⚠️ ne jamais écrire `statut: extracted` côté webapp (c'est le pipeline) ;
-  les transitions humaines sont les seules autorisées (D6/non-rétrogradation
-  protégée parRPC).
+- `statut`: `extracted` (auto) → human does"`valide`/`rejete` → `paye`/`archive`
+- `extraction` (jsonb) = audit payload: canonical invoice + `sums`
+  (arithmetic check) + `judge` (OCR/agreement scores)
+- ⚠️ never write `statut: extracted` on the webapp side (that's the pipeline);
+  human transitions are the only ones allowed (D6/no-downgrade
+  protected byRPC).
 
 ---
 
-## 3. Conventions sécurité (suite de D8-v3)
+## 3. Security conventions (continuation of D8-v3)
 
-| Type d'accès webApp | Clé à utiliser |
+| webApp access type | Key to use |
 |---|---|
-| Lecture tables (SELECT) | **Service key** (backend webapp, jamais au client) |
-| Chat sémantique | Service key **ou** RPC `rpc_cap_doc_match` (slug + `CLIENT_RPC_SECRET` — pattern D8-v3 identique aux agents) |
-| Écritures factures (`statut` humain) | Service key (bypass RLS) — mais seulement les colonnes métier, jamais `statut: extracted` |
-| Embedding des questions | `VPS_GEMINI_API_KEY` (backend webapp) — même modèle 768d |
+| Table reads (SELECT) | **Service key** (webapp backend, never to the client) |
+| Semantic chat | Service key **or** RPC `rpc_cap_doc_match` (slug + `CLIENT_RPC_SECRET` — D8-v3 pattern identical to the agents) |
+| Invoice writes (human `statut`) | Service key (RLS bypass) — but only business columns, never `statut: extracted` |
+| Embedding of questions | `VPS_GEMINI_API_KEY` (webapp backend) — same 768d model |
 
-## 4. Gaps connus et horaires (État au 2026-09-06)
+## 4. Known gaps and schedules (State as of 2026-09-06)
 
-| Gap | Impact webapp | Résolution prévue |
+| Gap | webapp impact | Planned resolution |
 |---|---|---|
-| `cap_emails.resume`/`classification` = **NULL** | Affichage des résumés vides | M2.6-bis : classify LLM branché terrain pipeline (étape choisie du prompt routine) |
-| `parse_degraded` (parsing douteux d'un provider exotique) | Signal à afficher si présent | Flag en `cap_documents.metadata` — plan B SLM en M3 |
-| Confiance facture 0,686 dans la 1ʳᵉ factura | "Pourquoi si basse" | **Explain** : 0.98 (Gemini) × 0.7 (mode dégradé 1 extracteur) ; les prochains runs à 2 extracteurs (PJ images) → ~0.83 ; factura PDF spécifique → ×0.85 (D14 révisé à venir) |
-| Position de mail dans la chaîne non stockée | Tri parallèle possible | Calculable (mail_date) ou M3 (colonne email_position) |
-| Ordre des mails : ordre chronologique | — | OK |
+| `cap_emails.resume`/`classification` = **NULL** | Empty summaries displayed | M2.6-bis: LLM classify wired into the pipeline ground (chosen step of the routine prompt) |
+| `parse_degraded` (dubious parsing of an exotic provider) | Signal to display if present | Flag in `cap_documents.metadata` — SLM plan B in M3 |
+| Invoice confidence 0,686 in the 1st invoice | "Why so low" | **Explain**: 0.98 (Gemini) × 0.7 (degraded mode 1 extractor); next runs with 2 extractors (image attachments) → ~0.83; specific PDF invoice → ×0.85 (D14 revised to come) |
+| Mail position in the chain not stored | Possible parallel sorting | Computable (mail_date) or M3 (email_position column) |
+| Mail order: chronological order | — | OK |
 
-## 5. JSON pour l'écran "vue mailChain" (suggestion de shape pour Alinea)
+## 5. JSON for the "mailChain view" screen (shape suggestion for Alinea)
 
 ```json
 {
@@ -192,7 +192,7 @@ order by created_at desc;
              "participants": ["..."], "messages_count": 3},
   "mails": [
     {"message_id": "<msgA>", "role": "nouveau", "from": "...", "date": "...",
-     "content": [ depuis cap_documents kind=email par message_id ],
+     "content": [ from cap_documents kind=email by message_id ],
      "r2_key": "emails/arev/emails/<thread>/thread.json",
      "attachments": [{"filename": "...", "content": [doc kind=attachment], 
                        "r2_key": "emails/arev/emails/<thread>/att-1-..."}]}
@@ -201,5 +201,5 @@ order by created_at desc;
 }
 ```
 
-Le format exact des routes est de la responsabilité de la webApp ; ce
-document fixe uniquement **la donnée disponible et ses conventions**.
+The exact format of the routes is the webApp's responsibility; this
+document fixes only **the available data and its conventions**.
