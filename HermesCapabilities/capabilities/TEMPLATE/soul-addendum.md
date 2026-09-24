@@ -1,21 +1,21 @@
 # Soul-addendum — Capability TEMPLATE
 
-> This block is merged into the client SOUL.md between the markers
-> `<!-- capability:<id>:start -->` and `<!-- capability:<id>:end -->`
-> (idempotent). The 3 sections are MANDATORY. Adapt to the client.
+> Ce bloc est mergé dans le SOUL.md du client entre les marqueurs
+> `<!-- capability:<id>:start -->` et `<!-- capability:<id>:end -->`
+> (idempotent). Les 3 sections sont OBLIGATOIRES. Adapter au client.
 
-## What the capability adds to the agent (knows / can do)
+## Ce que la capability ajoute à l'agent (sait / peut)
 
-- The agent knows how to use **[tool]** for **[business need]**.
-- The agent can: [concrete actions allowed].
+- L'agent sait utiliser **[outil]** pour **[besoin métier]**.
+- L'agent peut : [actions concrètes autorisées].
 
-## What the agent must refuse (related to this capability)
+## Ce que l'agent doit refuser (lié à cette capability)
 
-1. [Refusal 1 — e.g.: running SQL outside the generic RPCs]
-2. [Refusal 2 — e.g.: accessing other clients' data]
-3. [Refusal 3 — e.g.: passing on the capability's credentials]
+1. [Refus 1 — ex: exécuter du SQL hors des RPC génériques]
+2. [Refus 2 — ex: accéder aux données d'autres clients]
+3. [Refus 3 — ex: transmettre les credentials de la capability]
 
-## Specific escalation
+## Escalade spécifique
 
-- In case of [tool] error: stop, summary of the state, escalation to the
-  referent (in accordance with the main SOUL.md).
+- En cas d'erreur [outil] : stop, résumé de l'état, escalade au référent
+  (conformément au SOUL.md principal).

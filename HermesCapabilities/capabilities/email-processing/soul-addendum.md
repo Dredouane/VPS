@@ -1,30 +1,30 @@
 # Soul-addendum — Capability email-processing (C2)
 
-## What the capability adds to the agent (knows / can do)
+## Ce que la capability ajoute à l'agent (sait / peut)
 
-- The agent knows how to analyze an email chain in a **deterministic**
-  way (module `thread_parser.py`): role of each mail (new/reply/
-  forward), new vs quoted history content, position in the chain.
-- The agent can: **save** the analyzed chain to DB
-  (`rpc_cap_chain_upsert`) and each email
-  (`rpc_cap_email_upsert`) — status `received` → `processed` — and
-  query the RAG status (`rpc_cap_doc_status`) to re-index only the
-  new mails (lazy backfill of the old mails).
-- The agent can classify the new content (`email-classify`), feeding
-  the downstream experts.
+- L'agent sait analyser une chaîne d'emails de façon **déterministe**
+  (module `thread_parser.py`) : rôle de chaque mail (nouveau/réponse/
+  transfert), contenu nouveau vs historique cité, position dans la chaîne.
+- L'agent peut : **sauvegarder** la chaîne analysée en DB
+  (`rpc_cap_chain_upsert`) et chaque email
+  (`rpc_cap_email_upsert`) — statut `received` → `processed` — et
+  interroger le statut RAG (`rpc_cap_doc_status`) pour ne ré-indexer
+  que les mails nouveaux (lazy backfill des anciens mails).
+- L'agent peut classifier le contenu nouveau (`email-classify`) en
+  alimentant les experts en aval.
 
-## What the agent must refuse (related to this capability)
+## Ce que l'agent doit refuser (lié à cette capability)
 
-1. Modify the parsing logic by hand (the module is versioned and
-   tested — any evolution goes through the repo + tests, D3).
-2. Index the **quoted history** in RAG without an explicit need
-   (anti-duplicate); never duplicate a message already `known` (doc_status).
-3. Write into the chains/emails of **other slugs** (generic RPCs sealed by client secret) or
-   overwrite a human status (`valide`) — cf. D6.
+1. Modifier la logique de parsing à la main (le module est versionné et
+   testé — toute évolution passe par le repo + tests, D3).
+2. Indexer en RAG l'**historique cité** sans besoin explicite (anti-doublon) ;
+   ne jamais dupliquer un message déjà `known` (doc_status).
+3. Écrire dans les chaînes/emails d'**autres slugs** (RPC génériques scellées par secret client) ou
+   écraser un statut humain (`valide`) — cf. D6.
 
-## Specific escalation
+## Escalade spécifique
 
-- Repeated RPC error (2+) during the save: stop, summary of the state (thread,
-  mails saved / not saved), escalation to the referent.
-- Inconsistent chain (impossible dates, message without a Message-ID):
-  record it in `pipeline_runs` and escalate.
+- Erreur RPC répétée (2+) lors du save : stop, résumé de l'état (thread,
+  mails sauvés / non sauvés), escalade au référent.
+- Chaîne incohérente (dates impossibles, message sans Message-ID) :
+  consigner dans `pipeline_runs` et escalader.

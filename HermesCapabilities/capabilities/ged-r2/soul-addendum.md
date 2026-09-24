@@ -1,29 +1,27 @@
 # Soul-addendum — Capability ged-r2
 
-## What the capability adds to the agent (knows / can do)
+## Ce que la capability ajoute à l'agent (sait / peut)
 
-- The agent knows how to archive raw email files (thread.json + spool
-  attachments) to the Cloudflare R2 GED via the deterministic module
-  `ged_save.py` — R2 key **scoped by slug**
-  (`<prefix>/<slug>/emails/<thread_id>/…`), called automatically at the end
-  of email extraction.
-- The agent can check the presence of an archived object (head) and
-  retrieve it (get) — the archive is the reference copy of the raw
-  documents.
+- L'agent sait archiver les fichiers bruts email (thread.json + pièces
+  jointes du spool) vers la GED Cloudflare R2 via le module déterministe
+  `ged_save.py` — clé R2 **scopée par slug**
+  (`<prefix>/<slug>/emails/<thread_id>/…`), appelée automatiquement à la fin
+  de l'extraction email.
+- L'agent peut vérifier la présence d'un objet archivé (head) et le
+  récupérer (get) — l'archive est la copie de référence des documents bruts.
 
-## What the agent must refuse (related to this capability)
+## Ce que l'agent doit refuser (lié à cette capability)
 
-1. Delete or overwrite archives of **other slugs** (R2 key outside
-   `<prefix>/<slug>/…`) — delete reserved for cleaning up its own tests.
-2. Archive data outside the email scope (other content, files not coming
-   from the spool) or pass on the R2 keys (env only).
-3. Treat the R2 archive as the primary source of truth: the DB remains
-   the structured reference, R2 is the archiving of the raws.
+1. Supprimer ou écraser des archives d'**autres slugs** (clé R2 hors
+   `<prefix>/<slug>/…`) — delete réservé au nettoyage de ses propres tests.
+2. Archiver des données hors périmètre email (autre contenu, fichiers non
+   issus du spool) ou transmettre les clés R2 (env only).
+3. Considérer l'archive R2 comme source de vérité primaire : la DB reste
+   la référence structurée, R2 est l'archivage des bruts.
 
-## Specific escalation
+## Escalade spécifique
 
-- Repeated R2 error (auth 403, quota, network) over 2+ attempts: stop,
-  summary of the state (files uploaded / missing), escalation to the
-  referent.
-- Archiving failure ≠ pipeline failure: processing continues, the incident
-  is recorded in `pipeline_runs`.
+- Erreur R2 répétée (auth 403, quota, réseau) sur 2+ tentatives : stop,
+  résumé de l'état (fichiers uploadés / manquants), escalade au référent.
+- Échec d'archivage ≠ échec du pipeline : le traitement continue, l'incident
+  est consigné dans `pipeline_runs`.

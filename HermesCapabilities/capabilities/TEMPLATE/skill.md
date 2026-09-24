@@ -1,32 +1,32 @@
 ---
 name: template-skill
 description: >-
-  TEMPLATE skill HermesCapabilities — replace with the actual description.
-  Frontmatter expected by Hermes (validate the exact format with
-  `hermes skills list` on an instance before activation — M2).
+  Skill TEMPLATE HermesCapabilities — remplacer par la description réelle.
+  Frontmatter attendu par Hermes (valider le format exact avec
+  `hermes skills list` sur une instance avant activation — M2).
 ---
 
 # Skill TEMPLATE
 
-> ⚠️ **Implementation note**: the exact location of custom skills in a
-> dockerized instance (`/opt/data/skills/<name>/SKILL.md`?) still has to be
-> validated in M2 (`hermes skills --help`, trial on the test instance). The
-> `capability-attach.sh` copies this file to `data/skills/<id>/SKILL.md`
-> on a best-effort basis and reports it as a warning.
+> ⚠️ **Note d'implémentation** : l'emplacement exact des skills custom dans
+> une instance dockerisée (`/opt/data/skills/<name>/SKILL.md` ?) reste à
+> valider en M2 (`hermes skills --help`, essai sur l'instance test). Le
+> `capability-attach.sh` copie ce fichier vers `data/skills/<id>/SKILL.md`
+> comme best-effort et le signale en warning.
 
-## Role
+## Rôle
 
-Describe what the skill enables the agent to do, in business terms.
+Décrire ce que la skill permet à l'agent de faire, en termes métier.
 
-## When to use it
+## Quand l'utiliser
 
-Describe the triggers (user request, routine, pipeline).
+Décrire les déclencheurs (demande utilisateur, routine, pipeline).
 
-## Scope and limits
+## Périmètre et limites
 
-- Tools used: (MCP, API, files — reference the manifest)
-- Never: recall the relevant refusals (the detail lives in the soul-addendum)
+- Outils utilisés : (MCP, API, fichiers — référencer le manifest)
+- Jamais : rappeler les refus pertinents (le détail vit dans le soul-addendum)
 
-## Expected output
+## Sortie attendue
 
-Describe the output format (Telegram message, vault note, RPC line…).
+Décrire le format de sortie (message Telegram, note vault, ligne RPC…).

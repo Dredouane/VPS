@@ -1,43 +1,42 @@
 ---
 name: expert-facturation
 description: >-
-  Invoicing expert (Chain of Experts): assembles the full invoicing context
-  (email + invoice pre-verified by the C3 amount check) and creates/updates
-  the structured data in Supabase via rpc_cap_facture_upsert (status
-  extracted — D6). Available for the webApp CRUD and the other agents.
+  Expert facturation (Chain of Experts) : assemble le contexte complet de
+  la facturation (email + facture canonique pré-vérifiée par le check
+  montant C3) et crée/met à jour la donnée structurée dans Supabase via
+  rpc_cap_facture_upsert (statut extracted — D6). Disponible pour la
+  webApp CRUD et les autres agents.
 ---
 
 # Skill expert-facturation
 
-## Role
+## Rôle
 
-Build the most complete structured invoice data possible from the
-mail + pre-verified OCR, and make it persist.
+Constituer la donnée facture structurée la plus complète possible à partir
+du mail + OCR pré-vérifié, et la faire persister.
 
-## Procedure
+## Procédure
 
-1. **Context**: structured mail (C2) + canonical invoice (C3
-   `invoice.verdict` — numbers ALREADY verified: sums_ok).
-1bis. **D15 — PJ-sourced only**: the invoice is created/updated **ONLY**
-   from an invoice attachment (canonical pre-verified OCR). A discussion
-   mail without an attachment (reminder, nth forward) = RAG + thread
-   **only** — never upsert from text alone (anti-overwriting of processed
-   invoices).
-2. Matching: `rpc_cap_facture_find(slug, secret, numero, fournisseur)` —
-   does it already exist?
-3. Upsert: `rpc_cap_facture_upsert(slug, secret, numero, fournisseur,
+1. **Contexte** : mail structuré (C2) + facture canonique (C3
+   `invoice.verdict` — nombres DÉJÀ vérifiés : sums_ok).
+1bis. **D15 — PJ-sourced only** : la facture n'est créée/mise à jour **QUE
+   depuis une PJ facture (OCR canonique pré-vérifié)**. Un mail de discussion
+   sans PJ (relance, nième forward) = RAG + chaîne **uniquement** — jamais
+   d'upsert depuis du texte seul (anti-écrasement des factures traitsées).
+2. Matching : `rpc_cap_facture_find(slug, secret, numero, fournisseur)` —
+   existe-t-elle déjà ?
+3. Upsert : `rpc_cap_facture_upsert(slug, secret, numero, fournisseur,
    identifiant, objet, date_facture, date_echeance, ht, tva, ttc, devise,
-   confiance, email_message_id, document_id, extraction)` — status
-   `extracted` (D6: human validation = webApp status transition).
-4. Record the result in the mail metadata (email_upsert → status
-   processed).
+   confiance, email_message_id, document_id, extraction)` — statut
+   `extracted` (D6 : validation humaine = transition de statut webApp).
+4. Consigner le résultat dans les métadonnées du mail (email_upsert →
+   status processed).
 
-## Strict rules
+## Règles strictes
 
-- `numero` missing → NO upsert: record in `pipeline_runs` + flag.
-- `sums_ok == false` → upsert anyway (status extracted) BUT reduced
-  confidence + `sums_ecart` flag in `extraction` — the human sees the
-  discrepancy.
-- NEVER touch the `valide`/`paye` status of an existing invoice (the RPC
-  already protects it — D6/no demotion).
-- Never any direct SQL (RPC only, slug + secret from the env).
+- `numero` absent → PAS d'upsert : consigner en `pipeline_runs` + flag.
+- `sums_ok == false` → upsert quand même (statut extracted) MAIS confiance
+  réduite + flag `sums_ecart` dans `extraction` — le humain voit l'écart.
+- JAMAIS toucher au statut `valide`/`paye` d'une facture existante (la RPC
+  protège déjà — D6/non-rétrogradation).
+- Jamais de SQL direct (RPC only, slug + secret depuis l'env).

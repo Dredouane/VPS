@@ -1,29 +1,28 @@
 ---
 name: rag-embed
 description: >-
-  Generates the 768d vector (gemini-embedding-001) of a content to index
-  (new mail, attachment OCR) before the RAG upsert (C5). FROZEN model —
-  changing it = complete reindexation.
+  Génère le vecteur 768d (gemini-embedding-001) d'un contenu à indexer
+  (mail nouveau, OCR de PJ) avant l'upsert RAG (C5). Modèle FIGÉ — changer
+  = réindexation complète.
 ---
 
 # Skill rag-embed
 
-## Role
+## Rôle
 
-Produce the embedding of the new content just before `rpc_cap_doc_upsert`.
+Produire l'embedding du contenu nouveau juste avant `rpc_cap_doc_upsert`.
 
-## Procedure
+## Procédure
 
 ```bash
-python3 /opt/data/code/rag-embeddings/embed_gemini.py <content.txt>
+python3 /opt/data/code/rag-embeddings/embed_gemini.py <contenu.txt>
 ```
 
-JSON output: `{"embedding": [768 floats], "model", "chars"}` — pass
-the embedding as is to `rpc_cap_doc_upsert(...)` (C5). Empty content →
-no embedding (doc not indexed, recorded).
+Sortie JSON : `{"embedding": [768 floats], "model", "chars"}` — passer
+l'embedding tel quel à `rpc_cap_doc_upsert(...)` (C5). Un contenu vide →
+pas d'embedding (doc non indexé, consigné).
 
-## Limits
+## Limites
 
-- Truncation at `EMBED_MAX_CHARS` (6000) — advanced chunking outside the
-  M2 scope.
-- FROZEN model (D5) — never change it without a full RAG migration.
+- Troncature à `EMBED_MAX_CHARS` (6000) — chunking avancé hors scope M2.
+- Modèle FIGÉ (D5) — jamais de changement sans migration RAG complète.

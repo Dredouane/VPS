@@ -1,62 +1,62 @@
-# 🤖 Bot Mode — Rules and roles (HermesConfig)
+# 🤖 Bot Mode — Règles et rôles (HermesConfig)
 
-## What it is
+## Ce que c'est
 
-A **Bot** = a real Hermes profile (`~/.hermes/profiles/<name>/` natively,
-equivalent in `HERMES_HOME` in Docker) with: its own `SOUL.md`, **isolated
-memory**, model, skills, tools, MCP, sessions and **routines (cron)**.
+Un **Bot** = un vrai profile Hermes (`~/.hermes/profiles/<name>/` en natif,
+équivalent dans `HERMES_HOME` en Docker) avec : `SOUL.md` propre, **mémoire
+isolée**, modèle, skills, tools, MCP, sessions et **routines (cron)**.
 
-⚠️ **Bot Mode is first a Desktop UX** (roster, @mentions, group chats of 2-6
-bots, serialized turns) — but **the profiles work very well in
-headless Docker**: cron routines attach to profiles server-side
-(`hermes cron …` in the container), and orchestration can go through
-kanban/peer. The Desktop interface is only required for visual supervision
-of group chats.
+⚠️ **Bot Mode est d'abord une UX Desktop** (roster, @mentions, group chats 2-6
+bots, tours sérialisés) — mais **les profiles fonctionnent très bien en
+headless Docker** : les routines cron s'attachent aux profiles côté serveur
+(`hermes cron …` dans le conteneur), et l'orchestration peut passer par le
+kanban/peer. L'interface Desktop n'est requise que pour la supervision visuelle
+des group chats.
 
-## Bot vs Subagent decision rule
+## Règle de décision Bot vs Subagent
 
-| Criterion | Subagent | Bot |
+| Critère | Subagent | Bot |
 |---|---|---|
-| One-off task | ✅ | ❌ |
-| Recurring role | ❌ | ✅ |
-| Own memory/history | ❌ | ✅ |
-| Specialized model/skills/tools | ❌ | ✅ |
-| Callable by role by other bots | ❌ | ✅ |
-| Recurring work (cron) | ❌ | ✅ |
+| Tâche ponctuelle | ✅ | ❌ |
+| Rôle récurrent | ❌ | ✅ |
+| Mémoire/historique propres | ❌ | ✅ |
+| Modèle/skills/tools spécialisés | ❌ | ✅ |
+| Appelable par rôle par d'autres bots | ❌ | ✅ |
+| Travail récurrent (cron) | ❌ | ✅ |
 
-**Maximum 2-4 bots per client.** Do not multiply: each bot = one
-stable responsibility. Example "The Cronfather" (veille §3.1): a bot that
-watches the others' crons and escalates to the human — relevant when the
-number of routines grows.
+**Maximum 2-4 bots par client.** Ne pas multiplier : chaque bot = une
+responsabilité stable. Exemple « The Cronfather » (veille §3.1) : un bot qui
+surveille les crons des autres et escalade à l'humain — pertinent quand le
+nombre de routines grandit.
 
-## Recommended roles for an SME client (creation order)
+## Rôles recommandés pour un client PME (ordre de création)
 
-1. **Principal** (the client's agent, spawned by `spawn-hermes-pro.sh`) —
-   Telegram interface, daily work. *Not a separate bot: it is the
-   default profile of the container.*
-2. **Ops** — monitoring, cron routines (backup check, monitoring, reminders),
-   escalation. See `ops-bot.example.md`.
-3. *(optional)* **Researcher** — multi-source web monitoring, document OCR
-   (Firecrawl), documentary summaries.
-4. *(optional)* **Content/Admin** — writing reports, payment reminders,
-   recurring administrative documents.
+1. **Principal** (l'agent du client, spawné par `spawn-hermes-pro.sh`) —
+   interface Telegram, travail quotidien. *Pas un bot séparé : c'est le
+   profile par défaut du conteneur.*
+2. **Ops** — surveillance, routines cron (backup check, monitoring, rappels),
+   escalade. Voir `ops-bot.example.md`.
+3. *(optionnel)* **Researcher** — veilles web multi-sources, OCR documents
+   (Firecrawl), résumés documentaires.
+4. *(optionnel)* **Content/Admin** — rédaction de comptes-rendus, relances,
+   documents administratifs récurrents.
 
-## Headless creation (in the container)
+## Création en headless (dans le conteneur)
 
 ```bash
-docker exec -it hermes-<slug>-pro bash   # or docker compose exec
+docker exec -it hermes-<slug>-pro bash   # ou docker compose exec
 hermes profile create ops
-# edit the profile's SOUL.md, then attach a routine:
-hermes cron create --profile ops "0 7 * * 1" "Weekly report: summary of the week in /opt/vault"
+# éditer le SOUL.md du profile, puis attacher une routine :
+hermes cron create --profile ops "0 7 * * 1" "Rapport hebdo : résumé de la semaine dans /opt/vault"
 hermes cron list
 ```
 
-Each created bot/routine must be **documented in the client vault**
-(`VPS/HermesConfig/<slug>/Bots et routines.md`): name, role, routine, what
-it knows/can/refuses.
+Chaque bot/routine créée doit être **documentée dans le vault client**
+(`VPS/HermesConfig/<slug>/Bots et routines.md`) : nom, rôle, routine, ce
+qu'il sait/peut/refuse.
 
-## Non-negotiable
+## Non négociable
 
-- The Ops bot does not touch the scope of other clients (same isolation).
-- Routines **never** contain secrets in plain text (go through env/config).
-- Any new routine is reviewed by the provider before activation.
+- Le bot Ops ne touche pas au périmètre des autres clients (même isolation).
+- Les routines ne contiennent **jamais** de secrets en clair (passer par env/config).
+- Toute nouvelle routine est relue par le prestataire avant activation.

@@ -1,35 +1,35 @@
 ---
 name: email-classify
 description: >-
-  Business classification of the NEW content of a structured email (output
-  of thread_parser): category, summary, flags. To run after the
-  thread-parser, before expert routing. Never classify the quoted
-  history (anti-duplicate).
+  Classification métier du contenu NOUVEAU d'un email structuré (sortie
+  thread_parser) : catégorie, résumé, flags. À exécuter après le
+  thread-parser, avant le routage experts. Ne jamais classifier l'historique
+  cité (anti-doublon).
 ---
 
 # Skill email-classify
 
-## Role
+## Rôle
 
-Categorize the new content of each structured mail and produce the
-summary used by expert routing and the RAG.
+Catégoriser le contenu nouveau de chaque mail structuré et produire le
+résumé utilisé par le routage experts et le RAG.
 
-## Procedure
+## Procédure
 
-1. Input: the `thread_parser` output (mails with `rag_status: new`).
-2. For each new mail, produce **strictly**:
+1. Entrée : la sortie `thread_parser` (mails avec `rag_status: new`).
+2. Pour chaque mail nouveau, produire **strictement** :
 
 ```json
 {"message_id": "<msg@x>", "categorie": "facturation|devis|chantier|admin|autre",
- "resume": "1 sentence", "flags": ["pj-facture", "urgent"]}
+ "resume": "1 phrase", "flags": ["pj-facture", "urgent"]}
 ```
 
-3. The summary covers the new content only — never the quoted
-   history (already in RAG or refused, cf. D3).
+3. Le résumé porte sur le contenu nouveau uniquement — jamais sur l'historique
+   cité (déjà en RAG ou refusé, cf. D3).
 
-## Limits
+## Limites
 
-- The classification commits to nothing: the experts decide downstream
+- La classification n'engage rien : les experts décident en aval
   (`expert-router`).
-- Invalid output (missing JSON) → `error` status on the mail (email_upsert)
-  and escalation — no silent LLM retry.
+- Sortie invalide (JSON manquant) → statut `error` sur le mail (email_upsert)
+  et escalade — pas de retry LLM silencieux.
