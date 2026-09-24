@@ -223,7 +223,7 @@ B8. Transition : `ssh nemo 'systemctl is-active hermes-gateway-arev'` = active
 ## D. Observation — autres sessions (WARN informatif, JAMAIS FAIL)
 
 `ssh nemo` (read-only) : `sudo ufw status` contient deny 8642 et 8650-8653 +
-allow 2222 ; `sudo fail2ban-client status sshd` actif ; `grep pam_exec
+allow $VPS_SSH_PORT ; `sudo fail2ban-client status sshd` actif ; `grep pam_exec
 /etc/pam.d/sshd` présent ; flotte v1 visible (`docker ps` : 4 conteneurs
 hermes-* non `-pro`, 2 runners natifs actifs).
 Ces éléments appartiennent à d'autres sessions — toute anomalie = WARN.

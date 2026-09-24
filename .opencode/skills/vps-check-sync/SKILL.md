@@ -11,8 +11,8 @@ description: >-
 
 # Check sync — Syncthing & vault Obsidian (SSH read-only)
 
-Audit **lecture seule** de Syncthing sur `nemo` (admin@REDACTED:2222,
-clé `REDACTED`), baseline = `Installation/SYNCTHING_OBSIDIAN.md`.
+Audit **lecture seule** de Syncthing sur `nemo` (admin@$VPS_IP:$VPS_SSH_PORT,
+clé `$VPS_SSH_KEY`), baseline = `Installation/SYNCTHING_OBSIDIAN.md`.
 Règles absolues :
 
 1. **READ-ONLY strict** : interdits côté serveur — `systemctl restart`,
@@ -43,12 +43,12 @@ Le check Y9 est local (exécutable quoi qu'il arrive).
 |---|---|---|---|
 | Y1 | Service actif + activé | `systemctl is-active syncthing@syncthing` + `systemctl is-enabled syncthing@syncthing` | `active` + `enabled` |
 | Y2 | Folder `obsidian-vault` | `APIKEY=$(sudo grep -oP '(?<=<apikey>)[^<]+' /home/syncthing/.config/syncthing/config.xml); curl -s -H "X-API-Key: $APIKEY" 'http://127.0.0.1:8384/rest/db/status?folder=obsidian-vault' \| grep -oE '"(state\|needFiles\|needBytes)":[^,}]*'` | `state: idle`, `needFiles: 0` |
-| Y3 | Devices | `curl … /rest/system/connections` → lister `id[:7]-…` + `connected=` (python, IDs masqués) | 4 devices déclarés : PC (`GPMPYZ2-…`) connecté + un 2ᵉ device actif (`6QXB532-…`) ; Android (`67QMEVF-…`) et `REDACTED_DEVICE_ID…` offline = `~ WARN` (mobile pas toujours allumé) |
+| Y3 | Devices | `curl … /rest/system/connections` → lister `id[:7]-…` + `connected=` (python, IDs masqués) | 4 devices déclarés : PC (`GPMPYZ2-…`) connecté + un 2ᵉ device actif (`6QXB532-…`) ; Android (`67QMEVF-…`) et `$SYNCTHING_DEVICE_ID offline = `~ WARN` (mobile pas toujours allumé) |
 | Y4 | GUI local uniquement | `sudo grep -A3 '<gui' /home/syncthing/.config/syncthing/config.xml \| grep -oE '<address>[^<]+</address>'` | `127.0.0.1:8384` — **FAIL si `0.0.0.0`** |
 | Y5 | Relais activé | `sudo grep -oE '<relaysEnabled>[a-z]*</relaysEnabled>' /home/syncthing/.config/syncthing/config.xml` | `<relaysEnabled>true</relaysEnabled>` (nomades via relay) |
 | Y6 | Sous-dossier projet | `sudo stat -c '%U:%G %a' /home/syncthing/obsidian-vault/VPS` (sudo obligatoire) | existe, owner `syncthing:syncthing` |
 | Y7 | Vault HermesConfig | `ls /home/syncthing/obsidian-vault/VPS/HermesConfig/` | notes présentes (VEILLE, Décisions, Runbook AREV, État flotte pro) + sous-dossier `arev/` |
-| Y8 | Port données 22000 | `sudo ss -tlnp \| grep syncthing` | `*:22000` en écoute (processus) — **UFW ferme le port depuis le 01/09** (aucune règle ALLOW, cf. skill `vps-check-securite` S14) ; le sync futur passera par Tailscale (`REDACTED`) |
+| Y8 | Port données 22000 | `sudo ss -tlnp \| grep syncthing` | `*:22000` en écoute (processus) — **UFW ferme le port depuis le 01/09** (aucune règle ALLOW, cf. skill `vps-check-securite` S14) ; le sync futur passera par Tailscale (`$TAILSCALE_IP`) |
 | Y9 | Tunnel GUI (local) | `grep syncthing-gui ~/.bashrc` (machine locale) | alias présent — cf. skill `vps-check-repo` R9 |
 
 ⚠️ Y2/Y3 : ne jamais `echo $APIKEY` ni logger la commande avec la clé ;

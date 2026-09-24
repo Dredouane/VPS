@@ -1,136 +1,136 @@
-# 🧩 HermesCapabilities — Compétences modulaires des agents Hermes
+# 🧩 HermesCapabilities — Modular skills of the Hermes agents
 
-Sous-projet **volet 2/3** de la fabrique Hermes. Le schéma global de
-l'architecture est ci-dessous ; les décisions sont tracées dans
-[`DECISIONS.md`](DECISIONS.md) et le design du pipeline email dans
+Sub-project **part 2/3** of the Hermes factory. The overall architecture
+diagram is below; decisions are tracked in
+[`DECISIONS.md`](DECISIONS.md) and the email pipeline design in
 [`PIPELINE_EMAIL_AREV.md`](PIPELINE_EMAIL_AREV.md).
 
-## 🗺️ Architecture globale
+## 🗺️ Overall architecture
 
-### Niveau fabrique — les 3 volets
+### Factory level — the 3 parts
 
 ```mermaid
 flowchart LR
-    subgraph REPO["Repo VPS — fabrique (code versionné)"]
-        HC["HermesConfig<br/>plateforme : spawn, sécurité,<br/>flotte Docker v2, clients variabilisés"]
-        HCAP["HermesCapabilities<br/>capabilities : contrats manifest,<br/>code déterministe, skills, SQL, tests"]
-        HI["HermesInstances<br/>écurie métier par client<br/>(à venir)"]
+    subgraph REPO["Repo VPS — factory (versioned code)"]
+        HC["HermesConfig<br/>platform: spawn, security,<br/>Docker fleet v2, variabilized clients"]
+        HCAP["HermesCapabilities<br/>capabilities: manifest contracts,<br/>deterministic code, skills, SQL, tests"]
+        HI["HermesInstances<br/>per-client business stable<br/>(upcoming)"]
     end
     subgraph RUNTIME["VPS nemo — runtime"]
-        INST["instances/arev<br/>hermes-arev-pro (Docker, loopback,<br/>image pinnée, secrets env_file)"]
-        SUPA[("Supabase<br/>webapp CRUD AREV<br/>+ RAG pgvector + TEST")]
+        INST["instances/arev<br/>hermes-arev-pro (Docker, loopback,<br/>pinned image, env_file secrets)"]
+        SUPA[("Supabase<br/>AREV CRUD webapp<br/>+ pgvector RAG + TEST")]
         GMAIL[("Gmail<br/>REDACTED_EMAIL")]
     end
     HC -->|"spawn-hermes-pro.sh"| INST
     HCAP -->|"capability-attach.sh<br/>manifests → MCP, skills,<br/>routines, SOUL, secrets"| INST
-    HI -.->|"consomme volets 1+2"| HCAP
-    INST <-->|"RPC génériques rpc_cap_*<br/>(slug + secret) — (rôle limité, RLS)"| SUPA
-    INST <-->|"OAuth gmail.modify,<br/>filtre +AREV"| GMAIL
+    HI -.->|"consumes parts 1+2"| HCAP
+    INST <-->|"generic RPCs rpc_cap_*<br/>(slug + secret) — (limited role, RLS)"| SUPA
+    INST <-->|"OAuth gmail.modify,<br/>+AREV filter"| GMAIL
 ```
 
-### Niveau runtime — pipeline email AREV (M2)
+### Runtime level — AREV email pipeline (M2)
 
 ```mermaid
 flowchart TB
-    CRON["⏰ cron */10 · 8h-19h<br/>(silencieux 20h-08h, ≤5 threads)"] --> POLL
-    subgraph CODE["Modules CODE déterministes (stdlib Python, testés par fixtures)"]
-        POLL["gmail_poll.py<br/>OAuth, filtre +AREV,<br/>-label:ia-traite"]
-        TP["thread_parser.py<br/>mailChain → mails structurés<br/>+ statut RAG (déjà/nouveau)"]
-        OCR["ocr_gemini.py<br/>TOUTES les PJ → texte + confiance"]
+    CRON["⏰ cron */10 · 8am-7pm<br/>(silent 8pm-8am, ≤5 threads)"] --> POLL
+    subgraph CODE["Deterministic CODE modules (Python stdlib, tested by fixtures)"]
+        POLL["gmail_poll.py<br/>OAuth, +AREV filter,<br/>-label:ia-traite"]
+        TP["thread_parser.py<br/>mailChain → structured emails<br/>+ RAG status (existing/new)"]
+        OCR["ocr_gemini.py<br/>ALL attachments → text + confidence"]
         EMB["embed_gemini.py<br/>gemini-embedding-001 · 768d"]
-        LBL["gmail_label.py<br/>pose label ia-traite"]
+        LBL["gmail_label.py<br/>applies label ia-traite"]
     end
-    subgraph SKILLS["Skills LLM (Hermes)"]
-        CLS["email-classify<br/>catégorie + résumé"]
-        ROUTER["expert-router<br/>'ça me concerne ?' → experts"]
-        FACT["expert-facturation<br/>extraction JSON strict"]
+    subgraph SKILLS["LLM Skills (Hermes)"]
+        CLS["email-classify<br/>category + summary"]
+        ROUTER["expert-router<br/>'does it concern me?' → experts"]
+        FACT["expert-facturation<br/>strict JSON extraction"]
     end
-    subgraph DB[("Supabase — même projet que la webapp CRUD")]
-        RPC["RPC génériques rpc_cap_*<br/>(slug + secret) — doc_status · doc_upsert · doc_search<br/>email_upsert · facture_find · facture_upsert<br/>pipeline_log"]
-        TBL["cap_arev : documents (pgvector 768)<br/>emails · factures · pipeline_runs"]
+    subgraph DB[("Supabase — same project as the CRUD webapp")]
+        RPC["Generic RPCs rpc_cap_*<br/>(slug + secret) — doc_status · doc_upsert · doc_search<br/>email_upsert · facture_find · facture_upsert<br/>pipeline_log"]
+        TBL["cap_arev: documents (pgvector 768)<br/>emails · factures · pipeline_runs"]
     end
     POLL -->|"threads"| TP
-    TP -->|"mails nouveaux"| CLS
+    TP -->|"new emails"| CLS
     CLS --> OCR --> EMB
     EMB -->|"vectors + metadata tags"| RPC
     TP -->|"status"| RPC
-    RPC --> UP["RAG indexé"] --> ROUTER
-    ROUTER -->|"facturation"| FACT
+    RPC --> UP["Indexed RAG"] --> ROUTER
+    ROUTER -->|"invoicing"| FACT
     FACT -->|"numero+fournisseur"| RPC
-    ROUTER -->|"aucun expert"| LBL
+    ROUTER -->|"no expert"| LBL
     FACT --> LBL --> LOG["pipeline_runs"]
 ```
 
-> **Deux natures de modules** : les `code/` sont **déterministes** (stdlib
-> Python, fixtures unitaires, non-régression verrouillée — cf. D3) ; les
-> `skills/` sont pilotés **LLM** (classification, routage, extraction). Les
-> accès Supabase passent **exclusivement** par RPC `security definer` avec
-> client hardcodé — jamais de service key (cf. DECISIONS D7/D8).
+> **Two kinds of modules**: `code/` modules are **deterministic** (stdlib
+> Python, unit fixtures, locked non-regression — see D3); `skills/` are
+> **LLM-driven** (classification, routing, extraction). Supabase access goes
+> **exclusively** through `security definer` RPCs with
+> hardcoded client — never a service key (see DECISIONS D7/D8).
 
-## 🎯 Principe
+## 🎯 Principle
 
-Une **capability** = une compétence métier granulaire (ex : « lire une boîte
-Gmail », « OCR des pièces jointes », « indexer dans le RAG Supabase ») décrite
-par un **contrat déclaratif** (`manifest.yaml`). Le client n'active que les
-capabilities dont il a besoin : `capability-attach.sh arev email-gmail
-rag-supabase …` configure l'instance (MCP, skills, code, routines, secrets,
-SOUL.md) — **la flotte part avec ses compétences à l'instanciation ou à
-l'update**.
+A **capability** = a granular business skill (e.g. "read a Gmail
+inbox", "OCR attachments", "index into the Supabase RAG") described
+by a **declarative contract** (`manifest.yaml`). The client only activates the
+capabilities it needs: `capability-attach.sh arev email-gmail
+rag-supabase …` configures the instance (MCP, skills, code, routines, secrets,
+SOUL.md) — **the fleet ships with its skills at instantiation or
+update time**.
 
-## 🔁 Cycle de vie d'une capability
+## 🔁 Capability life cycle
 
 ```
-1. ÉTUDE      → decision.md : disponibilité NATIF > MIX > SIDECAR (re-vérifiée à chaque montée de version Hermes)
-2. CONTRAT    → manifest.yaml : secrets, env variabilisé, MCP, skills, routines, soul_addendum
-3. IMPLÉMENT  → skill.md, mcp.json, routine.yaml, code/ (selon le type retenu)
-4. TESTER     → tests/test.sh via scripts/capability-test.sh (local d'abord, VPS ensuite)
-5. ATTACHER   → scripts/capability-attach.sh <slug> <capability> (--dry-run d'abord ; refuse si tests KO)
-6. INTÉGRER   → HermesConfig v3 consommera les manifests à l'instanciation (integration-hermesconfig.md)
+1. STUDY      → decision.md: NATIVE > MIX > SIDECAR availability (re-checked at every Hermes version bump)
+2. CONTRACT   → manifest.yaml: secrets, variabilized env, MCP, skills, routines, soul_addendum
+3. IMPLEMENT  → skill.md, mcp.json, routine.yaml, code/ (depending on the chosen type)
+4. TEST       → tests/test.sh via scripts/capability-test.sh (local first, then VPS)
+5. ATTACH     → scripts/capability-attach.sh <slug> <capability> (--dry-run first; refuses if tests fail)
+6. INTEGRATE  → HermesConfig v3 will consume the manifests at instantiation (integration-hermesconfig.md)
 ```
 
 ## 📂 Structure
 
 ```
 HermesCapabilities/
-├── README.md                      ← Ce fichier (schémas globaux)
-├── DECISIONS.md                   ← Registre ADR des décisions (grill 30-31/08)
-├── PIPELINE_EMAIL_AREV.md         ← Design détaillé du pipeline email + facturation
-├── ARCHITECTURE.md                ← Contrat de capability + matrice natif/mix/sidecar
-├── integration-hermesconfig.md    ← Contrat d'interface avec HermesConfig (spawn v3)
-├── sql/                           ← Source de vérité SQL (schéma, RPC, RLS) par client
+├── README.md                      ← This file (global diagrams)
+├── DECISIONS.md                   ← ADR registry of decisions (grid 30-31/08)
+├── PIPELINE_EMAIL_AREV.md         ← Detailed design of the email + invoicing pipeline
+├── ARCHITECTURE.md                ← Capability contract + native/mix/sidecar matrix
+├── integration-hermesconfig.md    ← Interface contract with HermesConfig (spawn v3)
+├── sql/                           ← SQL source of truth (schema, RPC, RLS) per client
 │   └── arev/                      ← 001_schema · 002_rpc · 003_rls
 ├── capabilities/
-│   ├── TEMPLATE/                  ← Squelette d'une nouvelle capability (à copier)
-│   ├── rag-supabase/              ← C5 (natif) — RAG pgvector via MCP supabase
+│   ├── TEMPLATE/                  ← Skeleton of a new capability (to copy)
+│   ├── rag-supabase/              ← C5 (native) — pgvector RAG via supabase MCP
 │   └── (M2) email-gmail · email-processing · doc-ocr · rag-embeddings ·
 │            analysis-facturation · db-crud-sync
 ├── pipelines/
-│   └── TEMPLATE/pipeline.yaml     ← Composition de capabilities (chaîne métier)
+│   └── TEMPLATE/pipeline.yaml     ← Composition of capabilities (business chain)
 └── scripts/
-    ├── capability-test.sh         ← Runner des tests unitaires (12 PASS / 0 FAIL)
-    └── capability-attach.sh       ← Attache des capabilities à un client (VPS, --dry-run)
+    ├── capability-test.sh         ← Unit test runner (12 PASS / 0 FAIL)
+    └── capability-attach.sh       ← Attaches capabilities to a client (VPS, --dry-run)
 ```
 
 ## 🚀 Quickstart
 
 ```bash
-# Vérifier le contrat de toutes les capabilities (local, read-only)
+# Verify the contract of all capabilities (local, read-only)
 ./scripts/capability-test.sh all
 
-# Nouvelle capability : copier le TEMPLATE, remplir manifest + decision
+# New capability: copy the TEMPLATE, fill in manifest + decision
 cp -r capabilities/TEMPLATE capabilities/ma-capability
 $EDITOR capabilities/ma-capability/manifest.yaml capabilities/ma-capability/decision.md
 ./scripts/capability-test.sh ma-capability
 
-# Sur le VPS — attacher à un client (jamais sans --dry-run la première fois)
+# On the VPS — attach to a client (never without --dry-run the first time)
 sudo ./scripts/capability-attach.sh arev rag-supabase --dry-run
 sudo ./scripts/capability-attach.sh arev rag-supabase
 ```
 
-## 🔗 Références
+## 🔗 References
 
-- Décisions (ADR) : [`DECISIONS.md`](DECISIONS.md) · Architecture contrats : [`ARCHITECTURE.md`](ARCHITECTURE.md)
-- Pipeline email + facturation AREV : [`PIPELINE_EMAIL_AREV.md`](PIPELINE_EMAIL_AREV.md)
-- Interface avec HermesConfig : [`integration-hermesconfig.md`](integration-hermesconfig.md)
-- Veille Hermes : [`../HermesConfig/VEILLE_HERMES_2026-08.md`](../HermesConfig/VEILLE_HERMES_2026-08.md)
-- Vault : `/home/syncthing/obsidian-vault/VPS/HermesCapabilities/`
+- Decisions (ADR): [`DECISIONS.md`](DECISIONS.md) · Architecture contracts: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+- AREV email + invoicing pipeline: [`PIPELINE_EMAIL_AREV.md`](PIPELINE_EMAIL_AREV.md)
+- Interface with HermesConfig: [`integration-hermesconfig.md`](integration-hermesconfig.md)
+- Hermes tech watch: [`../HermesConfig/VEILLE_HERMES_2026-08.md`](../HermesConfig/VEILLE_HERMES_2026-08.md)
+- Vault: `/home/syncthing/obsidian-vault/VPS/HermesCapabilities/`

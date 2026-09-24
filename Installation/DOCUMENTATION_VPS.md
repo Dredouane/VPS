@@ -1,7 +1,7 @@
 # Documentation Globale — VPS Contabo (Ubuntu 22.04 LTS)
 
-**Hostname** : `REDACTED`
-**IP publique** : `REDACTED`
+**Hostname** : `$VPS_HOSTNAME`
+**IP publique** : `$VPS_IP`
 **Contexte** : VPS ré-imaginé chez Contabo puis réinstallé + blindé (reprise depuis zéro), restauration des données depuis `backup.tar.gz`, puis réparation de la flotte d'agents Hermes.
 
 ---
@@ -12,20 +12,20 @@
 
 ```
 Host nemo-root   # connexion root temporaire (PORT 22, mot de passe) — PLUS DISPONIBLE (root bloqué)
-Host nemo        # connexion admin (PORT 2222, clé ed25519)   → UTILISER CELUI-CI
+Host nemo        # connexion admin (PORT $VPS_SSH_PORT, clé ed25519)   → UTILISER CELUI-CI
 ```
 
 | Paramètre | Valeur |
 |---|---|
 | Utilisateur admin | `admin` |
-| Port SSH | **2222** |
-| Authentification | Clé SSH uniquement (`id_ed25519` + `REDACTED`) |
+| Port SSH | **$VPS_SSH_PORT** |
+| Authentification | Clé SSH uniquement (`id_ed25519` + `$VPS_SSH_KEY`) |
 | `PermitRootLogin` | `no` (root impossible en SSH) |
 | `PasswordAuthentication` | `no` |
 
 Commandes :
 ```bash
-ssh nemo            # connexion admin (port 2222)
+ssh nemo            # connexion admin (port $VPS_SSH_PORT)
 # En cas de verrouillage SSH : console web Contabo (VNC) en root, mot de passe root.
 ```
 
@@ -52,9 +52,9 @@ ssh nemo            # connexion admin (port 2222)
 
 | Composant | État |
 |---|---|
-| SSH durci | Port 2222, clé seule, root bloqué, ciphers/MACs modernes |
-| Fail2ban | Jail `sshd` port 2222, banaction ufw, bantime 24h |
-| UFW | `deny incoming`, `allow 2222`, règles DOCKER-USER, `deny 8642` |
+| SSH durci | Port $VPS_SSH_PORT, clé seule, root bloqué, ciphers/MACs modernes |
+| Fail2ban | Jail `sshd` port $VPS_SSH_PORT, banaction ufw, bantime 24h |
+| UFW | `deny incoming`, `allow $VPS_SSH_PORT`, règles DOCKER-USER, `deny 8642` |
 | Docker | `no-new-privileges`, **pas** d'userns-remap, logs 10m×3 |
 | AIDE | Base d'intégrité (sha256), cron quotidien 3h |
 | Unattended-upgrades | Actif (patchs sécurité auto) |
@@ -64,17 +64,17 @@ ssh nemo            # connexion admin (port 2222)
 | Utilisateur cloud-init `ubuntu` | Supprimé (R1 audit 30/08) — sudoers `90-cloud-init-users` retiré |
 | Cron AIDE | Log daté dynamique `aide-$(date +\%Y\%m\%d).log` (corrigé le 30/08) |
 | snapd | Désactivé |
-| Supervision Telegram | `/usr/local/bin/telegram-alert.sh` (credentials dans `/etc/secrets/hermes.env`) — hook PAM sshd : alerte **uniquement si connexion inhabituelle** (IP ≠ allowlist `SSH_ALERT_ALLOWED_IPS=REDACTED`, utilisateur ≠ admin, ou locale) + alerte AIDE conditionnelle (cron 3h) — 30/08 |
+| Supervision Telegram | `/usr/local/bin/telegram-alert.sh` (credentials dans `/etc/secrets/hermes.env`) — hook PAM sshd : alerte **uniquement si connexion inhabituelle** (IP ≠ allowlist `SSH_ALERT_ALLOWED_IPS=$SOURCE_IP`, utilisateur ≠ admin, ou locale) + alerte AIDE conditionnelle (cron 3h) — 30/08 |
 | AIDE (exclusions churn) | `99_custom` : data-dirs agents, `.hermes` des 3 users, index Syncthing, fail2ban.sqlite3, landscape, vault Obsidian, `/run/containerd` — base régénérée le 30/08 21:34, check 0 diff |
 
 ### Ports en écoute publique
 
 | Port | Service | Note |
 |---|---|---|
-| 2222/tcp | SSH | Autorisé UFW |
+| $VPS_SSH_PORT/tcp | SSH | Autorisé UFW |
 | 8642/tcp | API gateway natif hermesrunner | **DENY UFW** (protégé par API_SERVER_KEY) |
 | 8650-8653/tcp | Agents Docker (gateways API 8642 des conteneurs) | **DENY UFW** (ports publiés mais bloqués publiquement) |
-| 22000/tcp | Syncthing (sync de données) | **FERMÉ (01/09)** — le sync passera par Tailscale (serveur enrôlé : REDACTED) |
+| 22000/tcp | Syncthing (sync de données) | **FERMÉ (01/09)** — le sync passera par Tailscale (serveur enrôlé : $TAILSCALE_IP) |
 
 ### ✅ Secrets migrés vers `/etc/secrets/` (30/08/2026 — audit)
 
@@ -190,8 +190,8 @@ Interface future avec le spawn v3 : `integration-hermesconfig.md`.
 
 - Vault : `/home/syncthing/obsidian-vault/` (612 Mo)
 - GUI Syncthing : `http://127.0.0.1:8384`
-- ⚠️ **Config Syncthing incomplète** : seul le device `REDACTED` (`REDACTED_DEVICE_ID...`) est déclaré, le vault n'a pas de `.stfolder`, aucun device distant → **pas de synchronisation active**. En attente des device IDs des autres appareils.
-- UFW : port 22000 restreint à l'IP locale `REDACTED`
+- ⚠️ **Config Syncthing incomplète** : seul le device `$VPS_HOSTNAME` (`$SYNCTHING_DEVICE_ID est déclaré, le vault n'a pas de `.stfolder`, aucun device distant → **pas de synchronisation active**. En attente des device IDs des autres appareils.
+- UFW : port 22000 restreint à l'IP locale `$SOURCE_IP`
 - Raccourcis : `sync-status`, `sync-restart`, `sync-reset` (alias dans `/root/.bashrc`)
 
 ---
@@ -231,14 +231,14 @@ Après la réinstallation, **rien n'était lancé** :
 ### Sécurité
 - [x] **Port 8650-8653** (APIs agents Docker) : **DENY UFW** — ports publiés mais bloqués publiquement.
 - [x] **Port 8642** (API gateway natif) : **DENY UFW**.
-- [x] **Port 22000** (Syncthing) : **FERMÉ le 01/09** — remplacé par Tailscale (serveur enrôlé REDACTED ; installer l'app Tailscale sur PC/téléphone pour le sync futur).
+- [x] **Port 22000** (Syncthing) : **FERMÉ le 01/09** — remplacé par Tailscale (serveur enrôlé $TAILSCALE_IP ; installer l'app Tailscale sur PC/téléphone pour le sync futur).
 - [x] **Déplacer les secrets de `/root/.bashrc`** vers `/etc/secrets/` — **fait le 30/08 (audit)** : 55 variables migrées vers `/etc/secrets/hermes.env` (600), `.bashrc` en 600 + sourcing, backup `/root/.bashrc.preaudit-20260830`.
 - [ ] Activer la **redaction des secrets** dans la config Hermes (`security.redact_secrets: true`) — désactivée par défaut.
 - [ ] Changer le **mot de passe root Contabo** (via console VNC) si pas déjà fait.
 - [x] **Uniformiser le conteneur leanConstruction** : ✅ **fait le 01/09** — compose régénéré sans `entrypoint: []`, image `hermes-agent:latest`, gateway en uid 10000, data `10000:10000 700`, Telegram `connected`.
 - [x] **Sauvegardes quotidiennes** : ✅ **fait le 01/09** — `/usr/local/bin/vps-backup.sh` (cron 4h30, archive ~1,3 Go dans `/var/backups/vps-fleet/`, rétention 7 j, log `/var/log/vps-backup.log`) + rapatriement local automatique `Installation/scripts/vps-backup-pull.sh` (tâche schtasks à créer, voir EXPLICATION_SECURITE.md) + NAS Synology en 2ᵉ temps (le NAS pull en SSH, procédure documentée).
-- [x] **Tailscale** : ✅ **installé le 01/09** — serveur enrôlé (`REDACTED`, tailnet REDACTED_EMAIL). À faire côté user : installer l'app Tailscale sur PC/téléphone pour accéder aux services via le tailnet.
-- [x] **Clés SSH durcies** : ✅ **01/09** — passphrase sur `REDACTED` + fonction `vps` (agent SSH au socket fixe `~/.ssh/agent.sock`, 1× par session WSL) + archive GPG des clés (`Installation/scripts/backup-keys.sh`, à copier sur USB).
+- [x] **Tailscale** : ✅ **installé le 01/09** — serveur enrôlé (`$TAILSCALE_IP`, tailnet REDACTED_EMAIL). À faire côté user : installer l'app Tailscale sur PC/téléphone pour accéder aux services via le tailnet.
+- [x] **Clés SSH durcies** : ✅ **01/09** — passphrase sur `$VPS_SSH_KEY` + fonction `vps` (agent SSH au socket fixe `~/.ssh/agent.sock`, 1× par session WSL) + archive GPG des clés (`Installation/scripts/backup-keys.sh`, à copier sur USB).
 - [ ] **Nettoyer `/etc/ssh/sshd_config` principal** (`PermitRootLogin yes` / `X11Forwarding yes` morts, neutralisés par `00-hardening.conf` mais piégeux).
 - [ ] **Binder le gateway natif sur 127.0.0.1** (défense en profondeur, UFW deny 8642 déjà en place).
 - [ ] **Purger les résidus snapd** (`apt purge snapd`, `/snap`) et mettre en place **logrotate AIDE** (logs > 40 Mo).
@@ -302,13 +302,13 @@ sudo /usr/local/bin/telegram-alert.sh "Test" "message de test"
 - **Test de persistance après reboot : RÉUSSI** — tout est revenu automatiquement (sshd, 6 agents Telegram connected, tailscaled, fail2ban, crons).
 
 ### Durcissements appliqués (01-06/09)
-- **Tailscale** installé (serveur REDACTED), port 22000 fermé définitivement.
-- **Sauvegardes** : cron 4h30 → `/var/backups/vps-fleet/` (1,3 Go, rétention 7 j) + clé dédiée restreinte (`id_vps_backup`, `restrict,command=`) + rapatriement auto PC (`vps-backup-pull.sh` + schtasks) + NAS Synology documenté.
-- **Clés SSH** : passphrase sur `REDACTED`, fonction `vps` (agent au socket fixe), archive GPG (`backup-keys.sh`), `authorized_keys` pruné à 2 lignes.
+- **Tailscale** installé (serveur $TAILSCALE_IP), port 22000 fermé définitivement.
+- **Sauvegardes** : cron 4h30 → `/var/backups/vps-fleet/` (1,3 Go, rétention 7 j) + clé dédiée restreinte (`$VPS_KEY_BACKUP`, `restrict,command=`) + rapatriement auto PC (`vps-backup-pull.sh` + schtasks) + NAS Synology documenté.
+- **Clés SSH** : passphrase sur `$VPS_SSH_KEY`, fonction `vps` (agent au socket fixe), archive GPG (`backup-keys.sh`), `authorized_keys` pruné à 2 lignes.
 - **Token bot @pipou200bot roté** (01/09) — ⚠️ leçon : le même token sert le runner natif → mettre à jour AUSSI `/home/hermesrunner/.hermes/.env` à chaque rotation.
 - **leanConstruction uniformisé** (gateway uid 10000, compose régénéré).
 - **AIDE v4** : exclusions de churn exhaustives (maintenance apt/notifier, /run/*, swap, instances pro), heartbeat quotidien **🟢 OK / 🚨 NOK** sur Telegram avec **triage LLM (DeepSeek)** + fallback brut, logs conservés 7 jours (purge 5h).
-- **Clavier console VNC en AZERTY** (`/etc/vconsole.conf` KEYMAP=fr) + **swap 2G** (`/swapfile`, fstab) + **fail2ban `ignoreip` REDACTED** (jamais de ban accidentel de l'IP admin).
+- **Clavier console VNC en AZERTY** (`/etc/vconsole.conf` KEYMAP=fr) + **swap 2G** (`/swapfile`, fstab) + **fail2ban `ignoreip` $SOURCE_IP** (jamais de ban accidentel de l'IP admin).
 
 ### Protocole alertes AIDE
 1. 🟢 `OK` → rien à faire (maintenance/bénéfique, détail dans `/var/log/aide/` 7 j).

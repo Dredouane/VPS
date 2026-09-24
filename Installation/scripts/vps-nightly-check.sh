@@ -38,14 +38,14 @@ for f in /home/admin/hermes-fleet/leanConstruction/data/gateway_state.json \
 done
 [ "$C" -eq 9 ] && ok "Agents Telegram : 9/9 connectés" || bad "Agents Telegram connectés : $C/9"
 
-# 5) UFW : actif, 2222 ouvert, 22000 absent
+# 5) UFW : actif, [VPS_SSH_PORT] ouvert, 22000 absent
 ufw status 2>/dev/null | grep -q "Status: active" && ok "UFW : actif" || bad "UFW : inactif !"
-ufw status 2>/dev/null | grep -q "2222/tcp" && ok "UFW : 2222 ALLOW" || bad "UFW : règle 2222 absente !"
+ufw status 2>/dev/null | grep -q "[VPS_SSH_PORT]/tcp" && ok "UFW : [VPS_SSH_PORT] ALLOW" || bad "UFW : règle [VPS_SSH_PORT] absente !"
 if ufw status 2>/dev/null | grep -q "22000"; then bad "UFW : règle 22000 résiduelle (doit être fermée)"; else ok "UFW : 22000 fermé"; fi
 
 # 6) Tailscale
 TS=$(tailscale ip -4 2>/dev/null | head -1)
-[ "$TS" = "REDACTED" ] && ok "Tailscale : enrôlé (REDACTED)" || bad "Tailscale : [$TS]"
+[ "$TS" = "[TAILSCALE_IP]" ] && ok "Tailscale : enrôlé ([TAILSCALE_IP])" || bad "Tailscale : [$TS]"
 
 # 7) Sauvegarde récente (< 26 h)
 B=$(ls -1t /var/backups/vps-fleet/fleet-*.tar.gz 2>/dev/null | head -1)

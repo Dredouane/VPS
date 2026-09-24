@@ -37,7 +37,7 @@
 
 ## §3 Périmètre des autres sessions (référence — checks D, non bloquants)
 
-- **Hardening** : SSH 2222 clé seule (root bloqué), fail2ban jail sshd,
+- **Hardening** : SSH $VPS_SSH_PORT clé seule (root bloqué), fail2ban jail sshd,
   UFW deny incoming + deny 8642/8650-8653 + 22000 restreint, AIDE (cron 3h,
   base régénérée 30/08 21:34), unattended-upgrades, secrets dans
   `/etc/secrets/hermes.env` (600, dir 700).

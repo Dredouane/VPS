@@ -33,7 +33,7 @@
 
 ADMIN_USER="admin"                  # Utilisateur admin avec sudo
 HERMES_USER="hermes"                # Utilisateur service SANS sudo
-SSH_PORT="2222"                     # Port SSH non standard
+SSH_PORT="$VPS_SSH_PORT"                     # Port SSH non standard
 
 # ⚠️⚠️⚠️ CRITIQUE – REMPLACER PAR TA VRAIE CLÉ PUBLIQUE ⚠️⚠️⚠️
 # Si tu laisses la valeur placeholder, tu seras définitivement verrouillé hors du VPS

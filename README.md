@@ -1,89 +1,101 @@
-# 🖥️ VPS — Documentation de projet
+# VPS Platform — Hardened server, agent fleet & client webapp
 
-Documentation et scripts du **VPS Contabo** (`REDACTED` — Ubuntu 22.04 LTS, IP `REDACTED`) : durcissement, restauration, flotte d'agents Hermes, Syncthing & Obsidian.
+[![Docker](https://img.shields.io/badge/fleet-Docker%20hardened-blue)](https://www.docker.com/)
+[![Ubuntu](https://img.shields.io/badge/os-Ubuntu%2022.04%20LTS-orange)](https://ubuntu.com/)
+[![Security](https://img.shields.io/badge/security-audited%20%2B%20%E2%9C%94%20regression%20checks-green)](Installation/RAPPORT_AUDIT_2026-08-30.md)
+[![Next.js](https://img.shields.io/badge/webapp-Next.js%2016-black)](https://nextjs.org/)
+[![Agents](https://img.shields.io/badge/agents-Hermes%20AI%20fleet-purple)](HermesConfig/README.md)
 
-> 🔒 **Repo privé** — ne pas committer de secrets (tokens, clés API, archives de backup).
+> A self-hosted AI operations platform: a security-hardened VPS running a fleet of Dockerized AI agents (personal + small-business clients), with modular capabilities and a Next.js client backoffice.
 
----
+This repository documents and drives everything running on a **Contabo VPS**
+(Ubuntu 22.04 LTS): infrastructure hardening, a production-grade **AI agent
+fleet**, a library of reusable **capabilities** (email, OCR, RAG, GED…), and
+**Alinea**, the web backoffice where SMB clients review agent work
+(invoice analysis, email triage…). The README of each sub-project is in
+English; deeper operational docs are in French.
 
-## 📂 Arborescence
+All deployment identifiers (IP, hostname, SSH port/key…) are **kept out of the
+repo** — they live in local environment variables, see
+[`LOCAL_SETUP.md`](LOCAL_SETUP.md).
+
+## 🧱 The three pillars
+
+```mermaid
+flowchart TB
+    subgraph PILLAR1["🖥️ 1. VPS hardening & ops"]
+        HARD[SSH hardening · UFW · Fail2ban<br/>AIDE · Tailscale · Syncthing]
+    end
+    subgraph PILLAR2["🤖 2. Hermes agent fleet"]
+        CONF[HermesConfig<br/>per-client agent deployment] --> CAP[HermesCapabilities<br/>modular skills]
+    end
+    subgraph PILLAR3["🌐 3. Alinea webapp"]
+        WEB[Next.js 16 backoffice<br/>email · invoices · search · chat]
+    end
+    HARD --> CONF --> WEB
+```
+
+### 🖥️ 1. [`Installation/`](Installation/README.md) — VPS hardening & operations
+Sovereign-ops discipline on a single cloud server: SSH hardening (port, ciphers,
+keys), UFW & Fail2ban, AIDE integrity monitoring, secrets in `/etc/secrets`,
+Syncthing + Obsidian knowledge sync. Includes a
+[final hardening plan](Installation/VPS_HARDENING_PLAN_FINAL.md), the
+[security audit report](Installation/RAPPORT_AUDIT_2026-08-30.md) and
+non-regression **OpenCode skills** that verify in read-only mode that the
+validated state never regresses (`vps-check-repo`, `vps-check-securite`,
+`vps-check-sync`, `check-hermesconfig` — orchestrated by a single
+`vps-check-full` PASS/FAIL run).
+
+### 🤖 2. Hermes — AI agent fleet
+- [`HermesConfig/`](HermesConfig/README.md) — professional, fully-templated
+  deployment of [Hermes agents](https://nousresearch.com/) for SMB clients:
+  one `clients/TEMPLATE/` + 3 variables = a new hardened Docker agent sandbox
+  (least-privilege caps, non-root UID, localhost-bound ports, zero secrets in
+  YAML/git, explicit `SOUL.md` behavior contract).
+  Client deployments are automated by `spawn-hermes-pro.sh` and audited by
+  `audit-hermes-pro.sh`.
+- [`HermesCapabilities/`](HermesCapabilities/README.md) — the modular skill
+  library agents are built on: email processing (Gmail), document OCR,
+  RAG/embeddings (Supabase), GED on Cloudflare R2, invoicing analysis — each
+  with manifest contract, lifecycle and test script.
+
+> **Scope note:** this platform powers **professional agent deployments for two
+> SMB clients** (construction-sector SaaS — see pillar 3) *and* a personal
+> agent workspace. Personal-fleet details and session notes live in the local
+> `internal/` folder (gitignored) and are intentionally out of this repository.
+
+### 🌐 3. [`Alinea/`](Alinea/README.md) — client webapp (Next.js 16)
+The backoffice where SMB end-users see agent results: emails, invoices with
+AI-extracted values, RAG search, expert chat. Highlights:
+- **SQL as source of truth** — `openapi.yaml` is *generated from the database
+  DDL* and types from `supabase gen types`; a CI `pnpm gen:check` fails on any
+  drift between SQL ⇄ OpenAPI ⇄ TypeScript
+- One Cloud Run service (Next.js App Router + API route handlers in the same
+  deployment), shadcn/ui design system in a shared package
+- [ADR-style decisions log](Alinea/DECISIONS.md) records every architectural trade-off
+
+## 🚀 Quick access
+
+```bash
+# Deploy a hardened client agent (on the VPS)
+cd HermesConfig && ./scripts/spawn-hermes-pro.sh <client-slug>
+
+# Webapp backoffice
+cd Alinea && pnpm dev && pnpm gen:check
+
+# Full non-regression security check (read-only)
+```
+Skills are invoked by name through [OpenCode](https://opencode.ai/) (e.g.
+*“run vps-check-full”*).
+
+## 📂 Repository layout
 
 ```
 VPS/
-├── README.md                  ← Ce fichier : vue d'ensemble du projet
-├── Obsidian_Vault.md          ← Où se trouve le vault Obsidian dédié au projet
-│
-├── Installation/              ← Documentation technique + scripts d'installation
-│   ├── README.md              ← Guide du dossier Installation
-│   ├── VPS_HARDENING_PLAN_FINAL.md   ← Plan de blindage (13 sections)
-│   ├── DOCUMENTATION_VPS.md          ← Doc globale post-installation
-│   ├── SYNCTHING_OBSIDIAN.md         ← Guide Syncthing & Obsidian
-│   ├── RAPPORT_AUDIT_2026-08-30.md   ← Rapport d'audit sécurité
-│   └── spawn-hermes.sh               ← Script de déploiement des agents Hermes (v1)
-│
-├── HermesConfig/              ← 🤖 Agents Hermes PRO clients PME (v2, variabilisé)
-│   ├── README.md              ← Vue d'ensemble + quickstart
-│   ├── VEILLE_HERMES_2026-08.md      ← Veille state of the art (août 2026)
-│   ├── ARCHITECTURE.md        ← Décisions (ADR) — Docker v2, secrets, Bot Mode
-│   ├── DEPLOYMENT.md          ← Guide pas-à-pas déploiement VPS
-│   ├── docker/                ← Template compose sécurisé
-│   ├── clients/               ← TEMPLATE + clients réels (arev)
-│   ├── hermes/                ← config, bots, routines, skills
-│   └── scripts/               ← spawn-hermes-pro.sh + audit-hermes-pro.sh
-│
-├── HermesCapabilities/        ← 🧩 Compétences modulaires (email, OCR, RAG…)
-│   ├── README.md              ← Cycle de vie d'une capability
-│   ├── ARCHITECTURE.md        ← Contrat manifest + matrice natif/mix/sidecar
-│   ├── capabilities/          ← TEMPLATE + pilote rag-supabase (C5)
-│   ├── pipelines/             ← Compositions de capabilities (chaînes métier)
-│   └── scripts/               ← capability-test.sh + capability-attach.sh
-│
-├── Alinea/                 ← 🌐 WebApp backoffice clients (Next.js 16)
-│   ├── README.md              ← Stack, pipeline contrats, phases
-│   ├── DECISIONS.md           ← ADR (Next.js, openapi.yaml généré, Cloud Run)
-│   ├── apps/web/              ← Front + API route handlers (1 déploiement)
-│   ├── packages/              ← ui (design system) + api-types (générés)
-│   └── openapi/               ← openapi.yaml GÉNÉRÉ depuis sql/generic
-│
-├── .gitignore                 ← Exclusions (backup.tar.gz, secrets, logs…)
-│
-└── (non versionnés, locaux uniquement)
-    ├── backup.tar.gz          ← Archive de sauvegarde (2,1 Go) — IGNORÉE
-    └── spawn-agent.sh         ← Ancien script (lien invalide) — non commité
+├── Installation/        # Hardening plan, audit, ops docs, scripts
+├── HermesConfig/        # Client agent deployment (template-driven)
+├── HermesCapabilities/  # Modular agent skills (+ capabilities/, pipelines/)
+├── Alinea/              # Next.js client webapp (monorepo, SQL→OpenAPI)
+├── LOCAL_SETUP.md       # Where deployment identifiers live (local env)
+└── .env.example / .env.local   # Local, gitignored values
 ```
-
-## 🚀 Accès rapide
-
-```bash
-ssh nemo                # admin@REDACTED:2222 (clé REDACTED)
-syncthing-gui           # tunnel SSH → GUI Syncthing du VPS (http://localhost:8384)
-# Agent pro client (flotte HermesConfig v2) :
-cd HermesConfig && ./scripts/spawn-hermes-pro.sh <slug>   # sur le VPS
-# WebApp backoffice (P0-P1 : monorepo + pipeline contrats) :
-cd Alinea && pnpm dev && pnpm gen:check                # génère/vérifie openapi.yaml
-```
-
-## 🛡️ Skills de non-régression
-
-6 skills OpenCode (`.opencode/skills/`) vérifient en **lecture seule** que
-l'état validé (audit du 30/08/2026) ne régresse pas. Les invoquer par leur
-nom ou par mots-clés (ex. « lance vps-check-full ») — **redémarrer opencode**
-après leur création pour les charger :
-
-| Skill | Périmètre |
-|---|---|
-| `vps-check-repo` | Repo git local : secrets versionnés, `.gitignore`, `~/.ssh/config`, alias |
-| `vps-check-securite` | Hardening VPS : sshd 2222 + ciphers, UFW/DOCKER-USER, Fail2ban, AIDE, sysctl, `/etc/secrets` 600, hook PAM |
-| `vps-check-flotte` | Flotte legacy : 4 conteneurs 8650-8653, 2 runners natifs, loukyrunner inactif, 0 conflit 409, `spawn-hermes.sh` |
-| `check-hermesconfig` | Invariants HermesConfig : template compose, `audit-hermes-pro.sh`, `redact_secrets`, ACLs Obsidian, drift repo↔VPS |
-| `vps-check-sync` | Syncthing : service actif, folder idle, GUI 127.0.0.1:8384, vault `VPS/HermesConfig` |
-| `vps-check-full` | Orchestrateur : exécute les 5 skills (repo → sécurité → flotte → HermesConfig → sync) + synthèse PASS/FAIL |
-
-Format : tableau `✓ PASS / ✗ FAIL / ~ WARN` + renvoi exact vers la doc de
-remédiation — les skills **ne corrigent jamais** (rapport seul).
-Registre des invariants HermesConfig : [`HermesConfig/VERIFICATIONS.md`](HermesConfig/VERIFICATIONS.md).
-
-## 🔗 Liens utiles
-
-- [Repo GitHub](https://github.com/Dredouane/VPS)
-- Vault Obsidian local → voir [`Obsidian_Vault.md`](Obsidian_Vault.md)

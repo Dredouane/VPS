@@ -37,11 +37,11 @@ R1 à R3 : `git grep` retourne rc=1 quand aucune correspondance → **rc=1 = PAS
 | R5 | `*.env` ignorés | `git check-ignore 'HermesConfig/clients/arev/client.env'` | rc=0 |
 | R6 | Artefacts `Zone.Identifier` ignorés | `git check-ignore 'Installation/VPS_HARDENING_PLAN_FINAL.md:Zone.Identifier'` | rc=0 |
 | R7 | Repo GitHub PRIVÉ | `gh repo view Dredouane/VPS --json visibility -q .visibility` | `PRIVATE` — si `gh` absent/non authentifié → `~ WARN` (ne pas FAIL) |
-| R8 | Config SSH locale `Host nemo` | `grep -A5 '^Host nemo$' ~/.ssh/config` | contient `User admin`, `Port 2222`, `IdentityFile ~/.ssh/REDACTED` |
+| R8 | Config SSH locale `Host nemo` | `grep -A5 '^Host nemo$' ~/.ssh/config` | contient `User admin`, `Port $VPS_SSH_PORT`, `IdentityFile ~/.ssh/$VPS_SSH_KEY` |
 | R9 | Alias `syncthing-gui` (tunnel GUI Syncthing) | `grep syncthing-gui ~/.bashrc` | présent (ligne active) |
-| R10 | Ancien alias root@22 neutralisé | `grep -n 'alias nemo' ~/.bashrc` | ancien alias `root@…:22` **commenté** (précédé de `#`) ; seul l'alias SSH `nemo` → admin@2222 est actif (dans `~/.ssh/config`) |
+| R10 | Ancien alias root@22 neutralisé | `grep -n 'alias nemo' ~/.bashrc` | ancien alias `root@…:22` **commenté** (précédé de `#`) ; seul l'alias SSH `nemo` → admin@$VPS_SSH_PORT est actif (dans `~/.ssh/config`) |
 | R11 | État de l'arbre (informatif) | `git status -sb` | noter branche, fichiers modifiés, avance sur `origin/main` — jamais FAIL |
-| R12 | Clés privées locales jamais versionnées | `git ls-files \| grep -cE 'id_vps_backup\|REDACTED\|id_ed25519'` → **0** ; `ls ~/.ssh/id_vps_backup` présent localement (info — la clé backup pull n'existe que sur le PC) | 0 clé privée trackée ; la clé publique seule, si versionnée un jour, est tolérée |
+| R12 | Clés privées locales jamais versionnées | `git ls-files \| grep -cE '$VPS_KEY_BACKUP\|$VPS_SSH_KEY\|id_ed25519'` → **0** ; `ls ~/.ssh/$VPS_KEY_BACKUP` présent localement (info — la clé backup pull n'existe que sur le PC) | 0 clé privée trackée ; la clé publique seule, si versionnée un jour, est tolérée |
 
 ## Rapport
 

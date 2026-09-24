@@ -1,9 +1,9 @@
 ---
 name: vps-check-securite
 description: >-
-  Audit de non-régression sécurité du VPS nemo (REDACTED, SSH read-only) :
-  sshd (port 2222, root/password désactivés, ciphers sans algo faible, drop-ins),
-  UFW (default deny, 2222 seul port ouvert, 8642/8650 DENY, 22000 FERMÉ,
+  Audit de non-régression sécurité du VPS nemo ($VPS_IP, SSH read-only) :
+  sshd (port $VPS_SSH_PORT, root/password désactivés, ciphers sans algo faible, drop-ins),
+  UFW (default deny, $VPS_SSH_PORT seul port ouvert, 8642/8650 DENY, 22000 FERMÉ,
   DOCKER-USER), Fail2ban (jail sshd), AIDE (base + cron aide-check-alert.sh +
   99_custom), sauvegardes quotidiennes (vps-backup.sh), Tailscale (enrôlement),
   daemon.json Docker, secrets /etc/secrets/hermes.env (600), hook PAM SSH
@@ -15,8 +15,8 @@ description: >-
 
 # Check sécurité — audit hardening VPS (SSH read-only)
 
-Audit **lecture seule** du VPS `nemo` (admin@REDACTED:2222, clé
-`REDACTED` via `~/.ssh/config`), baseline = état validé du 30/08/2026
+Audit **lecture seule** du VPS `nemo` (admin@$VPS_IP:$VPS_SSH_PORT, clé
+`$VPS_SSH_KEY` via `~/.ssh/config`), baseline = état validé du 30/08/2026
 (`Installation/RAPPORT_AUDIT_2026-08-30.md` §1 + §5).
 Règles absolues :
 
@@ -47,14 +47,14 @@ Les checks R1-R4 (repo local) ne dépendent pas du SSH — cf. skill
 
 | # | Check | Commande (`$SSH '…'`) | Attendu (baseline 30/08) |
 |---|---|---|---|
-| S1 | Port SSH | `sudo ss -tlnp \| grep sshd` | `0.0.0.0:2222` + `[::]:2222` uniquement, **pas de `:22`** |
+| S1 | Port SSH | `sudo ss -tlnp \| grep sshd` | `0.0.0.0:$VPS_SSH_PORT` + `[::]:$VPS_SSH_PORT` uniquement, **pas de `:22`** |
 | S2 | PermitRootLogin | `sudo sshd -T \| grep -i permitrootlogin` | `no` |
 | S3 | PasswordAuthentication | `sudo sshd -T \| grep -i passwordauthentication` | `no` |
 | S4 | KbdInteractiveAuthentication | `sudo sshd -T \| grep -i kbdinteractiveauthentication` | `no` |
 | S5 | PubkeyAuthentication | `sudo sshd -T \| grep -i pubkeyauthentication` | `yes` |
 | S6 | AuthenticationMethods | `sudo sshd -T \| grep -i authenticationmethods` | `publickey` |
 | S7 | MaxAuthTries | `sudo sshd -T \| grep -i maxauthtries` | `3` |
-| S8 | Forwards / DNS / X11 / empty pwd | `sudo sshd -T \| grep -Ei 'allowtcpforwarding\|allowagentforwarding\|usedns\|x11forwarding\|permitemptypasswords'` | `allowtcpforwarding local` (intentionnel : `10-tunnel.conf`, tunnels `nemoclaw-tunnel` — ⚠️ le §1.1 du RAPPORT_AUDIT dit « no » à tort) ; `allowagentforwarding no`, `usedns no`, `x11forwarding no`, `permitemptypasswords no` |
+| S8 | Forwards / DNS / X11 / empty pwd | `sudo sshd -T \| grep -Ei 'allowtcpforwarding\|allowagentforwarding\|usedns\|x11forwarding\|permitemptypasswords'` | `allowtcpforwarding local` (intentionnel : `10-tunnel.conf`, tunnels `$VPS_TUNNEL` — ⚠️ le §1.1 du RAPPORT_AUDIT dit « no » à tort) ; `allowagentforwarding no`, `usedns no`, `x11forwarding no`, `permitemptypasswords no` |
 | S9 | Ciphers/MACs sans algo faible | `sudo sshd -T \| grep -E '^(ciphers\|macs) '` | **0** occurrence de `arcfour`, `hmac-sha1`, `hmac-md5` (grep -cE → 0) ; `chacha20-poly1305@openssh.com` autorisé (moderne), AES-GCM + hmac-sha2-ETM présents |
 | S10 | Drop-ins SSH | `ls /etc/ssh/sshd_config.d/` | `00-hardening.conf` présent (chargé en 1ᵉʳ → first-match-wins) ; drop-ins cloud-init résiduels tolérés (`50-cloud-init.conf` contient `PasswordAuthentication yes` **inerte** — neutralisé par sshd -T ; `60-cloudimg-settings.conf` = `no`) → `~ WARN` documentaire (prolonge Y2) |
 | S11 | Perms `.ssh` admin | `stat -c '%a' /home/admin/.ssh /home/admin/.ssh/authorized_keys` | `700` et `600` |
@@ -65,7 +65,7 @@ Les checks R1-R4 (repo local) ne dépendent pas du SSH — cf. skill
 |---|---|---|---|
 | S12 | UFW active | `sudo ufw status` | `Status: active` |
 | S13 | Default policy | `sudo ufw status verbose` | `Default: deny (incoming)` |
-| S14 | Règles ouvertes | `sudo ufw status \| grep -E '2222\|8642\|8650\|22000'` | `2222/tcp ALLOW` ; `8642/tcp DENY` ; `8650/tcp DENY` ; **22000 : AUCUNE règle** (fermé le 01/09 — remplacé par Tailscale, cf. `EXPLICATION_SECURITE.md` §7.3) — une règle 22000 ALLOW résiduelle = **FAIL** |
+| S14 | Règles ouvertes | `sudo ufw status \| grep -E '$VPS_SSH_PORT\|8642\|8650\|22000'` | `$VPS_SSH_PORT/tcp ALLOW` ; `8642/tcp DENY` ; `8650/tcp DENY` ; **22000 : AUCUNE règle** (fermé le 01/09 — remplacé par Tailscale, cf. `EXPLICATION_SECURITE.md` §7.3) — une règle 22000 ALLOW résiduelle = **FAIL** |
 | S15 | Bloc UFW/Docker | `sudo grep -c 'BEGIN UFW AND DOCKER' /etc/ufw/after.rules` | ≥ 1 (bloc présent — critique : Docker court-circuite UFW) |
 | S16 | Chaîne DOCKER-USER | `sudo iptables -L DOCKER-USER -n` | contient une règle `DROP` finale (RETURN RFC1918/loopback/ESTABLISHED tolérés) |
 | S17 | daemon.json | `cat /etc/docker/daemon.json` | `no-new-privileges: true`, `live-restore: true`, log-opts `max-size 10m` / `max-file 3`, **aucune** clé `userns-remap` |
@@ -78,7 +78,7 @@ une liste figée complète de règles, uniquement les règles ci-dessus.
 | # | Check | Commande | Attendu |
 |---|---|---|---|
 | S18 | Service fail2ban | `systemctl is-active fail2ban` | `active` |
-| S19 | Jail sshd | `sudo fail2ban-client status` (liste) + `sudo fail2ban-client get sshd bantime` + `sudo grep -E '^(port\|bantime\|backend\|banaction)' /etc/fail2ban/jail.local` | jail `sshd` présente ; bantime **effectif** `86400` ; `port = 2222`, `backend = systemd`, `banaction = ufw` — un `bantime = 3600` en tête ([DEFAULT]) est toléré si la section [sshd] prime |
+| S19 | Jail sshd | `sudo fail2ban-client status` (liste) + `sudo fail2ban-client get sshd bantime` + `sudo grep -E '^(port\|bantime\|backend\|banaction)' /etc/fail2ban/jail.local` | jail `sshd` présente ; bantime **effectif** `86400` ; `port = $VPS_SSH_PORT`, `backend = systemd`, `banaction = ufw` — un `bantime = 3600` en tête ([DEFAULT]) est toléré si la section [sshd] prime |
 | S20 | Base AIDE | `stat -c '%a' /var/lib/aide/aide.db` | présente, `600` |
 | S21 | Cron AIDE (heartbeat 🟢/🚨) | `cat /etc/cron.d/aide` + `sudo head -5 /usr/local/bin/aide-check-alert.sh` | planifié à 3h (`0 3 * * *`) appelant `/usr/local/bin/aide-check-alert.sh` (v4+) : chaque check envoie sur Telegram **🟢 OK** (0 diff ou diffs bénins via triage LLM) ou **🚨 NOK** (diffs suspects + explications) ; fallback brut si l'API LLM échoue ; détails complets dans `/var/log/aide/` (conservés 7 j, purge cron 5h) |
 | S22 | Exclusions churn `99_custom` | `cat /etc/aide/aide.conf.d/99_custom` | contient : `node_modules` (agents + global), `/var/lib/docker`, `containerd`, data-dirs `hermes-fleet/.*/data` (récursif — instances pro incluses), `.hermes` des 3 users (ou pattern `admin\|hermesrunner\|arev`), `syncthing`, `fail2ban`, `landscape`, `/run/containerd`, `/run/docker`, `/var/lib/aide`, `/var/lib/tailscale`, `/var/backups`, `obsidian-vault`, `/var/cache/apt`, `/var/cache/motd-news`, `/var/lib/apt`, `/var/lib/ubuntu-advantage`, `/var/lib/update-notifier`, `/var/lib/update-manager`, `/var/lib/ubuntu-release-upgrader`, `/var/lib/systemd/timers`, `/run/systemd`, `/run/user`, `/run/ufw.lock`, `/swapfile` (grep par mot-clé, ≥ 15 motifs) |
@@ -112,8 +112,8 @@ une liste figée complète de règles, uniquement les règles ci-dessus.
 | # | Check | Commande | Attendu |
 |---|---|---|---|
 | S37 | Sauvegarde quotidienne | `ls -la /etc/cron.d/vps-backup` + `cat /etc/cron.d/vps-backup` + `sudo stat -c '%a %U:%G' /usr/local/bin/vps-backup.sh` + `ls -1t /var/backups/vps-fleet/fleet-*.tar.gz \| head -1` (mtime < 26 h) + `tail -3 /var/log/vps-backup.log` | cron `30 4 * * * root` ; script `700 root:root` ; archive récente 600 ; log sans erreur |
-| S38 | Tailscale enrôlé | `systemctl is-active tailscaled` + `sudo tailscale status \| head -2` + `sudo tailscale ip -4` | `active` ; ligne du serveur `REDACTED` logged-in ; IP **REDACTED** |
-| S39 | Clé backup restreinte | `sudo grep backup-pull-nemo /home/admin/.ssh/authorized_keys` + `stat -c '%a' /usr/local/bin/vps-backup-serve.sh` + `sudo ls ~/.ssh/id_vps_backup 2>&1` | ligne `restrict,command="/usr/local/bin/vps-backup-serve.sh"` présente ; script `755` ; clé privée **ABSENTE du serveur** (elle n'existe que sur le PC local — FAIL si trouvée) |
+| S38 | Tailscale enrôlé | `systemctl is-active tailscaled` + `sudo tailscale status \| head -2` + `sudo tailscale ip -4` | `active` ; ligne du serveur `$VPS_HOSTNAME` logged-in ; IP **$TAILSCALE_IP** |
+| S39 | Clé backup restreinte | `sudo grep backup-pull-nemo /home/admin/.ssh/authorized_keys` + `stat -c '%a' /usr/local/bin/vps-backup-serve.sh` + `sudo ls ~/.ssh/$VPS_KEY_BACKUP 2>&1` | ligne `restrict,command="/usr/local/bin/vps-backup-serve.sh"` présente ; script `755` ; clé privée **ABSENTE du serveur** (elle n'existe que sur le PC local — FAIL si trouvée) |
 
 ## Rapport
 

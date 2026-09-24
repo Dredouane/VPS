@@ -14,9 +14,15 @@ Ce dossier contient toute la documentation technique et les scripts liés à la 
 
 ## Contexte
 
-- **Serveur** : `REDACTED` — Ubuntu 22.04 LTS — `REDACTED`
-- **Accès SSH** : `ssh nemo` (admin@2222, clé `REDACTED`)
+- **Serveur** : `$VPS_HOSTNAME` — Ubuntu 22.04 LTS — `$VPS_IP`
+- **Accès SSH** : `ssh nemo` (admin@$VPS_SSH_PORT, clé `$VPS_SSH_KEY`)
 - **Repo GitHub** : [Dredouane/VPS](https://github.com/Dredouane/VPS) (privé)
+
+> Les valeurs ci-dessus (`$VPS_*`, `$SOURCE_IP`…) sont de simples variables
+> d'environnement chargées automatiquement depuis votre bloc
+> "VPS infrastructure identity" de `~/.bashrc` — voir
+> [`LOCAL_SETUP.md`](../LOCAL_SETUP.md). Copier-coller les commandes de ce
+> dossier fonctionne tel quel dans un terminal où ces variables sont définies.
 
 ## Ordre de lecture recommandé
 

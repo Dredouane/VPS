@@ -1,9 +1,9 @@
 # 🔐 Rapport d'Audit Sécurité — VPS Contabo `nemo`
 
-**Date** : 30/08/2026 | **Cible** : REDACTED (REDACTED, Ubuntu 22.04 LTS, kernel 5.15.0-190)
+**Date** : 30/08/2026 | **Cible** : $VPS_IP ($VPS_HOSTNAME, Ubuntu 22.04 LTS, kernel 5.15.0-190)
 **Méthode** : Vérifications en lecture seule + tests dynamiques externes (aucune modification de configuration)
 **Référentiel** : `DOCUMENTATION_VPS.md` (état documenté du 30/08/2026)
-**Connexion audit** : alias `nemo` (port 2222), clé `REDACTED` — note : `id_ed25519` est protégé par passphrase et aucun agent SSH ne tournait sur la machine locale ; un `ssh-add` au boot de session WSL est recommandé (confort local, hors périmètre serveur).
+**Connexion audit** : alias `nemo` (port $VPS_SSH_PORT), clé `$VPS_SSH_KEY` — note : `id_ed25519` est protégé par passphrase et aucun agent SSH ne tournait sur la machine locale ; un `ssh-add` au boot de session WSL est recommandé (confort local, hors périmètre serveur).
 
 ---
 
@@ -12,7 +12,7 @@
 ### 1.1 SSH & SSHD Hardening — ✅ CONFORME
 | Test | Résultat |
 |---|---|
-| Port d'écoute | **2222 uniquement** (`0.0.0.0:2222` + `[::]:2222`), port 22 non écouté et **filtré de l'extérieur** |
+| Port d'écoute | **$VPS_SSH_PORT uniquement** (`0.0.0.0:$VPS_SSH_PORT` + `[::]:$VPS_SSH_PORT`), port 22 non écouté et **filtré de l'extérieur** |
 | `PermitRootLogin` | `no` (test dynamique : `ssh root@` → `Permission denied (publickey)`) |
 | `PasswordAuthentication` / `KbdInteractive` | `no` / `no` (test dynamique avec `PreferredAuthentications=password` → rejeté, le serveur n'offre QUE publickey) |
 | `AuthenticationMethods` | `publickey` uniquement, `MaxAuthTries 3` |
@@ -24,17 +24,17 @@
 | Test | Résultat |
 |---|---|
 | UFW | `active`, default `deny incoming` / `allow outgoing` / `deny routed` |
-| Règles ouvertes | `2222/tcp ALLOW`, `22000/tcp ALLOW **depuis REDACTED uniquement**` |
+| Règles ouvertes | `$VPS_SSH_PORT/tcp ALLOW`, `22000/tcp ALLOW **depuis $SOURCE_IP uniquement**` |
 | Ports Hermes | `8642 DENY`, `8650 DENY` (explicites) |
 | Docker bypass UFW | **Neutralisé** : chaîne `DOCKER-USER` active → RETURN pour RFC1918/loopback/ESTABLISHED, **DROP pour tout le reste** (6 300+ paquets traités) |
-| Probes externes (depuis machine distante) | 22, 25, 8384, 8642, 8650, **8651, 8652, 8653**, 22000 → tous **FILTERED** ; 2222 → seul port OPEN |
+| Probes externes (depuis machine distante) | 22, 25, 8384, 8642, 8650, **8651, 8652, 8653**, 22000 → tous **FILTERED** ; $VPS_SSH_PORT → seul port OPEN |
 | Syncthing | GUI bindée sur `127.0.0.1:8384` ✅ ; `22000` exposé mais restreint UFW à 1 IP (TO DO doc **appliqué**) |
 | Postfix | `inet_interfaces = loopback-only`, écoute `127.0.0.1:25` et `[::1]:25` exclusivement ✅ |
 
 ### 1.3 Anti-Intrusion — ✅ CONFORME
 | Test | Résultat |
 |---|---|
-| Fail2ban | Service actif, 1 jail `sshd` : port **2222**, backend systemd, `maxretry 3`, `bantime 86400` (24h), `banaction ufw` |
+| Fail2ban | Service actif, 1 jail `sshd` : port **$VPS_SSH_PORT**, backend systemd, `maxretry 3`, `bantime 86400` (24h), `banaction ufw` |
 | Efficacité prouvée | **2 IP bannies actuellement** (41.63.63.211, 47.80.59.134) = les 2 règles `REJECT` UFW → chaîne fail2ban→UFW opérationnelle |
 | AIDE | `99_custom` présent avec exclusions pertinentes (node_modules, venv, git, docker, containerd, tmp, var/log) |
 | Base AIDE | `aide.db` **régénérée le 30/08 à 11:56** (post-changements → TO DO doc **appliqué**, fausses alertes évitées) |
@@ -174,7 +174,7 @@ Remédiation exécutée en une session `sudo bash -s` via SSH, avec sauvegardes 
 | Utilisateurs root-équivalents | **1 seul** : `admin` (NOPASSWD via `90-admin`) — porte `ubuntu` fermée |
 | Secrets | **0 en clair** dans `.bashrc` ; centralisés dans `/etc/secrets/hermes.env` (600, dir 700) |
 | Flotte Hermes | 6/6 actifs (4 Docker + 2 natifs), fail2ban actif, 0 unit failed |
-| Exposition réseau | inchangée et conforme (2222 seul public) |
+| Exposition réseau | inchangée et conforme ($VPS_SSH_PORT seul public) |
 
 ### 5.5 Supervision Telegram active (30/08, ajout post-audit)
 
@@ -183,7 +183,7 @@ Architecture d'alerte centralisée déployée et validée de bout en bout :
 | Composant | Rôle | Validation |
 |---|---|---|
 | `/usr/local/bin/telegram-alert.sh` (700 root) | Envoi Telegram centralisé ; credentials sourcés depuis `/etc/secrets/hermes.env` (`ALERT_TELEGRAM_BOT_TOKEN`, `ALERT_TELEGRAM_CHAT_ID`) ; erreurs tracées via `logger -t telegram-alert` | Test direct **HTTP 200** ; messages reçus sur Telegram |
-| `/usr/local/bin/telegram-alert-ssh.sh` + hook PAM (`/etc/pam.d/sshd` : `session optional pam_exec.so quiet seteuid …`) | Notifie **uniquement les connexions SSH inhabituelles** : autre IP que `SSH_ALERT_ALLOWED_IPS` (`REDACTED`, allowlist dans `hermes.env`), autre utilisateur que `admin`, ou connexion locale — silence pour `admin@REDACTED` (trafic routine des agents, tracé dans `journalctl`) ; `optional` = ne peut jamais bloquer un login ; backups `sshd.preaudit-20260830` / `telegram-alert-ssh.sh.preaudit-policy-20260830` | Simulation `admin@REDACTED` → silence (exit 0) ; `admin@203.0.113.99` (IP test) → notification reçue ; `close_session` → silence |
+| `/usr/local/bin/telegram-alert-ssh.sh` + hook PAM (`/etc/pam.d/sshd` : `session optional pam_exec.so quiet seteuid …`) | Notifie **uniquement les connexions SSH inhabituelles** : autre IP que `SSH_ALERT_ALLOWED_IPS` (`$SOURCE_IP`, allowlist dans `hermes.env`), autre utilisateur que `admin`, ou connexion locale — silence pour `admin@$SOURCE_IP` (trafic routine des agents, tracé dans `journalctl`) ; `optional` = ne peut jamais bloquer un login ; backups `sshd.preaudit-20260830` / `telegram-alert-ssh.sh.preaudit-policy-20260830` | Simulation `admin@$SOURCE_IP` → silence (exit 0) ; `admin@203.0.113.99` (IP test) → notification reçue ; `close_session` → silence |
 | `/usr/local/bin/aide-check-alert.sh` (cron 3h via `/etc/cron.d/aide`) | Check AIDE quotidien → alerte Telegram **uniquement si** fichiers ajoutés/supprimés/modifiés (sinon silence) | Chaîne validée : alertes parties lors des checks en écarts (reçues), silence après base propre |
 
 **Correctifs imposés par la mise en œuvre** :

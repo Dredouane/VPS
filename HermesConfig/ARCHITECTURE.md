@@ -1,7 +1,7 @@
 # 🏗️ Architecture HermesConfig — Décisions (ADR)
 
 Statuts : ✅ accepté · 🔄 révisable. Date : 30/08/2026. Contexte : VPS Contabo
-`REDACTED` (Ubuntu 22.04 durci — UFW, Fail2ban, AIDE, secrets dans
+`$VPS_HOSTNAME` (Ubuntu 22.04 durci — UFW, Fail2ban, AIDE, secrets dans
 `/etc/secrets/`), flotte Hermes existante (4 Docker + 2 natifs).
 
 ---

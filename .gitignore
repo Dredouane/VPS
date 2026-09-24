@@ -15,3 +15,10 @@ backup.tar.gz
 *.log
 /tmp/
 __pycache__/
+
+# Travail interne (notes de session, plans, agents perso) — local uniquement
+internal/
+.opencode/plans/
+
+# Config locale personnelle (voir LOCAL_SETUP.md)
+.env.local

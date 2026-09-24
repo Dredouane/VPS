@@ -15,7 +15,7 @@ chmod 700 "$DEST"
 
 # Clés privées + publiques + config SSH (contient IP/port, non sensible cryptographiquement)
 cp ~/.ssh/id_ed25519 ~/.ssh/id_ed25519.pub "$TMP/" 2>/dev/null || true
-cp ~/.ssh/REDACTED ~/.ssh/REDACTED.pub "$TMP/" 2>/dev/null || true
+cp ~/.ssh/[VPS_SSH_KEY] ~/.ssh/[VPS_SSH_KEY].pub "$TMP/" 2>/dev/null || true
 cp ~/.ssh/id_rsa ~/.ssh/id_rsa.pub "$TMP/" 2>/dev/null || true
 cp ~/.ssh/config "$TMP/ssh_config" 2>/dev/null || true
 chmod 600 "$TMP"/* 2>/dev/null || true

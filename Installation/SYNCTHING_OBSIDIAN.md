@@ -1,6 +1,6 @@
 # Syncthing & Obsidian — Guide d'exploitation (VPS Contabo)
 
-**Serveur** : `REDACTED` — Ubuntu 22.04 LTS — IP `REDACTED`
+**Serveur** : `$VPS_HOSTNAME` — Ubuntu 22.04 LTS — IP `$VPS_IP`
 **Dernière mise à jour** : 30/08/2026
 
 ---
@@ -11,8 +11,8 @@
 
 | Appareil | Nom | Device ID | Rôle | État |
 |---|---|---|---|---|
-| **VPS** | `REDACTED` | `REDACTED_DEVICE_ID` | Serveur | ✅ |
-| **PC** (Windows/WSL) | `REDACTED` | `GPMPYZ2-7JRJHKB-KYUMBCW-HULB5EG-HRQXCCU-FP5VEZT-UNUGXUM-54LFAQE` | Client | ✅ connecté (relay) |
+| **VPS** | `$VPS_HOSTNAME` | `$SYNCTHING_DEVICE_ID | Serveur | ✅ |
+| **PC** (Windows/WSL) | `$DESKTOP_DEVICE` | `GPMPYZ2-7JRJHKB-KYUMBCW-HULB5EG-HRQXCCU-FP5VEZT-UNUGXUM-54LFAQE` | Client | ✅ connecté (relay) |
 | **Mobile** (Android) | `Android-Mobile` | `67QMEVF-UF4DO7C-3BWARCW-OYJKEDH-FYZ2BX7-P32OXQS-ZCNA2OM-MBZM2QX` | Client | ⚠️ déclaré, connexion à confirmer |
 
 ### 1.2 Folder partagé
@@ -25,7 +25,7 @@
 | Type | `sendreceive` |
 | Taille | ~612 Mo — 15 342 fichiers |
 | État | synchronisé à 100 % (`inSync 599 032 479 octets`, `needFiles: 0`) |
-| Devices partagés | REDACTED + REDACTED + Android-Mobile |
+| Devices partagés | $VPS_HOSTNAME + $DESKTOP_DEVICE + Android-Mobile |
 
 ### 1.3 Consommateurs (agents Hermes Docker)
 
@@ -37,19 +37,19 @@ Les 4 agents Docker montent le vault en lecture dans le conteneur (`/opt/vault`)
 
 ## 2. Connexions & Accès
 
-### 2.1 SSH (port 2222)
+### 2.1 SSH (port $VPS_SSH_PORT)
 
 ```bash
-ssh nemo            # admin@REDACTED:2222 — clé ~/.ssh/REDACTED (sans passphrase)
+ssh nemo            # admin@$VPS_IP:$VPS_SSH_PORT — clé ~/.ssh/$VPS_SSH_KEY (sans passphrase)
 ```
 
 Config `~/.ssh/config` :
 ```
 Host nemo
-    HostName REDACTED
+    HostName $VPS_IP
     User admin
-    Port 2222
-    IdentityFile ~/.ssh/REDACTED
+    Port $VPS_SSH_PORT
+    IdentityFile ~/.ssh/$VPS_SSH_KEY
     IdentitiesOnly yes
 ```
 
@@ -63,7 +63,7 @@ Le GUI écoute sur `127.0.0.1:8384` (localhost uniquement). **Jamais exposé pub
 syncthing-gui      # alias = ssh -N -L 8384:127.0.0.1:8384 nemo
 ```
 
-Puis ouvrir : **http://localhost:8384** (GUI du VPS, device `REDACTED`).
+Puis ouvrir : **http://localhost:8384** (GUI du VPS, device `$VPS_HOSTNAME`).
 
 Arrêt du tunnel : `Ctrl+C`.
 
@@ -83,13 +83,13 @@ systemctl restart syncthing@syncthing.service   # redémarrage
 ### 3.2 Pare-feu UFW
 
 ```
-22000/tcp   ALLOW   REDACTED    # Syncthing — restreint à l'IP du PC (WSL)
-2222/tcp    ALLOW   Anywhere        # SSH durci
+22000/tcp   ALLOW   $SOURCE_IP    # Syncthing — restreint à l'IP du PC (WSL)
+$VPS_SSH_PORT/tcp    ALLOW   Anywhere        # SSH durci
 ```
 
 > **Attention** : si l'IP publique du PC (WSL) change, mettre à jour la règle :
 > ```bash
-> sudo ufw delete allow from REDACTED to any port 22000 proto tcp
+> sudo ufw delete allow from $SOURCE_IP to any port 22000 proto tcp
 > sudo ufw allow from <NOUVELLE_IP> to any port 22000 proto tcp
 > ```
 
@@ -128,7 +128,7 @@ sudo systemctl restart syncthing@syncthing.service
 
 1. Depuis l'appareil : copier son Device ID (Actions → Show ID / Réglages → Appareil).
 2. Sur le VPS (GUI via tunnel, ou API REST) : ajouter le device.
-3. Depuis l'appareil : ajouter le Device ID du VPS `REDACTED_DEVICE_ID...-UYAFGAU` (appairage bidirectionnel obligatoire).
+3. Depuis l'appareil : ajouter le Device ID du VPS `$SYNCTHING_DEVICE_ID (appairage bidirectionnel obligatoire).
 4. Partager le folder `obsidian-vault` (même Folder ID des deux côtés).
 5. Si connexion directe souhaitée : ouvrir `22000/tcp` pour l'IP de l'appareil dans UFW (sinon le relais gère).
 
@@ -201,10 +201,10 @@ Mettre à jour la règle UFW (voir §3.2). Alternative durable : passer le PC en
 ## 8. Référence rapide — Identifiants
 
 ```
-VPS  (REDACTED)  : REDACTED_DEVICE_ID
-PC   (REDACTED) : GPMPYZ2-7JRJHKB-KYUMBCW-HULB5EG-HRQXCCU-FP5VEZT-UNUGXUM-54LFAQE
+VPS  ($VPS_HOSTNAME)  : $SYNCTHING_DEVICE_ID
+PC   ($DESKTOP_DEVICE) : GPMPYZ2-7JRJHKB-KYUMBCW-HULB5EG-HRQXCCU-FP5VEZT-UNUGXUM-54LFAQE
 Mobile (Android)    : 67QMEVF-UF4DO7C-3BWARCW-OYJKEDH-FYZ2BX7-P32OXQS-ZCNA2OM-MBZM2QX
 Folder              : obsidian-vault  →  /home/syncthing/obsidian-vault
-SSH                 : ssh nemo  (admin@REDACTED:2222)
+SSH                 : ssh nemo  (admin@$VPS_IP:$VPS_SSH_PORT)
 GUI VPS             : syncthing-gui  →  http://localhost:8384
 ```

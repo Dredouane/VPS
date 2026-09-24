@@ -1,72 +1,72 @@
-# 🤖 HermesConfig — Déploiement pro d'agents Hermes pour clients PME
+# 🤖 HermesConfig — Professional deployment of Hermes agents for SMB clients
 
-Sous-projet dédié à l'installation d'agents **Hermes Agent** (Nous Research) en
-configuration **professionnelle, variabilisée par client**, sur le VPS durci
-(`REDACTED`). Successeur de la flotte historique `spawn-hermes.sh` : même
-philosophie Docker, niveau de sécurité et de robustesse supérieur.
+Sub-project dedicated to installing **Hermes Agent** agents (Nous Research) in a
+**professional, per-client variabilized** configuration on the hardened VPS
+(`$VPS_HOSTNAME`). Successor to the historical `spawn-hermes.sh` fleet: same
+Docker philosophy, higher level of security and robustness.
 
-> 🔒 **Aucun secret n'est versionné ici.** Les `client.env` réels vivent sur le
-> VPS uniquement (`.gitignore` couvre `*.env`). Les `.env.example` sont des
-> squelettes avec placeholders.
+> 🔒 **No secrets are versioned here.** Actual `client.env` files live on the
+> VPS only (`.gitignore` covers `*.env`). The `.env.example` files are
+> skeletons with placeholders.
 
 ---
 
-## 🧭 Principes (non négociables)
+## 🧭 Principles (non-negotiable)
 
-1. **Least privilege** — caps Docker minimales, UID non-root `10000`, ports liés à `127.0.0.1`.
-2. **Zéro secret dans les YAML / CLI / git** — tout passe par `clients/<slug>/client.env` (600).
-3. **Image pinnée** — jamais de `latest` dans les compose générés.
-4. **Client reprend la main facilement** — `SOUL.md` explicite (sait / peut / refuse / escalade), runbook vault.
-5. **Bot Mode mesuré** — 2-4 rôles stables max, pas de multiplication de subagents.
-6. **Variabilisation totale** — un nouveau client = copier `clients/TEMPLATE/`, remplir 2-3 variables, `spawn-hermes-pro.sh <slug>`.
+1. **Least privilege** — minimal Docker caps, non-root UID `10000`, ports bound to `127.0.0.1`.
+2. **Zero secrets in YAML / CLI / git** — everything goes through `clients/<slug>/client.env` (600).
+3. **Pinned image** — never any `latest` in generated composes.
+4. **Client can easily take over** — explicit `SOUL.md` (knows / can / refuses / escalates), vault runbook.
+5. **Measured Bot Mode** — max 2-4 stable roles, no subagent proliferation.
+6. **Total variabilization** — a new client = copy `clients/TEMPLATE/`, fill in 2-3 variables, `spawn-hermes-pro.sh <slug>`.
 
 ## 📂 Structure
 
 ```
 HermesConfig/
-├── README.md                      ← Ce fichier
-├── VEILLE_HERMES_2026-08.md       ← Veille techno state of the art (août 2026)
-├── ARCHITECTURE.md                ← Décisions d'architecture (ADR)
-├── DEPLOYMENT.md                  ← Guide pas-à-pas déploiement VPS
+├── README.md                      ← This file
+├── VEILLE_HERMES_2026-08.md       ← State-of-the-art tech watch (August 2026)
+├── ARCHITECTURE.md                ← Architecture decisions (ADR)
+├── DEPLOYMENT.md                  ← Step-by-step VPS deployment guide
 ├── docker/
-│   └── docker-compose.yml.template← Template sécurisé (placeholders __VAR__)
+│   └── docker-compose.yml.template← Secure template (placeholders __VAR__)
 ├── clients/
-│   ├── TEMPLATE/                  ← Squelette à copier pour un nouveau client
+│   ├── TEMPLATE/                  ← Skeleton to copy for a new client
 │   │   ├── client.env.example
 │   │   └── soul.md
-│   └── arev/                      ← Client #1 : AREV Travaux (PME travaux/chantier)
+│   └── arev/                      ← Client #1: AREV Travaux (construction/works SMB)
 ├── hermes/
-│   ├── config.yaml.example        ← Config runtime pro (redact_secrets, model…)
-│   ├── bots/                      ← Bot Mode : règles + exemples (Ops…)
-│   ├── routines/                  ← Routines cron par bot
-│   └── skills/                    ← Skills custom client
+│   ├── config.yaml.example        ← Pro runtime config (redact_secrets, model…)
+│   ├── bots/                      ← Bot Mode: rules + examples (Ops…)
+│   ├── routines/                  ← Cron routines per bot
+│   └── skills/                    ← Custom client skills
 └── scripts/
-    ├── spawn-hermes-pro.sh        ← Déploiement d'un client (idempotent)
-    └── audit-hermes-pro.sh        ← Audit santé/sécurité flotte pro (read-only)
+    ├── spawn-hermes-pro.sh        ← Client deployment (idempotent)
+    └── audit-hermes-pro.sh        ← Pro fleet health/security audit (read-only)
 ```
 
-## 🚀 Quickstart (sur le VPS)
+## 🚀 Quickstart (on the VPS)
 
 ```bash
 cd /home/admin/hermes-fleet/HermesConfig
 
-# 1. Nouveau client : copier le template
+# 1. New client: copy the template
 cp -r clients/TEMPLATE clients/monclient
-vim clients/monclient/client.env   # token bot, users autorisés, clé LLM
-vim clients/monclient/soul.md      # adapter le contrat au client
+vim clients/monclient/client.env   # bot token, allowed users, LLM key
+vim clients/monclient/soul.md      # adapt the contract to the client
 
-# 2. Déployer
+# 2. Deploy
 ./scripts/spawn-hermes-pro.sh monclient
 
-# 3. Vérifier
+# 3. Verify
 ./scripts/audit-hermes-pro.sh
 ```
 
-## 🔗 Liens
+## 🔗 Links
 
-- Veille & sources officielles : [`VEILLE_HERMES_2026-08.md`](VEILLE_HERMES_2026-08.md)
-- Décisions d'architecture : [`ARCHITECTURE.md`](ARCHITECTURE.md)
-- Procédure de déploiement complète : [`DEPLOYMENT.md`](DEPLOYMENT.md)
-- **Volet 2 — compétences modulaires** : [`../HermesCapabilities/README.md`](../HermesCapabilities/README.md)
-- Doc globale VPS : [`../Installation/DOCUMENTATION_VPS.md`](../Installation/DOCUMENTATION_VPS.md)
-- Vault Obsidian : `/home/syncthing/obsidian-vault/VPS/HermesConfig/` (notes ADR, runbook, état flotte)
+- Tech watch & official sources: [`VEILLE_HERMES_2026-08.md`](VEILLE_HERMES_2026-08.md)
+- Architecture decisions: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+- Full deployment procedure: [`DEPLOYMENT.md`](DEPLOYMENT.md)
+- **Part 2 — modular skills**: [`../HermesCapabilities/README.md`](../HermesCapabilities/README.md)
+- Global VPS doc: [`../Installation/DOCUMENTATION_VPS.md`](../Installation/DOCUMENTATION_VPS.md)
+- Obsidian vault: `/home/syncthing/obsidian-vault/VPS/HermesConfig/` (ADR notes, runbook, fleet status)

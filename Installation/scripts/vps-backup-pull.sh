@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # vps-backup-pull.sh v2 — rapatrie la DERNIÈRE archive de sauvegarde du VPS nemo
-# Clé dédiée id_vps_backup (sans passphrase, restreinte côté serveur par
+# Clé dédiée [VPS_KEY_BACKUP] (sans passphrase, restreinte côté serveur par
 # restrict + commande forcée : ne peut QUE streamer la dernière archive).
 # => Fonctionne sans agent SSH, donc depuis une tâche planifiée Windows.
 #

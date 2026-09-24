@@ -1,6 +1,6 @@
 # 🚀 DEPLOYMENT.md — Déploiement d'un client HermesConfig sur le VPS
 
-Pré-requis : VPS `REDACTED` durci (voir `../Installation/DOCUMENTATION_VPS.md`),
+Pré-requis : VPS `$VPS_HOSTNAME` durci (voir `../Installation/DOCUMENTATION_VPS.md`),
 Docker actif, image `hermes-agent` buildée ou buildable (`hermes-repo`),
 accès `ssh nemo`.
 
